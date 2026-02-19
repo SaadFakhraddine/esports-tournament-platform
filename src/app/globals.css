@@ -1,0 +1,252 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode gaming theme - Always dark */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 90%;
+
+    /* Purple primary color */
+    --primary: 266 83% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Cyan accent color */
+    --accent: 189 100% 50%;
+    --accent-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 266 83% 67%;
+    --radius: 0.5rem;
+
+    /* Success and warning colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Glow effect for cards and buttons */
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+  }
+
+  .glow-purple-hover {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-purple-hover:hover {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+  }
+
+  .glow-cyan-hover {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-cyan-hover:hover {
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
+  }
+
+  /* Gradient backgrounds */
+  .gradient-purple {
+    background: linear-gradient(135deg, hsl(266, 83%, 67%) 0%, hsl(266, 83%, 47%) 100%);
+  }
+
+  .gradient-cyan {
+    background: linear-gradient(135deg, hsl(189, 100%, 50%) 0%, hsl(189, 100%, 40%) 100%);
+  }
+
+  .gradient-purple-cyan {
+    background: linear-gradient(135deg, hsl(266, 83%, 67%) 0%, hsl(189, 100%, 50%) 100%);
+  }
+}
+
+@layer utilities {
+  /* Text gradient utilities */
+  .text-gradient-purple {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-purple-600;
+  }
+
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-cyan-600;
+  }
+
+  .text-gradient-purple-cyan {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-fuchsia-500 to-cyan-400;
+  }
+
+  /* Animation utilities */
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-from-left {
+    animation: slide-in-from-left 0.3s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+}
+
+/* React DatePicker Customization */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker {
+  @apply font-sans border-border bg-card shadow-lg;
+}
+
+.react-datepicker__header {
+  @apply bg-muted border-b border-border rounded-t-md;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  @apply text-foreground font-semibold;
+}
+
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  @apply text-foreground;
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__month-text:hover,
+.react-datepicker__quarter-text:hover,
+.react-datepicker__year-text:hover {
+  @apply bg-muted;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range,
+.react-datepicker__month-text--selected,
+.react-datepicker__month-text--in-selecting-range,
+.react-datepicker__month-text--in-range,
+.react-datepicker__quarter-text--selected,
+.react-datepicker__quarter-text--in-selecting-range,
+.react-datepicker__quarter-text--in-range,
+.react-datepicker__year-text--selected,
+.react-datepicker__year-text--in-selecting-range,
+.react-datepicker__year-text--in-range {
+  @apply bg-primary text-primary-foreground;
+}
+
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__month-text--keyboard-selected,
+.react-datepicker__quarter-text--keyboard-selected,
+.react-datepicker__year-text--keyboard-selected {
+  @apply bg-primary/80 text-primary-foreground;
+}
+
+.react-datepicker__day--disabled,
+.react-datepicker__month-text--disabled,
+.react-datepicker__quarter-text--disabled,
+.react-datepicker__year-text--disabled {
+  @apply text-muted-foreground cursor-not-allowed;
+}
+
+.react-datepicker__time-container {
+  @apply border-l border-border;
+}
+
+.react-datepicker__time {
+  @apply bg-card;
+}
+
+.react-datepicker__time-box {
+  @apply w-auto;
+}
+
+.react-datepicker__time-list-item {
+  @apply text-foreground;
+}
+
+.react-datepicker__time-list-item:hover {
+  @apply bg-muted;
+}
+
+.react-datepicker__time-list-item--selected {
+  @apply bg-primary text-primary-foreground font-semibold;
+}
+
+.react-datepicker__navigation {
+  @apply top-3;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-foreground;
+}
+
+.react-datepicker__input-container input {
+  @apply w-full;
+}
