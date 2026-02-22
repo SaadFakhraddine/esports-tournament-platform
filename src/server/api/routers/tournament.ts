@@ -33,10 +33,7 @@ export const tournamentRouter = createTRPCRouter({
     if (game) {
       const gameRecord = await ctx.db.game.findFirst({
         where: {
-          OR: [
-            { slug: game },
-            { name: { equals: game, mode: 'insensitive' } },
-          ],
+          OR: [{ slug: game }, { name: { equals: game, mode: 'insensitive' } }],
         },
       })
       if (gameRecord) {
@@ -178,6 +175,14 @@ export const tournamentRouter = createTRPCRouter({
                 logo: true,
               },
             },
+            winner: {
+              select: {
+                id: true,
+                name: true,
+                tag: true,
+                logo: true,
+              },
+            },
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -185,10 +190,35 @@ export const tournamentRouter = createTRPCRouter({
       orderBy: { round: 'asc' },
     })
 
+    // Fetch matches
+    const matches = await ctx.db.match.findMany({
+      where: { tournamentId: input.id },
+      include: {
+        homeTeam: {
+          select: {
+            id: true,
+            name: true,
+            tag: true,
+            logo: true,
+          },
+        },
+        awayTeam: {
+          select: {
+            id: true,
+            name: true,
+            tag: true,
+            logo: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    })
+
     return {
       ...tournament,
       registrations,
       brackets,
+      matches,
     }
   }),
 
@@ -206,10 +236,7 @@ export const tournamentRouter = createTRPCRouter({
       })
     }
 
-    if (
-      tournament.organizerId !== ctx.session.user.id &&
-      ctx.session.user.role !== 'ADMIN'
-    ) {
+    if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have permission to update this tournament',
@@ -238,10 +265,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to delete this tournament',
@@ -324,7 +348,8 @@ export const tournamentRouter = createTRPCRouter({
       if (isTournamentOrganizer && isTeamOwner) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You cannot participate in tournaments you organize. Please use a different account to compete.',
+          message:
+            'You cannot participate in tournaments you organize. Please use a different account to compete.',
         })
       }
 
@@ -548,10 +573,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to view registrations',
@@ -640,10 +662,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to generate brackets for this tournament',
@@ -682,10 +701,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to regenerate brackets for this tournament',
@@ -731,10 +747,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to seed teams for this tournament',
@@ -770,10 +783,7 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      if (
-        tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to start this tournament',
@@ -818,7 +828,10 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
-      const totalMatches = tournament.brackets.reduce((sum, bracket) => sum + bracket.matches.length, 0)
+      const totalMatches = tournament.brackets.reduce(
+        (sum, bracket) => sum + bracket.matches.length,
+        0
+      )
       if (totalMatches === 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',

@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import { useSession } from "next-auth/react"
-import { redirect, useParams } from "next/navigation"
-import Link from "next/link"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useSession } from 'next-auth/react'
+import { redirect, useParams } from 'next/navigation'
+import Link from 'next/link'
+import { DashboardLayout } from '@/components/layout/dashboard-layout'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Users,
   Trophy,
@@ -17,10 +17,18 @@ import {
   XCircle,
   Clock,
   Play,
-  AlertTriangle
-} from "lucide-react"
-import { trpc } from "@/lib/trpc/client"
-import { TournamentForm } from "@/components/tournament/tournament-form"
+  AlertTriangle,
+  Filter,
+  MoreVertical,
+} from 'lucide-react'
+import { trpc } from '@/lib/trpc/client'
+import { TournamentForm } from '@/components/tournament/tournament-form'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export default function TournamentManagePage() {
   const { data: session, status } = useSession()
@@ -32,10 +40,11 @@ export default function TournamentManagePage() {
     { enabled: !!session && !!tournamentId }
   )
 
-  const { data: registrations, isLoading: registrationsLoading } = trpc.tournament.getRegistrations.useQuery(
-    { tournamentId },
-    { enabled: !!session && !!tournamentId }
-  )
+  const { data: registrations, isLoading: registrationsLoading } =
+    trpc.tournament.getRegistrations.useQuery(
+      { tournamentId },
+      { enabled: !!session && !!tournamentId }
+    )
 
   const approveRegistrationMutation = trpc.tournament.approveRegistration.useMutation()
   const rejectRegistrationMutation = trpc.tournament.rejectRegistration.useMutation()
@@ -46,7 +55,7 @@ export default function TournamentManagePage() {
 
   const utils = trpc.useUtils()
 
-  if (status === "loading" || tournamentLoading) {
+  if (status === 'loading' || tournamentLoading) {
     return (
       <DashboardLayout userRole={session?.user?.role}>
         <div className="space-y-6">
@@ -58,11 +67,11 @@ export default function TournamentManagePage() {
   }
 
   if (!session) {
-    redirect("/login")
+    redirect('/login')
   }
 
-  if (session.user.role !== "ORGANIZER" && session.user.role !== "ADMIN") {
-    redirect("/tournaments")
+  if (session.user.role !== 'ORGANIZER' && session.user.role !== 'ADMIN') {
+    redirect('/tournaments')
   }
 
   if (!tournament) {
@@ -75,14 +84,18 @@ export default function TournamentManagePage() {
     )
   }
 
-  const pendingCount = registrations?.filter((r) => r.status === "PENDING").length || 0
-  const approvedCount = registrations?.filter((r) => r.status === "APPROVED").length || 0
+  const pendingCount = registrations?.filter((r) => r.status === 'PENDING').length || 0
+  const approvedCount = registrations?.filter((r) => r.status === 'APPROVED').length || 0
   const hasBracket = tournament.brackets && tournament.brackets.length > 0
-  const totalMatches = tournament.brackets?.reduce((sum, bracket) => sum + (bracket.matches?.length || 0), 0) || 0
-  const canStart = approvedCount >= 2 && hasBracket && totalMatches > 0 &&
-    tournament.status !== "IN_PROGRESS" &&
-    tournament.status !== "COMPLETED" &&
-    tournament.status !== "CANCELLED"
+  const totalMatches =
+    tournament.brackets?.reduce((sum, bracket) => sum + (bracket.matches?.length || 0), 0) || 0
+  const canStart =
+    approvedCount >= 2 &&
+    hasBracket &&
+    totalMatches > 0 &&
+    tournament.status !== 'IN_PROGRESS' &&
+    tournament.status !== 'COMPLETED' &&
+    tournament.status !== 'CANCELLED'
 
   return (
     <DashboardLayout userRole={session.user.role}>
@@ -94,15 +107,20 @@ export default function TournamentManagePage() {
             <Badge
               variant="outline"
               className={
-                tournament.status === "DRAFT" ? "bg-gray-500/10 text-gray-500 border-gray-500/20" :
-                  tournament.status === "REGISTRATION" ? "bg-blue-500/10 text-blue-500 border-blue-500/20" :
-                    tournament.status === "SEEDING" ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" :
-                      tournament.status === "IN_PROGRESS" ? "bg-green-500/10 text-green-500 border-green-500/20" :
-                        tournament.status === "COMPLETED" ? "bg-purple-500/10 text-purple-500 border-purple-500/20" :
-                          "bg-red-500/10 text-red-500 border-red-500/20"
+                tournament.status === 'DRAFT'
+                  ? 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                  : tournament.status === 'REGISTRATION'
+                    ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                    : tournament.status === 'SEEDING'
+                      ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                      : tournament.status === 'IN_PROGRESS'
+                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                        : tournament.status === 'COMPLETED'
+                          ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+                          : 'bg-red-500/10 text-red-500 border-red-500/20'
               }
             >
-              {tournament.status.replace(/_/g, " ")}
+              {tournament.status.replace(/_/g, ' ')}
             </Badge>
           </div>
           <p className="text-muted-foreground">
@@ -135,18 +153,23 @@ export default function TournamentManagePage() {
               />
               <StatCard
                 title="Matches"
-                value={tournament.brackets?.[0]?.matches?.length?.toString() || "0"}
+                value={tournament.brackets?.[0]?.matches?.length?.toString() || '0'}
                 icon={<Trophy className="h-4 w-4 text-muted-foreground" />}
               />
               <StatCard
                 title="Days Until Start"
-                value={Math.max(0, Math.ceil((new Date(tournament.startDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))).toString()}
+                value={Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(tournament.startDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                  )
+                ).toString()}
                 icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
 
             {/* Start Tournament Alert */}
-            {canStart && tournament.status !== "IN_PROGRESS" && (
+            {canStart && tournament.status !== 'IN_PROGRESS' && (
               <Card className="border-green-500/50 bg-green-500/5">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -164,10 +187,12 @@ export default function TournamentManagePage() {
                       className="gradient-purple gap-2"
                       onClick={async () => {
                         // Warn if registration is still open
-                        if (tournament.status === "REGISTRATION") {
-                          if (!confirm(
-                            "Warning: Registration is still open. Starting the tournament will prevent new team registrations.\n\nDo you want to proceed?"
-                          )) {
+                        if (tournament.status === 'REGISTRATION') {
+                          if (
+                            !confirm(
+                              'Warning: Registration is still open. Starting the tournament will prevent new team registrations.\n\nDo you want to proceed?'
+                            )
+                          ) {
                             return
                           }
                         }
@@ -176,13 +201,15 @@ export default function TournamentManagePage() {
                           await startTournamentMutation.mutateAsync({ tournamentId })
                           utils.tournament.getById.invalidate({ id: tournamentId })
                         } catch (error: unknown) {
-                          alert(`Cannot start tournament: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                          alert(
+                            `Cannot start tournament: ${error instanceof Error ? error.message : 'Unknown error'}`
+                          )
                         }
                       }}
                       disabled={startTournamentMutation.isPending}
                     >
                       <Play className="h-5 w-5" />
-                      {startTournamentMutation.isPending ? "Starting..." : "Start Tournament"}
+                      {startTournamentMutation.isPending ? 'Starting...' : 'Start Tournament'}
                     </Button>
                   </div>
                 </CardHeader>
@@ -196,7 +223,7 @@ export default function TournamentManagePage() {
                       <CheckCircle2 className="h-4 w-4" />
                       <span>Bracket generated ({totalMatches} matches)</span>
                     </div>
-                    {tournament.status === "REGISTRATION" && (
+                    {tournament.status === 'REGISTRATION' && (
                       <div className="flex items-center gap-2 text-yellow-600">
                         <AlertTriangle className="h-4 w-4" />
                         <span>Registration still open</span>
@@ -208,38 +235,41 @@ export default function TournamentManagePage() {
             )}
 
             {/* Cannot Start Alert */}
-            {!canStart && tournament.status !== "IN_PROGRESS" && tournament.status !== "COMPLETED" && tournament.status !== "CANCELLED" && (
-              <Card className="border-yellow-500/50 bg-yellow-500/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-yellow-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    Tournament Not Ready
-                  </CardTitle>
-                  <CardDescription>
-                    Complete the following steps before starting the tournament:
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    {approvedCount < 2 && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span>Need at least 2 approved teams (currently {approvedCount})</span>
-                      </div>
-                    )}
-                    {(!hasBracket || totalMatches === 0) && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span>Generate tournament bracket below</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {!canStart &&
+              tournament.status !== 'IN_PROGRESS' &&
+              tournament.status !== 'COMPLETED' &&
+              tournament.status !== 'CANCELLED' && (
+                <Card className="border-yellow-500/50 bg-yellow-500/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-yellow-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      Tournament Not Ready
+                    </CardTitle>
+                    <CardDescription>
+                      Complete the following steps before starting the tournament:
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {approvedCount < 2 && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span>Need at least 2 approved teams (currently {approvedCount})</span>
+                        </div>
+                      )}
+                      {(!hasBracket || totalMatches === 0) && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span>Generate tournament bracket below</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
             {/* Tournament In Progress */}
-            {tournament.status === "IN_PROGRESS" && (
+            {tournament.status === 'IN_PROGRESS' && (
               <Card className="border-blue-500/50 bg-blue-500/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-blue-600">
@@ -285,7 +315,7 @@ export default function TournamentManagePage() {
                   disabled={generateBracketMutation.isPending || approvedCount < 2}
                 >
                   <Trophy className="h-4 w-4 mr-2" />
-                  {generateBracketMutation.isPending ? "Generating..." : "Generate Bracket"}
+                  {generateBracketMutation.isPending ? 'Generating...' : 'Generate Bracket'}
                 </Button>
                 <Button
                   variant="outline"
@@ -302,16 +332,18 @@ export default function TournamentManagePage() {
                   disabled={autoSeedMutation.isPending || approvedCount < 2}
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  {autoSeedMutation.isPending ? "Seeding..." : "Seed Teams"}
+                  {autoSeedMutation.isPending ? 'Seeding...' : 'Seed Teams'}
                 </Button>
                 <Button
                   variant="outline"
                   className="justify-start w-full"
                   onClick={async () => {
-                    if (tournament.status === "REGISTRATION") {
-                      if (!confirm(
-                        "Warning: Registration is still open. Starting the tournament will prevent new team registrations.\n\nDo you want to proceed?"
-                      )) {
+                    if (tournament.status === 'REGISTRATION') {
+                      if (
+                        !confirm(
+                          'Warning: Registration is still open. Starting the tournament will prevent new team registrations.\n\nDo you want to proceed?'
+                        )
+                      ) {
                         return
                       }
                     }
@@ -320,8 +352,7 @@ export default function TournamentManagePage() {
                       await startTournamentMutation.mutateAsync({ tournamentId })
                       utils.tournament.getById.invalidate({ id: tournamentId })
                     } catch (error: unknown) {
-                      const message =
-                        error instanceof Error ? error.message : 'Unknown error'
+                      const message = error instanceof Error ? error.message : 'Unknown error'
 
                       alert(`Cannot start tournament:\n${message}`)
                     }
@@ -329,7 +360,7 @@ export default function TournamentManagePage() {
                   disabled={startTournamentMutation.isPending || !canStart}
                 >
                   <Play className="h-4 w-4 mr-2" />
-                  {startTournamentMutation.isPending ? "Starting..." : "Start Tournament"}
+                  {startTournamentMutation.isPending ? 'Starting...' : 'Start Tournament'}
                 </Button>
               </CardContent>
             </Card>
@@ -411,30 +442,37 @@ export default function TournamentManagePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Tournament Bracket</CardTitle>
-                    <CardDescription>
-                      View and manage the tournament bracket
-                    </CardDescription>
+                    <CardDescription>View and manage the tournament bracket</CardDescription>
                   </div>
-                  {tournament.brackets && tournament.brackets.length > 0 && tournament.status !== "IN_PROGRESS" && tournament.status !== "COMPLETED" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        if (confirm("Are you sure you want to regenerate the bracket? This will clear the current bracket.")) {
-                          try {
-                            await regenerateBracketMutation.mutateAsync({ tournamentId })
-                            utils.tournament.getById.invalidate({ id: tournamentId })
-                          } catch (error: unknown) {
-                            alert(error instanceof Error ? error.message : 'Something went wrong')
+                  {tournament.brackets &&
+                    tournament.brackets.length > 0 &&
+                    tournament.status !== 'IN_PROGRESS' &&
+                    tournament.status !== 'COMPLETED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              'Are you sure you want to regenerate the bracket? This will clear the current bracket.'
+                            )
+                          ) {
+                            try {
+                              await regenerateBracketMutation.mutateAsync({ tournamentId })
+                              utils.tournament.getById.invalidate({ id: tournamentId })
+                            } catch (error: unknown) {
+                              alert(error instanceof Error ? error.message : 'Something went wrong')
+                            }
                           }
-                        }
-                      }}
-                      disabled={regenerateBracketMutation.isPending}
-                    >
-                      <Trophy className="h-4 w-4 mr-2" />
-                      {regenerateBracketMutation.isPending ? "Regenerating..." : "Regenerate Bracket"}
-                    </Button>
-                  )}
+                        }}
+                        disabled={regenerateBracketMutation.isPending}
+                      >
+                        <Trophy className="h-4 w-4 mr-2" />
+                        {regenerateBracketMutation.isPending
+                          ? 'Regenerating...'
+                          : 'Regenerate Bracket'}
+                      </Button>
+                    )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -444,9 +482,14 @@ export default function TournamentManagePage() {
                       <div key={bracket.id} className="space-y-4">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold">
-                            {bracket.type === "MAIN" ? "Main Bracket" :
-                              bracket.type === "WINNERS" ? "Winners Bracket" :
-                                bracket.type === "LOSERS" ? "Losers Bracket" : "Grand Final"} - Round {bracket.round}
+                            {bracket.type === 'MAIN'
+                              ? 'Main Bracket'
+                              : bracket.type === 'WINNERS'
+                                ? 'Winners Bracket'
+                                : bracket.type === 'LOSERS'
+                                  ? 'Losers Bracket'
+                                  : 'Grand Final'}{' '}
+                            - Round {bracket.round}
                           </h3>
                           <Badge variant="secondary">{bracket.matches?.length || 0} matches</Badge>
                         </div>
@@ -459,16 +502,20 @@ export default function TournamentManagePage() {
                               >
                                 <div className="flex items-center gap-4 flex-1">
                                   <div className="flex-1">
-                                    <p className="font-medium">{match.homeTeam?.name || "TBD"}</p>
+                                    <p className="font-medium">{match.homeTeam?.name || 'TBD'}</p>
                                     {match.homeTeam?.tag && (
-                                      <p className="text-sm text-muted-foreground">[{match.homeTeam.tag}]</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        [{match.homeTeam.tag}]
+                                      </p>
                                     )}
                                   </div>
                                   <div className="text-lg font-bold text-muted-foreground">VS</div>
                                   <div className="flex-1 text-right">
-                                    <p className="font-medium">{match.awayTeam?.name || "TBD"}</p>
+                                    <p className="font-medium">{match.awayTeam?.name || 'TBD'}</p>
                                     {match.awayTeam?.tag && (
-                                      <p className="text-sm text-muted-foreground">[{match.awayTeam.tag}]</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        [{match.awayTeam.tag}]
+                                      </p>
                                     )}
                                   </div>
                                 </div>
@@ -479,7 +526,9 @@ export default function TournamentManagePage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">No matches in this round yet</p>
+                          <p className="text-sm text-muted-foreground">
+                            No matches in this round yet
+                          </p>
                         )}
                       </div>
                     ))}
@@ -491,7 +540,7 @@ export default function TournamentManagePage() {
                     <p className="text-sm text-muted-foreground mb-4">
                       {approvedCount < 2
                         ? `Need at least 2 approved teams to generate bracket (currently ${approvedCount})`
-                        : "Approve registrations and seed teams before generating the bracket"}
+                        : 'Approve registrations and seed teams before generating the bracket'}
                     </p>
                     <Button
                       onClick={async () => {
@@ -505,7 +554,7 @@ export default function TournamentManagePage() {
                       disabled={generateBracketMutation.isPending || approvedCount < 2}
                     >
                       <Trophy className="h-4 w-4 mr-2" />
-                      {generateBracketMutation.isPending ? "Generating..." : "Generate Bracket"}
+                      {generateBracketMutation.isPending ? 'Generating...' : 'Generate Bracket'}
                     </Button>
                   </div>
                 )}
@@ -517,19 +566,207 @@ export default function TournamentManagePage() {
           <TabsContent value="matches" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Match Schedule</CardTitle>
-                <CardDescription>
-                  Manage and schedule tournament matches
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Match Schedule</CardTitle>
+                    <CardDescription>Manage and schedule tournament matches</CardDescription>
+                  </div>
+                  {tournament.brackets &&
+                    tournament.brackets.some((b) => b.matches && b.matches.length > 0) && (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Filter className="h-4 w-4 mr-2" />
+                          Filter
+                        </Button>
+                      </div>
+                    )}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-2">No Matches Scheduled</p>
-                  <p className="text-sm text-muted-foreground">
-                    Generate the bracket first to create matches
-                  </p>
-                </div>
+                {tournament.brackets && tournament.brackets.length > 0 ? (
+                  <div className="space-y-6">
+                    {/* Loop through brackets */}
+                    {tournament.brackets.map((bracket) => (
+                      <div key={bracket.id} className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg">
+                            {bracket.type === 'MAIN'
+                              ? 'Main Bracket'
+                              : bracket.type === 'WINNERS'
+                                ? 'Winners Bracket'
+                                : bracket.type === 'LOSERS'
+                                  ? 'Losers Bracket'
+                                  : 'Grand Final'}{' '}
+                            - Round {bracket.round}
+                          </h3>
+                          <Badge variant="secondary">{bracket.matches?.length || 0} matches</Badge>
+                        </div>
+
+                        {bracket.matches && bracket.matches.length > 0 ? (
+                          <div className="space-y-3">
+                            {bracket.matches.map((match) => (
+                              <Card key={match.id} className="overflow-hidden">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between gap-4">
+                                    {/* Match Info */}
+                                    <div className="flex items-center gap-4 flex-1">
+                                      {/* Team 1 */}
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <p className="font-medium">
+                                            {match.homeTeam?.name || 'TBD'}
+                                          </p>
+                                          {match.homeTeam?.id === match.winner?.id && (
+                                            <Trophy className="h-4 w-4 text-yellow-500" />
+                                          )}
+                                        </div>
+                                        {match.homeTeam?.tag && (
+                                          <p className="text-sm text-muted-foreground">
+                                            [{match.homeTeam.tag}]
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {/* Score */}
+                                      <div className="text-center min-w-[80px]">
+                                        {match.status === 'COMPLETED' ? (
+                                          <div className="text-xl font-bold">
+                                            {match.homeScore ?? 0} - {match.awayScore ?? 0}
+                                          </div>
+                                        ) : (
+                                          <div className="text-lg font-bold text-muted-foreground">
+                                            VS
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Team 2 */}
+                                      <div className="flex-1 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                          {match.winner?.id === match.awayTeamId && (
+                                            <Trophy className="h-4 w-4 text-yellow-500" />
+                                          )}
+                                          <p className="font-medium">
+                                            {match.awayTeam?.name || 'TBD'}
+                                          </p>
+                                        </div>
+                                        {match.awayTeam?.tag && (
+                                          <p className="text-sm text-muted-foreground">
+                                            [{match.awayTeam.tag}]
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Match Details & Actions */}
+                                    <div className="flex items-center gap-3">
+                                      {/* Schedule Info */}
+                                      <div className="text-sm text-muted-foreground text-right min-w-[120px]">
+                                        {match.scheduledAt ? (
+                                          <>
+                                            <div className="flex items-center justify-end gap-1">
+                                              <Calendar className="h-3 w-3" />
+                                              {new Date(match.scheduledAt).toLocaleDateString()}
+                                            </div>
+                                            <div className="flex items-center justify-end gap-1">
+                                              <Clock className="h-3 w-3" />
+                                              {new Date(match.scheduledAt).toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                              })}
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <span className="text-muted-foreground">
+                                            Not scheduled
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Status Badge */}
+                                      <Badge
+                                        variant={
+                                          match.status === 'COMPLETED'
+                                            ? 'default'
+                                            : match.status === 'IN_PROGRESS'
+                                              ? 'secondary'
+                                              : match.status === 'SCHEDULED'
+                                                ? 'outline'
+                                                : 'secondary'
+                                        }
+                                        className="min-w-[100px] justify-center"
+                                      >
+                                        {match.status}
+                                      </Badge>
+
+                                      {/* Actions */}
+                                      {match.status !== 'COMPLETED' && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm">
+                                              <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {!match.scheduledAt && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  // TODO: Open schedule modal
+                                                  console.log('Schedule match:', match.id)
+                                                }}
+                                              >
+                                                <Calendar className="h-4 w-4 mr-2" />
+                                                Schedule Match
+                                              </DropdownMenuItem>
+                                            )}
+                                            {match.homeTeamId && match.awayTeamId && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  // TODO: Open report result modal
+                                                  console.log('Report result:', match.id)
+                                                }}
+                                              >
+                                                <Trophy className="h-4 w-4 mr-2" />
+                                                Report Result
+                                              </DropdownMenuItem>
+                                            )}
+                                            {match.scheduledAt && match.status === 'SCHEDULED' && (
+                                              <DropdownMenuItem
+                                                onClick={() => {
+                                                  // TODO: Edit schedule
+                                                  console.log('Edit schedule:', match.id)
+                                                }}
+                                              >
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                Edit Schedule
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No matches in this bracket yet
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-lg font-medium mb-2">No Matches Yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Generate the bracket first to create matches
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -540,15 +777,7 @@ export default function TournamentManagePage() {
 }
 
 // Stat Card Component
-function StatCard({
-  title,
-  value,
-  icon,
-}: {
-  title: string
-  value: string
-  icon: React.ReactNode
-}) {
+function StatCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -563,15 +792,7 @@ function StatCard({
 }
 
 // Activity Item Component
-function ActivityItem({
-  action,
-  team,
-  time,
-}: {
-  action: string
-  team: string
-  time: string
-}) {
+function ActivityItem({ action, team, time }: { action: string; team: string; time: string }) {
   return (
     <div className="flex items-center justify-between py-2 border-b last:border-0">
       <div>
@@ -611,9 +832,7 @@ function RegistrationsTab({
     <Card>
       <CardHeader>
         <CardTitle>Team Registrations</CardTitle>
-        <CardDescription>
-          Approve or reject team registration requests
-        </CardDescription>
+        <CardDescription>Approve or reject team registration requests</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -624,9 +843,7 @@ function RegistrationsTab({
           </div>
         ) : !registrations || registrations.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">
-              No team registrations yet
-            </p>
+            <p className="text-sm text-muted-foreground">No team registrations yet</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -642,23 +859,19 @@ function RegistrationsTab({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {registration.status === "APPROVED" ? (
+                  {registration.status === 'APPROVED' ? (
                     <Badge variant="outline" className="bg-green-500/10 text-green-500">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Approved
                     </Badge>
-                  ) : registration.status === "REJECTED" ? (
+                  ) : registration.status === 'REJECTED' ? (
                     <Badge variant="outline" className="bg-red-500/10 text-red-500">
                       <XCircle className="h-3 w-3 mr-1" />
                       Rejected
                     </Badge>
                   ) : (
                     <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onReject(registration.id)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => onReject(registration.id)}>
                         <XCircle className="h-4 w-4 mr-1" />
                         Reject
                       </Button>

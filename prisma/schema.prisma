@@ -6,11 +6,10 @@ generator client {
 }
 
 datasource db {
- provider          = "postgresql"
- url               = env("DATABASE_URL")
- directUrl         = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
-
 
 // ============================================
 // Game Management
@@ -58,15 +57,15 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  accounts            Account[]
-  sessions            Session[]
-  ownedTeams          Team[]                  @relation("TeamOwner")
-  teamMemberships     TeamMember[]
-  organizedTournaments Tournament[]           @relation("TournamentOrganizer")
-  notifications       Notification[]
-  sentMatchResults    Match[]                 @relation("MatchResultSubmitter")
-  receivedInvitations TeamInvitation[]        @relation("TeamInvitationUser")
-  sentInvitations     TeamInvitation[]        @relation("TeamInvitationInviter")
+  accounts             Account[]
+  sessions             Session[]
+  ownedTeams           Team[]           @relation("TeamOwner")
+  teamMemberships      TeamMember[]
+  organizedTournaments Tournament[]     @relation("TournamentOrganizer")
+  notifications        Notification[]
+  sentMatchResults     Match[]          @relation("MatchResultSubmitter")
+  receivedInvitations  TeamInvitation[] @relation("TeamInvitationUser")
+  sentInvitations      TeamInvitation[] @relation("TeamInvitationInviter")
 
   @@index([email])
   @@index([username])
@@ -127,13 +126,14 @@ model Team {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  game            Game                     @relation(fields: [gameId], references: [id])
-  owner           User                     @relation("TeamOwner", fields: [ownerId], references: [id])
-  members         TeamMember[]
-  invitations     TeamInvitation[]
-  registrations   TournamentRegistration[]
-  homeMatches     Match[]                  @relation("HomeTeam")
-  awayMatches     Match[]                  @relation("AwayTeam")
+  game          Game                     @relation(fields: [gameId], references: [id])
+  owner         User                     @relation("TeamOwner", fields: [ownerId], references: [id])
+  members       TeamMember[]
+  invitations   TeamInvitation[]
+  registrations TournamentRegistration[]
+  homeMatches   Match[]                  @relation("HomeTeam")
+  awayMatches   Match[]                  @relation("AwayTeam")
+  wonMatches    Match[]                  @relation("MatchWinner")
 
   @@index([ownerId])
   @@index([gameId])
@@ -146,11 +146,11 @@ enum TeamRole {
 }
 
 model TeamMember {
-  id        String   @id @default(cuid())
-  teamId    String
-  userId    String
-  role      TeamRole @default(PLAYER)
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  teamId   String
+  userId   String
+  role     TeamRole @default(PLAYER)
+  joinedAt DateTime @default(now())
 
   // Relations
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -204,11 +204,11 @@ enum TournamentFormat {
 }
 
 enum TournamentStatus {
-  DRAFT        // Being created
+  DRAFT // Being created
   REGISTRATION // Open for registration
-  SEEDING      // Registration closed, organizer is seeding
-  IN_PROGRESS  // Bracket generated, matches ongoing
-  COMPLETED    // All matches finished
+  SEEDING // Registration closed, organizer is seeding
+  IN_PROGRESS // Bracket generated, matches ongoing
+  COMPLETED // All matches finished
   CANCELLED
 }
 
@@ -304,39 +304,41 @@ enum MatchStatus {
 }
 
 model Match {
-  id              String       @id @default(cuid())
-  tournamentId    String
-  bracketId       String
-  homeTeamId      String
-  awayTeamId      String
-  homeScore       Int?
-  awayScore       Int?
-  status          MatchStatus  @default(SCHEDULED)
-  scheduledAt     DateTime?
-  startedAt       DateTime?
-  completedAt     DateTime?
-  winnerTeamId    String?
-  bestOf          Int          @default(1) // Best of 1, 3, 5, etc.
-  nextMatchId     String? // ID of the match the winner advances to
-  nextMatchSlot   String? // "home" or "away" - which slot in next match
+  id                String      @id @default(cuid())
+  tournamentId      String
+  bracketId         String
+  homeTeamId        String
+  awayTeamId        String
+  homeScore         Int?
+  awayScore         Int?
+  status            MatchStatus @default(SCHEDULED)
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  winnerTeamId      String?
+  bestOf            Int         @default(1) // Best of 1, 3, 5, etc.
+  nextMatchId       String? // ID of the match the winner advances to
+  nextMatchSlot     String? // "home" or "away" - which slot in next match
   resultSubmittedBy String? // User who submitted the result
-  disputeReason   String?      @db.Text
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  disputeReason     String?     @db.Text
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   // Relations
-  tournament        Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  bracket           Bracket    @relation(fields: [bracketId], references: [id], onDelete: Cascade)
-  homeTeam          Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam          Team       @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  nextMatch         Match?     @relation("MatchProgression", fields: [nextMatchId], references: [id], onDelete: SetNull)
-  previousMatches   Match[]    @relation("MatchProgression")
-  resultSubmitter   User?      @relation("MatchResultSubmitter", fields: [resultSubmittedBy], references: [id])
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  bracket         Bracket    @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  homeTeam        Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam        Team       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  winner          Team?      @relation("MatchWinner", fields: [winnerTeamId], references: [id])
+  nextMatch       Match?     @relation("MatchProgression", fields: [nextMatchId], references: [id], onDelete: SetNull)
+  previousMatches Match[]    @relation("MatchProgression")
+  resultSubmitter User?      @relation("MatchResultSubmitter", fields: [resultSubmittedBy], references: [id])
 
   @@index([tournamentId])
   @@index([bracketId])
   @@index([homeTeamId])
   @@index([awayTeamId])
+  @@index([winnerTeamId])
   @@index([status])
 }
 
