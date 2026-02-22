@@ -4,18 +4,7 @@ import { appRouter } from '@/server/api/root'
 import { createTRPCContext } from '@/server/api/trpc'
 
 async function handler(req: NextRequest) {
-  console.log('========== API ROUTE ==========')
-
-  // Clone the request to read body
-  const clonedReq = req.clone()
-  try {
-    const body = await clonedReq.text()
-  } catch (e) {
-    console.log('Could not parse body:', e)
-  }
-  console.log('========== END API ROUTE ==========')
-
-  return fetchRequestHandler({
+   return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
