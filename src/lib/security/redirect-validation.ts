@@ -7,7 +7,6 @@ const ALLOWED_REDIRECT_PREFIXES = [
   '/dashboard',
   '/tournaments',
   '/teams',
-  '/profile',
   '/settings',
 ] as const
 

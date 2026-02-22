@@ -53,7 +53,7 @@ const navigation = [
   },
   {
     name: "Profile",
-    href: "/profile",
+    href: "/dashboard/profile",
     icon: User,
     roles: ["ADMIN", "ORGANIZER", "PLAYER"],
   },
