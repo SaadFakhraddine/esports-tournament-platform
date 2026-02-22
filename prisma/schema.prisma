@@ -296,6 +296,7 @@ model Bracket {
 }
 
 enum MatchStatus {
+  PENDING
   SCHEDULED
   IN_PROGRESS
   COMPLETED
@@ -311,7 +312,7 @@ model Match {
   awayTeamId        String
   homeScore         Int?
   awayScore         Int?
-  status            MatchStatus @default(SCHEDULED)
+  status            MatchStatus @default(PENDING)
   scheduledAt       DateTime?
   startedAt         DateTime?
   completedAt       DateTime?

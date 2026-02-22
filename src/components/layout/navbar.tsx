@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import { Bell, Search } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Bell, Search } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,19 +9,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useSession, signOut } from "next-auth/react"
-import Link from "next/link"
-import { trpc } from "@/lib/trpc/client"
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useSession, signOut } from 'next-auth/react'
+import Link from 'next/link'
+import { trpc } from '@/lib/trpc/client'
 
 export function Navbar() {
   const { data: session } = useSession()
-  const { data: invitations } = trpc.invitation.getMyInvitations.useQuery(
-    undefined,
-    { enabled: !!session }
-  )
+  const { data: invitations } = trpc.invitation.getMyInvitations.useQuery(undefined, {
+    enabled: !!session,
+  })
 
   const pendingCount = invitations?.length || 0
 
@@ -45,11 +44,7 @@ export function Navbar() {
           {/* Notifications / Invitations */}
           {session && (
             <Link href="/dashboard/invitations">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative rounded-full hover:bg-muted"
-              >
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-muted">
                 <Bell className="h-5 w-5" />
                 {pendingCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center">
@@ -71,10 +66,10 @@ export function Navbar() {
                   <Avatar className="h-10 w-10">
                     <AvatarImage
                       src={session.user.image || undefined}
-                      alt={session.user.name || "User"}
+                      alt={session.user.name || 'User'}
                     />
                     <AvatarFallback className="bg-gradient-purple text-white">
-                      {session.user.name?.charAt(0) || session.user.email?.charAt(0) || "U"}
+                      {session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -83,7 +78,7 @@ export function Navbar() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {session.user.name || "User"}
+                      {session.user.name || 'User'}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {session.user.email}
@@ -92,7 +87,7 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">Profile</Link>
+                  <Link href="/dashboardprofile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/tournaments">My Tournaments</Link>

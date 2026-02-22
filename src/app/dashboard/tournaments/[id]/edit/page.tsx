@@ -662,7 +662,7 @@ export default function TournamentManagePage() {
                                     <div className="flex items-center gap-3">
                                       {/* Schedule Info */}
                                       <div className="text-sm text-muted-foreground text-right min-w-[120px]">
-                                        {match.scheduledAt ? (
+                                        {match.scheduledAt && (
                                           <>
                                             <div className="flex items-center justify-end gap-1">
                                               <Calendar className="h-3 w-3" />
@@ -676,10 +676,6 @@ export default function TournamentManagePage() {
                                               })}
                                             </div>
                                           </>
-                                        ) : (
-                                          <span className="text-muted-foreground">
-                                            Not scheduled
-                                          </span>
                                         )}
                                       </div>
 
