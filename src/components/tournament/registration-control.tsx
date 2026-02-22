@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { trpc } from "@/lib/trpc/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from 'react'
+import { trpc } from '@/lib/trpc/client'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,10 +14,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Lock, LockOpen, AlertCircle, Info, Loader2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+} from '@/components/ui/alert-dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Lock, LockOpen, AlertCircle, Info, Loader2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface RegistrationControlProps {
   tournament: {
@@ -54,22 +54,22 @@ export function RegistrationControl({
     },
   })
 
-  const isRegistrationOpen = tournament.status === "REGISTRATION"
-  const canChangeRegistration = tournament.status !== "COMPLETED" && tournament.status !== "CANCELLED"
+  const isRegistrationOpen = tournament.status === 'REGISTRATION'
+  const canChangeRegistration = tournament.status !== 'COMPLETED' && tournament.status !== 'CANCELLED'
 
   const handleCloseRegistration = () => {
     // When closing, move to SEEDING unless already past that
-    const newStatus = tournament.status === "IN_PROGRESS" ? "IN_PROGRESS" : "SEEDING"
+    const newStatus = tournament.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'SEEDING'
     updateStatusMutation.mutate({
       id: tournament.id,
-      status: newStatus as "IN_PROGRESS" | "SEEDING",
+      status: newStatus as 'IN_PROGRESS' | 'SEEDING',
     })
   }
 
   const handleOpenRegistration = () => {
     updateStatusMutation.mutate({
       id: tournament.id,
-      status: "REGISTRATION",
+      status: 'REGISTRATION',
     })
   }
 
@@ -82,13 +82,13 @@ export function RegistrationControl({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className='flex items-center justify-between'>
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className='flex items-center gap-2'>
               {isRegistrationOpen ? (
-                <LockOpen className="h-5 w-5 text-green-500" />
+                <LockOpen className='h-5 w-5 text-green-500' />
               ) : (
-                <Lock className="h-5 w-5 text-muted-foreground" />
+                <Lock className='h-5 w-5 text-muted-foreground' />
               )}
               Registration Control
             </CardTitle>
@@ -97,36 +97,36 @@ export function RegistrationControl({
             </CardDescription>
           </div>
           <Badge
-            variant="outline"
+            variant='outline'
             className={
               isRegistrationOpen
-                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                : "bg-gray-500/10 text-gray-500 border-gray-500/20"
+                ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
             }
           >
-            {isRegistrationOpen ? "Open" : "Closed"}
+            {isRegistrationOpen ? 'Open' : 'Closed'}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className='space-y-4'>
         {/* Current Status Info */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Registered Teams:</span>
-            <span className="font-medium">
+        <div className='space-y-2'>
+          <div className='flex items-center justify-between text-sm'>
+            <span className='text-muted-foreground'>Registered Teams:</span>
+            <span className='font-medium'>
               {currentRegistrationsCount} / {maxTeams}
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tournament Status:</span>
-            <Badge variant="secondary">{tournament.status}</Badge>
+          <div className='flex items-center justify-between text-sm'>
+            <span className='text-muted-foreground'>Tournament Status:</span>
+            <Badge variant='secondary'>{tournament.status}</Badge>
           </div>
         </div>
 
         {/* Date-based status info */}
         <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-sm">
+          <Info className='h-4 w-4' />
+          <AlertDescription className='text-sm'>
             {isRegistrationOpen ? (
               <>
                 {isBeforeStart && (
@@ -148,18 +148,18 @@ export function RegistrationControl({
         </Alert>
 
         {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+          <Alert variant='destructive'>
+            <AlertCircle className='h-4 w-4' />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Control Buttons */}
-        <div className="space-y-2">
+        <div className='space-y-2'>
           {!canChangeRegistration ? (
             <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="text-sm">
+              <Info className='h-4 w-4' />
+              <AlertDescription className='text-sm'>
                 Registration control is not available for {tournament.status.toLowerCase()} tournaments.
               </AlertDescription>
             </Alert>
@@ -167,14 +167,14 @@ export function RegistrationControl({
             <AlertDialog open={isDialogOpen && !updateStatusMutation.isPending} onOpenChange={setIsDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="destructive"
-                  className="w-full"
+                  variant='destructive'
+                  className='w-full'
                   disabled={updateStatusMutation.isPending}
                 >
                   {updateStatusMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
                   ) : (
-                    <Lock className="h-4 w-4 mr-2" />
+                    <Lock className='h-4 w-4 mr-2' />
                   )}
                   Close Registration
                 </Button>
@@ -197,11 +197,11 @@ export function RegistrationControl({
                   </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleCloseRegistration}
-                    className="bg-destructive hover:bg-destructive/90"
+                    className='bg-destructive hover:bg-destructive/90'
                     disabled={updateStatusMutation.isPending}
                   >
                     {updateStatusMutation.isPending && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className='h-4 w-4 mr-2 animate-spin' />
                     )}
                     Close Registration
                   </AlertDialogAction>
@@ -212,14 +212,14 @@ export function RegistrationControl({
             <AlertDialog open={isDialogOpen && !updateStatusMutation.isPending} onOpenChange={setIsDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="default"
-                  className="w-full gradient-purple"
+                  variant='default'
+                  className='w-full gradient-purple'
                   disabled={updateStatusMutation.isPending}
                 >
                   {updateStatusMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className='h-4 w-4 mr-2 animate-spin' />
                   ) : (
-                    <LockOpen className="h-4 w-4 mr-2" />
+                    <LockOpen className='h-4 w-4 mr-2' />
                   )}
                   Open Registration
                 </Button>
@@ -230,9 +230,9 @@ export function RegistrationControl({
                   <AlertDialogDescription>
                     This will open registration and allow teams to register for
                     this tournament.
-                    {tournament.status === "IN_PROGRESS" && (
+                    {tournament.status === 'IN_PROGRESS' && (
                       <>
-                        {" "}
+                        {' '}
                         <br />
                         <br />
                         <strong>Warning:</strong> The tournament is currently in
@@ -240,9 +240,9 @@ export function RegistrationControl({
                         ongoing matches.
                       </>
                     )}
-                    {tournament.status === "SEEDING" && (
+                    {tournament.status === 'SEEDING' && (
                       <>
-                        {" "}
+                        {' '}
                         <br />
                         <br />
                         Any seeding you&apos;ve done will remain, but you may need to
@@ -260,7 +260,7 @@ export function RegistrationControl({
                     disabled={updateStatusMutation.isPending}
                   >
                     {updateStatusMutation.isPending && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className='h-4 w-4 mr-2 animate-spin' />
                     )}
                     Open Registration
                   </AlertDialogAction>
@@ -271,7 +271,7 @@ export function RegistrationControl({
         </div>
 
         {/* Helper Text */}
-        <div className="text-xs text-muted-foreground space-y-1">
+        <div className='text-xs text-muted-foreground space-y-1'>
           <p>
             <strong>Tip:</strong> You have full control over registration at any time.
             Open it to accept new teams, or close it when you have enough teams.

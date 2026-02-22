@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { ReactNode } from "react"
-import { Sidebar } from "./sidebar"
-import { Navbar } from "./navbar"
+import { ReactNode } from 'react'
+import { Sidebar } from './sidebar'
+import { Navbar } from './navbar'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -11,17 +11,17 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className='min-h-screen bg-background'>
       {/* Sidebar */}
       <Sidebar userRole={userRole} />
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className='lg:pl-64'>
         {/* Navbar */}
         <Navbar />
 
         {/* Page content */}
-        <main className="py-6 px-4 sm:px-6 lg:px-8">
+        <main className='py-6 px-4 sm:px-6 lg:px-8'>
           {children}
         </main>
       </div>

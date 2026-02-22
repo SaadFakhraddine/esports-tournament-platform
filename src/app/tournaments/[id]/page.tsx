@@ -1,15 +1,15 @@
-"use client"
+'use client'
 
-import { useParams, useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
-import Link from "next/link"
-import { PublicLayout } from "@/components/layout/public-layout"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+import { PublicLayout } from '@/components/layout/public-layout'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Calendar,
   Users,
@@ -23,10 +23,10 @@ import {
   FileText,
   Info,
   UserPlus,
-} from "lucide-react"
-import { trpc } from "@/lib/trpc/client"
-import { format } from "date-fns"
-import { RegisterTeamDialog } from "@/components/tournament/register-team-dialog"
+} from 'lucide-react'
+import { trpc } from '@/lib/trpc/client'
+import { format } from 'date-fns'
+import { RegisterTeamDialog } from '@/components/tournament/register-team-dialog'
 
 export default function TournamentDetailPage() {
   const params = useParams()
@@ -50,11 +50,11 @@ export default function TournamentDetailPage() {
   if (error || !tournament) {
     return (
       <PublicLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Alert variant="destructive" className="max-w-md">
-            <AlertCircle className="h-4 w-4" />
+        <div className='flex items-center justify-center min-h-[60vh]'>
+          <Alert variant='destructive' className='max-w-md'>
+            <AlertCircle className='h-4 w-4' />
             <AlertDescription>
-              {error?.message || "Tournament not found"}
+              {error?.message || 'Tournament not found'}
             </AlertDescription>
           </Alert>
         </div>
@@ -63,23 +63,23 @@ export default function TournamentDetailPage() {
   }
 
   const isOrganizer = session?.user?.id === tournament.organizer.id
-  const isAdmin = session?.user?.role === "ADMIN"
+  const isAdmin = session?.user?.role === 'ADMIN'
   const canManage = isOrganizer || isAdmin
 
   const statusColors: Record<string, string> = {
-    DRAFT: "bg-gray-500/10 text-gray-500 border-gray-500/20",
-    REGISTRATION: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    SEEDING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    IN_PROGRESS: "bg-green-500/10 text-green-500 border-green-500/20",
-    COMPLETED: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-    CANCELLED: "bg-red-500/10 text-red-500 border-red-500/20",
+    DRAFT: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    REGISTRATION: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+    SEEDING: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+    IN_PROGRESS: 'bg-green-500/10 text-green-500 border-green-500/20',
+    COMPLETED: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+    CANCELLED: 'bg-red-500/10 text-red-500 border-red-500/20',
   }
 
   const formatLabels: Record<string, string> = {
-    SINGLE_ELIMINATION: "Single Elimination",
-    DOUBLE_ELIMINATION: "Double Elimination",
-    ROUND_ROBIN: "Round Robin",
-    SWISS: "Swiss",
+    SINGLE_ELIMINATION: 'Single Elimination',
+    DOUBLE_ELIMINATION: 'Double Elimination',
+    ROUND_ROBIN: 'Round Robin',
+    SWISS: 'Swiss',
   }
 
   const handleRegisterClick = () => {
@@ -92,62 +92,62 @@ export default function TournamentDetailPage() {
 
   return (
     <PublicLayout>
-      <div className="space-y-6">
+      <div className='space-y-6'>
         {/* Header with Banner */}
         {tournament.banner && (
-          <div className="relative h-64 rounded-lg overflow-hidden -mx-4 md:mx-0">
+          <div className='relative h-64 rounded-lg overflow-hidden -mx-4 md:mx-0'>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={tournament.banner}
               alt={tournament.name}
-              className="w-full h-full object-cover"
+              className='w-full h-full object-cover'
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+            <div className='absolute inset-0 bg-gradient-to-t from-background to-transparent' />
           </div>
         )}
 
         {/* Tournament Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-bold tracking-tight">{tournament.name}</h1>
+        <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
+          <div className='space-y-2'>
+            <div className='flex items-center gap-3 flex-wrap'>
+              <h1 className='text-3xl font-bold tracking-tight'>{tournament.name}</h1>
               <Badge
-                variant="outline"
+                variant='outline'
                 className={statusColors[tournament.status]}
               >
-                {tournament.status.replace(/_/g, " ")}
+                {tournament.status.replace(/_/g, ' ')}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
+            <div className='flex items-center gap-4 text-muted-foreground flex-wrap'>
+              <div className='flex items-center gap-1'>
+                <MapPin className='h-4 w-4' />
                 <span>
-                  {tournament.game.icon && <span className="mr-1">{tournament.game.icon}</span>}
+                  {tournament.game.icon && <span className='mr-1'>{tournament.game.icon}</span>}
                   {tournament.game.name}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                <Trophy className="h-4 w-4" />
+              <div className='flex items-center gap-1'>
+                <Trophy className='h-4 w-4' />
                 <span>{formatLabels[tournament.format]}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
+              <div className='flex items-center gap-1'>
+                <Users className='h-4 w-4' />
                 <span>{tournament.registrations?.length || 0}/{tournament.maxTeams} Teams</span>
               </div>
             </div>
           </div>
 
           {canManage && (
-            <div className="flex gap-2">
+            <div className='flex gap-2'>
               <Link href={`/dashboard/tournaments/${tournament.id}/edit`}>
-                <Button variant="outline" className="gap-2">
-                  <Edit className="h-4 w-4" />
+                <Button variant='outline' className='gap-2'>
+                  <Edit className='h-4 w-4' />
                   Edit
                 </Button>
               </Link>
               <Link href={`/dashboard/tournaments/${tournament.id}`}>
-                <Button className="gap-2 gradient-purple">
-                  <Settings className="h-4 w-4" />
+                <Button className='gap-2 gradient-purple'>
+                  <Settings className='h-4 w-4' />
                   Manage
                 </Button>
               </Link>
@@ -156,17 +156,17 @@ export default function TournamentDetailPage() {
         </div>
 
         {/* Main Content */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className='grid gap-6 lg:grid-cols-3'>
           {/* Left Column - Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <Tabs defaultValue="overview">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="teams">Teams</TabsTrigger>
-                <TabsTrigger value="bracket">Bracket</TabsTrigger>
+          <div className='lg:col-span-2 space-y-6'>
+            <Tabs defaultValue='overview'>
+              <TabsList className='grid w-full grid-cols-3'>
+                <TabsTrigger value='overview'>Overview</TabsTrigger>
+                <TabsTrigger value='teams'>Teams</TabsTrigger>
+                <TabsTrigger value='bracket'>Bracket</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-4 mt-6">
+              <TabsContent value='overview' className='space-y-4 mt-6'>
                 {/* Description */}
                 {tournament.description && (
                   <Card>
@@ -174,7 +174,7 @@ export default function TournamentDetailPage() {
                       <CardTitle>About</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
+                      <p className='text-muted-foreground whitespace-pre-wrap'>
                         {tournament.description}
                       </p>
                     </CardContent>
@@ -185,13 +185,13 @@ export default function TournamentDetailPage() {
                 {tournament.rules && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
+                      <CardTitle className='flex items-center gap-2'>
+                        <FileText className='h-5 w-5' />
                         Rules
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground whitespace-pre-wrap">
+                      <p className='text-muted-foreground whitespace-pre-wrap'>
                         {tournament.rules}
                       </p>
                     </CardContent>
@@ -202,13 +202,13 @@ export default function TournamentDetailPage() {
                 {tournament.prizePool && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Award className="h-5 w-5" />
+                      <CardTitle className='flex items-center gap-2'>
+                        <Award className='h-5 w-5' />
                         Prize Pool
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-2xl font-bold text-primary">
+                      <p className='text-2xl font-bold text-primary'>
                         {tournament.prizePool}
                       </p>
                     </CardContent>
@@ -216,7 +216,7 @@ export default function TournamentDetailPage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="teams" className="mt-6">
+              <TabsContent value='teams' className='mt-6'>
                 <Card>
                   <CardHeader>
                     <CardTitle>Registered Teams</CardTitle>
@@ -226,27 +226,27 @@ export default function TournamentDetailPage() {
                   </CardHeader>
                   <CardContent>
                     {tournament.registrations && tournament.registrations.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className='space-y-3'>
                         {tournament.registrations.map((registration, index) => (
                           <Link
                             key={registration.team.id}
                             href={`/teams/${registration.team.id}`}
                           >
-                            <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted font-bold">
+                            <div className='flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors'>
+                              <div className='flex items-center gap-3'>
+                                <div className='flex items-center justify-center w-8 h-8 rounded-full bg-muted font-bold'>
                                   {registration.seed || index + 1}
                                 </div>
                                 <div>
-                                  <p className="font-medium">{registration.team.name}</p>
+                                  <p className='font-medium'>{registration.team.name}</p>
                                   {registration.team.tag && (
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className='text-sm text-muted-foreground'>
                                       [{registration.team.tag}]
                                     </p>
                                   )}
                                 </div>
                               </div>
-                              <Badge variant="secondary">
+                              <Badge variant='secondary'>
                                 {registration.status}
                               </Badge>
                             </div>
@@ -254,8 +254,8 @@ export default function TournamentDetailPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <div className='text-center py-8 text-muted-foreground'>
+                        <Users className='h-12 w-12 mx-auto mb-2 opacity-50' />
                         <p>No teams registered yet</p>
                       </div>
                     )}
@@ -263,86 +263,86 @@ export default function TournamentDetailPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="bracket" className="mt-6">
+              <TabsContent value='bracket' className='mt-6'>
                 <Card>
                   <CardHeader>
                     <CardTitle>Tournament Bracket</CardTitle>
                     <CardDescription>
                       {tournament.brackets && tournament.brackets.length > 0
-                        ? "View the tournament bracket and matchups"
-                        : "Bracket will be available once tournament starts"}
+                        ? 'View the tournament bracket and matchups'
+                        : 'Bracket will be available once tournament starts'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {tournament.brackets && tournament.brackets.length > 0 ? (
-                      <div className="space-y-6">
+                      <div className='space-y-6'>
                         {tournament.brackets.map((bracket) => (
-                          <div key={bracket.id} className="space-y-4">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">
-                                {bracket.type === "MAIN" ? "Main Bracket" :
-                                 bracket.type === "WINNERS" ? "Winners Bracket" :
-                                 bracket.type === "LOSERS" ? "Losers Bracket" : "Grand Final"} - Round {bracket.round}
+                          <div key={bracket.id} className='space-y-4'>
+                            <div className='flex items-center gap-2'>
+                              <h3 className='font-semibold'>
+                                {bracket.type === 'MAIN' ? 'Main Bracket' :
+                                 bracket.type === 'WINNERS' ? 'Winners Bracket' :
+                                 bracket.type === 'LOSERS' ? 'Losers Bracket' : 'Grand Final'} - Round {bracket.round}
                               </h3>
-                              <Badge variant="secondary">{bracket.matches?.length || 0} matches</Badge>
+                              <Badge variant='secondary'>{bracket.matches?.length || 0} matches</Badge>
                             </div>
                             {bracket.matches && bracket.matches.length > 0 ? (
-                              <div className="space-y-2">
+                              <div className='space-y-2'>
                                 {bracket.matches.map((match) => (
                                   <div
                                     key={match.id}
-                                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                                    className='flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors'
                                   >
-                                    <div className="flex items-center gap-4 flex-1">
-                                      <div className="flex-1">
-                                        <p className="font-medium">{match.homeTeam?.name || "TBD"}</p>
+                                    <div className='flex items-center gap-4 flex-1'>
+                                      <div className='flex-1'>
+                                        <p className='font-medium'>{match.homeTeam?.name || 'TBD'}</p>
                                         {match.homeTeam?.tag && (
-                                          <p className="text-sm text-muted-foreground">[{match.homeTeam.tag}]</p>
+                                          <p className='text-sm text-muted-foreground'>[{match.homeTeam.tag}]</p>
                                         )}
                                       </div>
-                                      <div className="px-4">
-                                        <div className="text-lg font-bold text-muted-foreground">VS</div>
-                                        {match.status === "COMPLETED" && match.homeScore !== null && match.awayScore !== null && (
-                                          <div className="text-sm text-center">
-                                            <span className={match.homeScore > match.awayScore ? "font-bold text-primary" : ""}>
+                                      <div className='px-4'>
+                                        <div className='text-lg font-bold text-muted-foreground'>VS</div>
+                                        {match.status === 'COMPLETED' && match.homeScore !== null && match.awayScore !== null && (
+                                          <div className='text-sm text-center'>
+                                            <span className={match.homeScore > match.awayScore ? 'font-bold text-primary' : ''}>
                                               {match.homeScore}
                                             </span>
-                                            {" - "}
-                                            <span className={match.awayScore > match.homeScore ? "font-bold text-primary" : ""}>
+                                            {' - '}
+                                            <span className={match.awayScore > match.homeScore ? 'font-bold text-primary' : ''}>
                                               {match.awayScore}
                                             </span>
                                           </div>
                                         )}
                                       </div>
-                                      <div className="flex-1 text-right">
-                                        <p className="font-medium">{match.awayTeam?.name || "TBD"}</p>
+                                      <div className='flex-1 text-right'>
+                                        <p className='font-medium'>{match.awayTeam?.name || 'TBD'}</p>
                                         {match.awayTeam?.tag && (
-                                          <p className="text-sm text-muted-foreground">[{match.awayTeam.tag}]</p>
+                                          <p className='text-sm text-muted-foreground'>[{match.awayTeam.tag}]</p>
                                         )}
                                       </div>
                                     </div>
                                     <Badge
-                                      variant="outline"
+                                      variant='outline'
                                       className={`ml-4 ${
-                                        match.status === "COMPLETED" ? "bg-green-500/10 text-green-500" :
-                                        match.status === "IN_PROGRESS" ? "bg-blue-500/10 text-blue-500" :
-                                        "bg-gray-500/10 text-gray-500"
+                                        match.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
+                                        match.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                        'bg-gray-500/10 text-gray-500'
                                       }`}
                                     >
-                                      {match.status === "SCHEDULED" ? "Upcoming" : match.status}
+                                      {match.status === 'SCHEDULED' ? 'Upcoming' : match.status}
                                     </Badge>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-sm text-muted-foreground">No matches in this round yet</p>
+                              <p className='text-sm text-muted-foreground'>No matches in this round yet</p>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Trophy className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <div className='text-center py-8 text-muted-foreground'>
+                        <Trophy className='h-12 w-12 mx-auto mb-2 opacity-50' />
                         <p>Bracket not generated yet</p>
                       </div>
                     )}
@@ -353,37 +353,37 @@ export default function TournamentDetailPage() {
           </div>
 
           {/* Right Column - Sidebar */}
-          <div className="space-y-6">
+          <div className='space-y-6'>
             {/* Schedule Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                <CardTitle className='flex items-center gap-2'>
+                  <Calendar className='h-5 w-5' />
                   Schedule
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className='space-y-4'>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Registration</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4" />
+                  <p className='text-sm text-muted-foreground mb-1'>Registration</p>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <Clock className='h-4 w-4' />
                     <span>
-                      {format(new Date(tournament.registrationStart), "MMM d, yyyy")}
-                      {" - "}
-                      {format(new Date(tournament.registrationEnd), "MMM d, yyyy")}
+                      {format(new Date(tournament.registrationStart), 'MMM d, yyyy')}
+                      {' - '}
+                      {format(new Date(tournament.registrationEnd), 'MMM d, yyyy')}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Tournament</p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4" />
+                  <p className='text-sm text-muted-foreground mb-1'>Tournament</p>
+                  <div className='flex items-center gap-2 text-sm'>
+                    <Calendar className='h-4 w-4' />
                     <span>
-                      {format(new Date(tournament.startDate), "MMM d, yyyy h:mm a")}
+                      {format(new Date(tournament.startDate), 'MMM d, yyyy h:mm a')}
                       {tournament.endDate && (
                         <>
-                          {" - "}
-                          {format(new Date(tournament.endDate), "MMM d, yyyy h:mm a")}
+                          {' - '}
+                          {format(new Date(tournament.endDate), 'MMM d, yyyy h:mm a')}
                         </>
                       )}
                     </span>
@@ -398,13 +398,13 @@ export default function TournamentDetailPage() {
                 <CardTitle>Organizer</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold">
-                    {tournament.organizer.name?.charAt(0) || "O"}
+                <div className='flex items-center gap-3'>
+                  <div className='h-10 w-10 rounded-full bg-gradient-purple flex items-center justify-center text-white font-semibold'>
+                    {tournament.organizer.name?.charAt(0) || 'O'}
                   </div>
                   <div>
-                    <p className="font-medium">{tournament.organizer.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className='font-medium'>{tournament.organizer.name}</p>
+                    <p className='text-sm text-muted-foreground'>
                       @{tournament.organizer.username || tournament.organizer.name}
                     </p>
                   </div>
@@ -416,24 +416,24 @@ export default function TournamentDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {session ? (canManage ? "Register a Team" : "Join Tournament") : "Join Tournament"}
+                  {session ? (canManage ? 'Register a Team' : 'Join Tournament') : 'Join Tournament'}
                 </CardTitle>
                 <CardDescription>
-                  {tournament.status === "REGISTRATION"
+                  {tournament.status === 'REGISTRATION'
                     ? session
                       ? canManage
-                        ? "Register and approve teams for this tournament"
-                        : "Register your team to compete"
-                      : "Sign in to register your team"
-                    : tournament.status === "SEEDING"
-                    ? "Registration is closed. Tournament is being seeded."
-                    : tournament.status === "IN_PROGRESS"
-                    ? "Tournament is in progress"
-                    : "Registration is not available"}
+                        ? 'Register and approve teams for this tournament'
+                        : 'Register your team to compete'
+                      : 'Sign in to register your team'
+                    : tournament.status === 'SEEDING'
+                    ? 'Registration is closed. Tournament is being seeded.'
+                    : tournament.status === 'IN_PROGRESS'
+                    ? 'Tournament is in progress'
+                    : 'Registration is not available'}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {tournament.status === "REGISTRATION" ? (
+              <CardContent className='space-y-3'>
+                {tournament.status === 'REGISTRATION' ? (
                   <>
                     {session ? (
                       <>
@@ -444,7 +444,7 @@ export default function TournamentDetailPage() {
                         />
                         {canManage && (
                           <Link href={`/dashboard/tournaments/${tournament.id}/registrations`}>
-                            <Button variant="outline" className="w-full">
+                            <Button variant='outline' className='w-full'>
                               Manage Registrations
                             </Button>
                           </Link>
@@ -453,9 +453,9 @@ export default function TournamentDetailPage() {
                     ) : (
                       <Button
                         onClick={handleRegisterClick}
-                        className="w-full gradient-purple gap-2"
+                        className='w-full gradient-purple gap-2'
                       >
-                        <UserPlus className="h-4 w-4" />
+                        <UserPlus className='h-4 w-4' />
                         Sign in to Register
                       </Button>
                     )}
@@ -463,21 +463,21 @@ export default function TournamentDetailPage() {
                 ) : canManage ? (
                   <>
                     <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription className="text-sm">
+                      <Info className='h-4 w-4' />
+                      <AlertDescription className='text-sm'>
                         Registration is closed. Go to tournament management to reopen.
                       </AlertDescription>
                     </Alert>
                     <Link href={`/dashboard/tournaments/${tournament.id}/edit`}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant='outline' className='w-full'>
                         Manage Tournament
                       </Button>
                     </Link>
                   </>
                 ) : (
                   <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
+                    <Info className='h-4 w-4' />
+                    <AlertDescription className='text-sm'>
                       Registration is currently closed.
                     </AlertDescription>
                   </Alert>
@@ -493,22 +493,22 @@ export default function TournamentDetailPage() {
 
 function TournamentDetailSkeleton() {
   return (
-    <div className="space-y-6">
-      <Skeleton className="h-64 w-full" />
-      <div className="flex justify-between items-start">
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-96" />
-          <Skeleton className="h-6 w-64" />
+    <div className='space-y-6'>
+      <Skeleton className='h-64 w-full' />
+      <div className='flex justify-between items-start'>
+        <div className='space-y-2'>
+          <Skeleton className='h-10 w-96' />
+          <Skeleton className='h-6 w-64' />
         </div>
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className='h-10 w-32' />
       </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Skeleton className="h-96 w-full" />
+      <div className='grid gap-6 lg:grid-cols-3'>
+        <div className='lg:col-span-2'>
+          <Skeleton className='h-96 w-full' />
         </div>
-        <div className="space-y-6">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-32 w-full" />
+        <div className='space-y-6'>
+          <Skeleton className='h-48 w-full' />
+          <Skeleton className='h-32 w-full' />
         </div>
       </div>
     </div>

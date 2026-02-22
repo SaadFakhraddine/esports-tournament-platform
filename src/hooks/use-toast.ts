@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback } from 'react'
 
 type ToastProps = {
   title?: string
   description?: string
-  variant?: "default" | "destructive"
+  variant?: 'default' | 'destructive'
 }
 
 type Toast = ToastProps & {

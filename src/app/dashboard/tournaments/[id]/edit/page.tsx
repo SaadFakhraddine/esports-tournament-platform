@@ -58,9 +58,9 @@ export default function TournamentManagePage() {
   if (status === 'loading' || tournamentLoading) {
     return (
       <DashboardLayout userRole={session?.user?.role}>
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-96" />
-          <Skeleton className="h-64" />
+        <div className='space-y-6'>
+          <Skeleton className='h-12 w-96' />
+          <Skeleton className='h-64' />
         </div>
       </DashboardLayout>
     )
@@ -77,8 +77,8 @@ export default function TournamentManagePage() {
   if (!tournament) {
     return (
       <DashboardLayout userRole={session.user.role}>
-        <div className="text-center py-12">
-          <p className="text-lg font-medium">Tournament not found</p>
+        <div className='text-center py-12'>
+          <p className='text-lg font-medium'>Tournament not found</p>
         </div>
       </DashboardLayout>
     )
@@ -99,13 +99,13 @@ export default function TournamentManagePage() {
 
   return (
     <DashboardLayout userRole={session.user.role}>
-      <div className="space-y-6">
+      <div className='space-y-6'>
         {/* Header */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold tracking-tight">{tournament.name}</h1>
+          <div className='flex items-center gap-2 mb-2'>
+            <h1 className='text-3xl font-bold tracking-tight'>{tournament.name}</h1>
             <Badge
-              variant="outline"
+              variant='outline'
               className={
                 tournament.status === 'DRAFT'
                   ? 'bg-gray-500/10 text-gray-500 border-gray-500/20'
@@ -123,59 +123,59 @@ export default function TournamentManagePage() {
               {tournament.status.replace(/_/g, ' ')}
             </Badge>
           </div>
-          <p className="text-muted-foreground">
+          <p className='text-muted-foreground'>
             Manage tournament settings, registrations, and brackets
           </p>
         </div>
 
         {/* Management Tabs */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="registrations">Registrations</TabsTrigger>
-            <TabsTrigger value="bracket">Bracket</TabsTrigger>
-            <TabsTrigger value="matches">Matches</TabsTrigger>
+        <Tabs defaultValue='overview' className='space-y-4'>
+          <TabsList className='grid w-full grid-cols-5'>
+            <TabsTrigger value='overview'>Overview</TabsTrigger>
+            <TabsTrigger value='settings'>Settings</TabsTrigger>
+            <TabsTrigger value='registrations'>Registrations</TabsTrigger>
+            <TabsTrigger value='bracket'>Bracket</TabsTrigger>
+            <TabsTrigger value='matches'>Matches</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <TabsContent value='overview' className='space-y-4'>
+            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
               <StatCard
-                title="Total Teams"
+                title='Total Teams'
                 value={`${approvedCount}/${tournament.maxTeams}`}
-                icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                icon={<Users className='h-4 w-4 text-muted-foreground' />}
               />
               <StatCard
-                title="Pending Approvals"
+                title='Pending Approvals'
                 value={pendingCount.toString()}
-                icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                icon={<Clock className='h-4 w-4 text-muted-foreground' />}
               />
               <StatCard
-                title="Matches"
+                title='Matches'
                 value={tournament.brackets?.[0]?.matches?.length?.toString() || '0'}
-                icon={<Trophy className="h-4 w-4 text-muted-foreground" />}
+                icon={<Trophy className='h-4 w-4 text-muted-foreground' />}
               />
               <StatCard
-                title="Days Until Start"
+                title='Days Until Start'
                 value={Math.max(
                   0,
                   Math.ceil(
                     (new Date(tournament.startDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
                   )
                 ).toString()}
-                icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+                icon={<Calendar className='h-4 w-4 text-muted-foreground' />}
               />
             </div>
 
             {/* Start Tournament Alert */}
             {canStart && tournament.status !== 'IN_PROGRESS' && (
-              <Card className="border-green-500/50 bg-green-500/5">
+              <Card className='border-green-500/50 bg-green-500/5'>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className='flex items-center justify-between'>
                     <div>
-                      <CardTitle className="flex items-center gap-2 text-green-600">
-                        <CheckCircle2 className="h-5 w-5" />
+                      <CardTitle className='flex items-center gap-2 text-green-600'>
+                        <CheckCircle2 className='h-5 w-5' />
                         Ready to Start Tournament
                       </CardTitle>
                       <CardDescription>
@@ -183,8 +183,8 @@ export default function TournamentManagePage() {
                       </CardDescription>
                     </div>
                     <Button
-                      size="lg"
-                      className="gradient-purple gap-2"
+                      size='lg'
+                      className='gradient-purple gap-2'
                       onClick={async () => {
                         // Warn if registration is still open
                         if (tournament.status === 'REGISTRATION') {
@@ -208,24 +208,24 @@ export default function TournamentManagePage() {
                       }}
                       disabled={startTournamentMutation.isPending}
                     >
-                      <Play className="h-5 w-5" />
+                      <Play className='h-5 w-5' />
                       {startTournamentMutation.isPending ? 'Starting...' : 'Start Tournament'}
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-6 text-sm">
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
+                  <div className='flex items-center gap-6 text-sm'>
+                    <div className='flex items-center gap-2 text-green-600'>
+                      <CheckCircle2 className='h-4 w-4' />
                       <span>{approvedCount} teams approved</span>
                     </div>
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
+                    <div className='flex items-center gap-2 text-green-600'>
+                      <CheckCircle2 className='h-4 w-4' />
                       <span>Bracket generated ({totalMatches} matches)</span>
                     </div>
                     {tournament.status === 'REGISTRATION' && (
-                      <div className="flex items-center gap-2 text-yellow-600">
-                        <AlertTriangle className="h-4 w-4" />
+                      <div className='flex items-center gap-2 text-yellow-600'>
+                        <AlertTriangle className='h-4 w-4' />
                         <span>Registration still open</span>
                       </div>
                     )}
@@ -239,10 +239,10 @@ export default function TournamentManagePage() {
               tournament.status !== 'IN_PROGRESS' &&
               tournament.status !== 'COMPLETED' &&
               tournament.status !== 'CANCELLED' && (
-                <Card className="border-yellow-500/50 bg-yellow-500/5">
+                <Card className='border-yellow-500/50 bg-yellow-500/5'>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-yellow-600">
-                      <AlertTriangle className="h-5 w-5" />
+                    <CardTitle className='flex items-center gap-2 text-yellow-600'>
+                      <AlertTriangle className='h-5 w-5' />
                       Tournament Not Ready
                     </CardTitle>
                     <CardDescription>
@@ -250,16 +250,16 @@ export default function TournamentManagePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2 text-sm">
+                    <div className='space-y-2 text-sm'>
                       {approvedCount < 2 && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <XCircle className="h-4 w-4 text-red-500" />
+                        <div className='flex items-center gap-2 text-muted-foreground'>
+                          <XCircle className='h-4 w-4 text-red-500' />
                           <span>Need at least 2 approved teams (currently {approvedCount})</span>
                         </div>
                       )}
                       {(!hasBracket || totalMatches === 0) && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <XCircle className="h-4 w-4 text-red-500" />
+                        <div className='flex items-center gap-2 text-muted-foreground'>
+                          <XCircle className='h-4 w-4 text-red-500' />
                           <span>Generate tournament bracket below</span>
                         </div>
                       )}
@@ -270,10 +270,10 @@ export default function TournamentManagePage() {
 
             {/* Tournament In Progress */}
             {tournament.status === 'IN_PROGRESS' && (
-              <Card className="border-blue-500/50 bg-blue-500/5">
+              <Card className='border-blue-500/50 bg-blue-500/5'>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-600">
-                    <Play className="h-5 w-5" />
+                  <CardTitle className='flex items-center gap-2 text-blue-600'>
+                    <Play className='h-5 w-5' />
                     Tournament In Progress
                   </CardTitle>
                   <CardDescription>
@@ -289,21 +289,21 @@ export default function TournamentManagePage() {
                 <CardTitle>Quick Actions</CardTitle>
                 <CardDescription>Common tournament management tasks</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-2">
+              <CardContent className='grid gap-3 md:grid-cols-2'>
                 <Link href={`/dashboard/tournaments/${tournamentId}/registrations`}>
-                  <Button variant="outline" className="justify-start w-full">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  <Button variant='outline' className='justify-start w-full'>
+                    <CheckCircle2 className='h-4 w-4 mr-2' />
                     Approve Pending Registrations
                     {pendingCount > 0 && (
-                      <Badge className="ml-auto" variant="destructive">
+                      <Badge className='ml-auto' variant='destructive'>
                         {pendingCount}
                       </Badge>
                     )}
                   </Button>
                 </Link>
                 <Button
-                  variant="outline"
-                  className="justify-start w-full"
+                  variant='outline'
+                  className='justify-start w-full'
                   onClick={async () => {
                     try {
                       await generateBracketMutation.mutateAsync({ tournamentId })
@@ -314,12 +314,12 @@ export default function TournamentManagePage() {
                   }}
                   disabled={generateBracketMutation.isPending || approvedCount < 2}
                 >
-                  <Trophy className="h-4 w-4 mr-2" />
+                  <Trophy className='h-4 w-4 mr-2' />
                   {generateBracketMutation.isPending ? 'Generating...' : 'Generate Bracket'}
                 </Button>
                 <Button
-                  variant="outline"
-                  className="justify-start w-full"
+                  variant='outline'
+                  className='justify-start w-full'
                   onClick={async () => {
                     try {
                       await autoSeedMutation.mutateAsync({ tournamentId })
@@ -331,12 +331,12 @@ export default function TournamentManagePage() {
                   }}
                   disabled={autoSeedMutation.isPending || approvedCount < 2}
                 >
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className='h-4 w-4 mr-2' />
                   {autoSeedMutation.isPending ? 'Seeding...' : 'Seed Teams'}
                 </Button>
                 <Button
-                  variant="outline"
-                  className="justify-start w-full"
+                  variant='outline'
+                  className='justify-start w-full'
                   onClick={async () => {
                     if (tournament.status === 'REGISTRATION') {
                       if (
@@ -359,7 +359,7 @@ export default function TournamentManagePage() {
                   }}
                   disabled={startTournamentMutation.isPending || !canStart}
                 >
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className='h-4 w-4 mr-2' />
                   {startTournamentMutation.isPending ? 'Starting...' : 'Start Tournament'}
                 </Button>
               </CardContent>
@@ -372,21 +372,21 @@ export default function TournamentManagePage() {
                 <CardDescription>Latest updates for this tournament</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className='space-y-4'>
                   <ActivityItem
-                    action="Team registered"
-                    team="Phoenix Legends"
-                    time="2 hours ago"
+                    action='Team registered'
+                    team='Phoenix Legends'
+                    time='2 hours ago'
                   />
                   <ActivityItem
-                    action="Registration approved"
-                    team="Dragon Squad"
-                    time="5 hours ago"
+                    action='Registration approved'
+                    team='Dragon Squad'
+                    time='5 hours ago'
                   />
                   <ActivityItem
-                    action="Tournament updated"
-                    team="Settings changed"
-                    time="1 day ago"
+                    action='Tournament updated'
+                    team='Settings changed'
+                    time='1 day ago'
                   />
                 </div>
               </CardContent>
@@ -394,7 +394,7 @@ export default function TournamentManagePage() {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4">
+          <TabsContent value='settings' className='space-y-4'>
             <TournamentForm
               tournament={{
                 id: tournament.id,
@@ -412,12 +412,12 @@ export default function TournamentManagePage() {
                 banner: tournament.banner,
                 status: tournament.status,
               }}
-              mode="edit"
+              mode='edit'
             />
           </TabsContent>
 
           {/* Registrations Tab */}
-          <TabsContent value="registrations" className="space-y-4">
+          <TabsContent value='registrations' className='space-y-4'>
             <RegistrationsTab
               tournamentId={tournamentId}
               registrations={registrations}
@@ -436,10 +436,10 @@ export default function TournamentManagePage() {
           </TabsContent>
 
           {/* Bracket Tab */}
-          <TabsContent value="bracket" className="space-y-4">
+          <TabsContent value='bracket' className='space-y-4'>
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className='flex items-center justify-between'>
                   <div>
                     <CardTitle>Tournament Bracket</CardTitle>
                     <CardDescription>View and manage the tournament bracket</CardDescription>
@@ -449,8 +449,8 @@ export default function TournamentManagePage() {
                     tournament.status !== 'IN_PROGRESS' &&
                     tournament.status !== 'COMPLETED' && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant='outline'
+                        size='sm'
                         onClick={async () => {
                           if (
                             confirm(
@@ -467,7 +467,7 @@ export default function TournamentManagePage() {
                         }}
                         disabled={regenerateBracketMutation.isPending}
                       >
-                        <Trophy className="h-4 w-4 mr-2" />
+                        <Trophy className='h-4 w-4 mr-2' />
                         {regenerateBracketMutation.isPending
                           ? 'Regenerating...'
                           : 'Regenerate Bracket'}
@@ -477,11 +477,11 @@ export default function TournamentManagePage() {
               </CardHeader>
               <CardContent>
                 {tournament.brackets && tournament.brackets.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className='space-y-6'>
                     {tournament.brackets.map((bracket) => (
-                      <div key={bracket.id} className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">
+                      <div key={bracket.id} className='space-y-4'>
+                        <div className='flex items-center gap-2'>
+                          <h3 className='font-semibold'>
                             {bracket.type === 'MAIN'
                               ? 'Main Bracket'
                               : bracket.type === 'WINNERS'
@@ -491,42 +491,42 @@ export default function TournamentManagePage() {
                                   : 'Grand Final'}{' '}
                             - Round {bracket.round}
                           </h3>
-                          <Badge variant="secondary">{bracket.matches?.length || 0} matches</Badge>
+                          <Badge variant='secondary'>{bracket.matches?.length || 0} matches</Badge>
                         </div>
                         {bracket.matches && bracket.matches.length > 0 ? (
-                          <div className="space-y-2">
+                          <div className='space-y-2'>
                             {bracket.matches.map((match) => (
                               <div
                                 key={match.id}
-                                className="flex items-center justify-between p-3 border rounded-lg"
+                                className='flex items-center justify-between p-3 border rounded-lg'
                               >
-                                <div className="flex items-center gap-4 flex-1">
-                                  <div className="flex-1">
-                                    <p className="font-medium">{match.homeTeam?.name || 'TBD'}</p>
+                                <div className='flex items-center gap-4 flex-1'>
+                                  <div className='flex-1'>
+                                    <p className='font-medium'>{match.homeTeam?.name || 'TBD'}</p>
                                     {match.homeTeam?.tag && (
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className='text-sm text-muted-foreground'>
                                         [{match.homeTeam.tag}]
                                       </p>
                                     )}
                                   </div>
-                                  <div className="text-lg font-bold text-muted-foreground">VS</div>
-                                  <div className="flex-1 text-right">
-                                    <p className="font-medium">{match.awayTeam?.name || 'TBD'}</p>
+                                  <div className='text-lg font-bold text-muted-foreground'>VS</div>
+                                  <div className='flex-1 text-right'>
+                                    <p className='font-medium'>{match.awayTeam?.name || 'TBD'}</p>
                                     {match.awayTeam?.tag && (
-                                      <p className="text-sm text-muted-foreground">
+                                      <p className='text-sm text-muted-foreground'>
                                         [{match.awayTeam.tag}]
                                       </p>
                                     )}
                                   </div>
                                 </div>
-                                <Badge variant="outline" className="ml-4">
+                                <Badge variant='outline' className='ml-4'>
                                   {match.status}
                                 </Badge>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
+                          <p className='text-sm text-muted-foreground'>
                             No matches in this round yet
                           </p>
                         )}
@@ -534,10 +534,10 @@ export default function TournamentManagePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-lg font-medium mb-2">Bracket Not Generated</p>
-                    <p className="text-sm text-muted-foreground mb-4">
+                  <div className='text-center py-12'>
+                    <Trophy className='h-16 w-16 mx-auto mb-4 text-muted-foreground' />
+                    <p className='text-lg font-medium mb-2'>Bracket Not Generated</p>
+                    <p className='text-sm text-muted-foreground mb-4'>
                       {approvedCount < 2
                         ? `Need at least 2 approved teams to generate bracket (currently ${approvedCount})`
                         : 'Approve registrations and seed teams before generating the bracket'}
@@ -553,7 +553,7 @@ export default function TournamentManagePage() {
                       }}
                       disabled={generateBracketMutation.isPending || approvedCount < 2}
                     >
-                      <Trophy className="h-4 w-4 mr-2" />
+                      <Trophy className='h-4 w-4 mr-2' />
                       {generateBracketMutation.isPending ? 'Generating...' : 'Generate Bracket'}
                     </Button>
                   </div>
@@ -563,19 +563,19 @@ export default function TournamentManagePage() {
           </TabsContent>
 
           {/* Matches Tab */}
-          <TabsContent value="matches" className="space-y-4">
+          <TabsContent value='matches' className='space-y-4'>
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className='flex items-center justify-between'>
                   <div>
                     <CardTitle>Match Schedule</CardTitle>
                     <CardDescription>Manage and schedule tournament matches</CardDescription>
                   </div>
                   {tournament.brackets &&
                     tournament.brackets.some((b) => b.matches && b.matches.length > 0) && (
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Filter className="h-4 w-4 mr-2" />
+                      <div className='flex gap-2'>
+                        <Button variant='outline' size='sm'>
+                          <Filter className='h-4 w-4 mr-2' />
                           Filter
                         </Button>
                       </div>
@@ -584,12 +584,12 @@ export default function TournamentManagePage() {
               </CardHeader>
               <CardContent>
                 {tournament.brackets && tournament.brackets.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className='space-y-6'>
                     {/* Loop through brackets */}
                     {tournament.brackets.map((bracket) => (
-                      <div key={bracket.id} className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">
+                      <div key={bracket.id} className='space-y-4'>
+                        <div className='flex items-center gap-2'>
+                          <h3 className='font-semibold text-lg'>
                             {bracket.type === 'MAIN'
                               ? 'Main Bracket'
                               : bracket.type === 'WINNERS'
@@ -599,59 +599,59 @@ export default function TournamentManagePage() {
                                   : 'Grand Final'}{' '}
                             - Round {bracket.round}
                           </h3>
-                          <Badge variant="secondary">{bracket.matches?.length || 0} matches</Badge>
+                          <Badge variant='secondary'>{bracket.matches?.length || 0} matches</Badge>
                         </div>
 
                         {bracket.matches && bracket.matches.length > 0 ? (
-                          <div className="space-y-3">
+                          <div className='space-y-3'>
                             {bracket.matches.map((match) => (
-                              <Card key={match.id} className="overflow-hidden">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between gap-4">
+                              <Card key={match.id} className='overflow-hidden'>
+                                <CardContent className='p-4'>
+                                  <div className='flex items-center justify-between gap-4'>
                                     {/* Match Info */}
-                                    <div className="flex items-center gap-4 flex-1">
+                                    <div className='flex items-center gap-4 flex-1'>
                                       {/* Team 1 */}
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <p className="font-medium">
+                                      <div className='flex-1'>
+                                        <div className='flex items-center gap-2'>
+                                          <p className='font-medium'>
                                             {match.homeTeam?.name || 'TBD'}
                                           </p>
                                           {match.homeTeam?.id === match.winner?.id && (
-                                            <Trophy className="h-4 w-4 text-yellow-500" />
+                                            <Trophy className='h-4 w-4 text-yellow-500' />
                                           )}
                                         </div>
                                         {match.homeTeam?.tag && (
-                                          <p className="text-sm text-muted-foreground">
+                                          <p className='text-sm text-muted-foreground'>
                                             [{match.homeTeam.tag}]
                                           </p>
                                         )}
                                       </div>
 
                                       {/* Score */}
-                                      <div className="text-center min-w-[80px]">
+                                      <div className='text-center min-w-[80px]'>
                                         {match.status === 'COMPLETED' ? (
-                                          <div className="text-xl font-bold">
+                                          <div className='text-xl font-bold'>
                                             {match.homeScore ?? 0} - {match.awayScore ?? 0}
                                           </div>
                                         ) : (
-                                          <div className="text-lg font-bold text-muted-foreground">
+                                          <div className='text-lg font-bold text-muted-foreground'>
                                             VS
                                           </div>
                                         )}
                                       </div>
 
                                       {/* Team 2 */}
-                                      <div className="flex-1 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                      <div className='flex-1 text-right'>
+                                        <div className='flex items-center justify-end gap-2'>
                                           {match.winner?.id === match.awayTeamId && (
-                                            <Trophy className="h-4 w-4 text-yellow-500" />
+                                            <Trophy className='h-4 w-4 text-yellow-500' />
                                           )}
-                                          <p className="font-medium">
+                                          <p className='font-medium'>
                                             {match.awayTeam?.name || 'TBD'}
                                           </p>
                                         </div>
                                         {match.awayTeam?.tag && (
-                                          <p className="text-sm text-muted-foreground">
+                                          <p className='text-sm text-muted-foreground'>
                                             [{match.awayTeam.tag}]
                                           </p>
                                         )}
@@ -659,17 +659,17 @@ export default function TournamentManagePage() {
                                     </div>
 
                                     {/* Match Details & Actions */}
-                                    <div className="flex items-center gap-3">
+                                    <div className='flex items-center gap-3'>
                                       {/* Schedule Info */}
-                                      <div className="text-sm text-muted-foreground text-right min-w-[120px]">
+                                      <div className='text-sm text-muted-foreground text-right min-w-[120px]'>
                                         {match.scheduledAt && (
                                           <>
-                                            <div className="flex items-center justify-end gap-1">
-                                              <Calendar className="h-3 w-3" />
+                                            <div className='flex items-center justify-end gap-1'>
+                                              <Calendar className='h-3 w-3' />
                                               {new Date(match.scheduledAt).toLocaleDateString()}
                                             </div>
-                                            <div className="flex items-center justify-end gap-1">
-                                              <Clock className="h-3 w-3" />
+                                            <div className='flex items-center justify-end gap-1'>
+                                              <Clock className='h-3 w-3' />
                                               {new Date(match.scheduledAt).toLocaleTimeString([], {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
@@ -690,7 +690,7 @@ export default function TournamentManagePage() {
                                                 ? 'outline'
                                                 : 'secondary'
                                         }
-                                        className="min-w-[100px] justify-center"
+                                        className='min-w-[100px] justify-center'
                                       >
                                         {match.status}
                                       </Badge>
@@ -699,11 +699,11 @@ export default function TournamentManagePage() {
                                       {match.status !== 'COMPLETED' && (
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                              <MoreVertical className="h-4 w-4" />
+                                            <Button variant='ghost' size='sm'>
+                                              <MoreVertical className='h-4 w-4' />
                                             </Button>
                                           </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
+                                          <DropdownMenuContent align='end'>
                                             {!match.scheduledAt && (
                                               <DropdownMenuItem
                                                 onClick={() => {
@@ -711,7 +711,7 @@ export default function TournamentManagePage() {
                                                   console.log('Schedule match:', match.id)
                                                 }}
                                               >
-                                                <Calendar className="h-4 w-4 mr-2" />
+                                                <Calendar className='h-4 w-4 mr-2' />
                                                 Schedule Match
                                               </DropdownMenuItem>
                                             )}
@@ -722,7 +722,7 @@ export default function TournamentManagePage() {
                                                   console.log('Report result:', match.id)
                                                 }}
                                               >
-                                                <Trophy className="h-4 w-4 mr-2" />
+                                                <Trophy className='h-4 w-4 mr-2' />
                                                 Report Result
                                               </DropdownMenuItem>
                                             )}
@@ -733,7 +733,7 @@ export default function TournamentManagePage() {
                                                   console.log('Edit schedule:', match.id)
                                                 }}
                                               >
-                                                <Clock className="h-4 w-4 mr-2" />
+                                                <Clock className='h-4 w-4 mr-2' />
                                                 Edit Schedule
                                               </DropdownMenuItem>
                                             )}
@@ -747,7 +747,7 @@ export default function TournamentManagePage() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
+                          <p className='text-sm text-muted-foreground'>
                             No matches in this bracket yet
                           </p>
                         )}
@@ -755,10 +755,10 @@ export default function TournamentManagePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-lg font-medium mb-2">No Matches Yet</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className='text-center py-12'>
+                    <Calendar className='h-16 w-16 mx-auto mb-4 text-muted-foreground' />
+                    <p className='text-lg font-medium mb-2'>No Matches Yet</p>
+                    <p className='text-sm text-muted-foreground'>
                       Generate the bracket first to create matches
                     </p>
                   </div>
@@ -776,12 +776,12 @@ export default function TournamentManagePage() {
 function StatCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+        <CardTitle className='text-sm font-medium'>{title}</CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className='text-2xl font-bold'>{value}</div>
       </CardContent>
     </Card>
   )
@@ -790,12 +790,12 @@ function StatCard({ title, value, icon }: { title: string; value: string; icon: 
 // Activity Item Component
 function ActivityItem({ action, team, time }: { action: string; team: string; time: string }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b last:border-0">
+    <div className='flex items-center justify-between py-2 border-b last:border-0'>
       <div>
-        <p className="text-sm font-medium">{action}</p>
-        <p className="text-xs text-muted-foreground">{team}</p>
+        <p className='text-sm font-medium'>{action}</p>
+        <p className='text-xs text-muted-foreground'>{team}</p>
       </div>
-      <span className="text-xs text-muted-foreground">{time}</span>
+      <span className='text-xs text-muted-foreground'>{time}</span>
     </div>
   )
 }
@@ -832,47 +832,47 @@ function RegistrationsTab({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-4">
+          <div className='space-y-4'>
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className='h-20' />
             ))}
           </div>
         ) : !registrations || registrations.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">No team registrations yet</p>
+          <div className='text-center py-8'>
+            <p className='text-sm text-muted-foreground'>No team registrations yet</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className='space-y-4'>
             {registrations.map((registration) => (
               <div
                 key={registration.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className='flex items-center justify-between p-4 border rounded-lg'
               >
-                <div className="flex-1">
-                  <p className="font-medium">{registration.team.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className='flex-1'>
+                  <p className='font-medium'>{registration.team.name}</p>
+                  <p className='text-sm text-muted-foreground'>
                     Registered {new Date(registration.registeredAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className='flex items-center gap-3'>
                   {registration.status === 'APPROVED' ? (
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                    <Badge variant='outline' className='bg-green-500/10 text-green-500'>
+                      <CheckCircle2 className='h-3 w-3 mr-1' />
                       Approved
                     </Badge>
                   ) : registration.status === 'REJECTED' ? (
-                    <Badge variant="outline" className="bg-red-500/10 text-red-500">
-                      <XCircle className="h-3 w-3 mr-1" />
+                    <Badge variant='outline' className='bg-red-500/10 text-red-500'>
+                      <XCircle className='h-3 w-3 mr-1' />
                       Rejected
                     </Badge>
                   ) : (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => onReject(registration.id)}>
-                        <XCircle className="h-4 w-4 mr-1" />
+                      <Button size='sm' variant='outline' onClick={() => onReject(registration.id)}>
+                        <XCircle className='h-4 w-4 mr-1' />
                         Reject
                       </Button>
-                      <Button size="sm" onClick={() => onApprove(registration.id)}>
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                      <Button size='sm' onClick={() => onApprove(registration.id)}>
+                        <CheckCircle2 className='h-4 w-4 mr-1' />
                         Approve
                       </Button>
                     </>
