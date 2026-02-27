@@ -27,6 +27,7 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { format } from 'date-fns'
 import { RegisterTeamDialog } from '@/components/tournament/register-team-dialog'
+import { BracketView } from '@/components/bracket/bracket-view' // Import BracketView
 
 export default function TournamentDetailPage() {
   const params = useParams()
@@ -274,73 +275,56 @@ export default function TournamentDetailPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    {/* Use BracketView component */}
                     {tournament.brackets && tournament.brackets.length > 0 ? (
-                      <div className='space-y-6'>
-                        {tournament.brackets.map((bracket) => (
-                          <div key={bracket.id} className='space-y-4'>
-                            <div className='flex items-center gap-2'>
-                              <h3 className='font-semibold'>
-                                {bracket.type === 'MAIN' ? 'Main Bracket' :
-                                 bracket.type === 'WINNERS' ? 'Winners Bracket' :
-                                 bracket.type === 'LOSERS' ? 'Losers Bracket' : 'Grand Final'} - Round {bracket.round}
-                              </h3>
-                              <Badge variant='secondary'>{bracket.matches?.length || 0} matches</Badge>
+                      (() => {
+                        // Flatten and map matches to the format expected by BracketView
+                        const mappedMatches = tournament.brackets.flatMap(bracket =>
+                          (bracket.matches || []).map((match: any) => ({ // Using 'any' for match type due to unknown exact API response structure
+                            id: match.id,
+                            round: bracket.round, // Use the round from the bracket
+                            // NOTE: 'matchNumber' is expected by BracketView's Match interface.
+                            // Assuming it might be available on the 'match' object from the API.
+                            // If not, this might cause a runtime error if BracketView strictly requires it.
+                            matchNumber: match.matchNumber,
+                            scheduledAt: match.scheduledAt,
+                            status: match.status,
+                            team1: match.homeTeam ? {
+                              id: match.homeTeam.id,
+                              name: match.homeTeam.name,
+                              logo: match.homeTeam.logo, // Assuming logo might be available
+                            } : null,
+                            team2: match.awayTeam ? {
+                              id: match.awayTeam.id,
+                              name: match.awayTeam.name,
+                              logo: match.awayTeam.logo, // Assuming logo might be available
+                            } : null,
+                            team1Score: match.homeScore,
+                            team2Score: match.awayScore,
+                            winnerId: match.winnerId,
+                          }))
+                        );
+
+                        // If no matches are found after flattening, display the "not generated" message.
+                        if (mappedMatches.length === 0) {
+                          return (
+                            <div className='text-center py-8 text-muted-foreground'>
+                              <Trophy className='h-12 w-12 mx-auto mb-2 opacity-50' />
+                              <p>Bracket not generated yet</p>
                             </div>
-                            {bracket.matches && bracket.matches.length > 0 ? (
-                              <div className='space-y-2'>
-                                {bracket.matches.map((match) => (
-                                  <div
-                                    key={match.id}
-                                    className='flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors'
-                                  >
-                                    <div className='flex items-center gap-4 flex-1'>
-                                      <div className='flex-1'>
-                                        <p className='font-medium'>{match.homeTeam?.name || 'TBD'}</p>
-                                        {match.homeTeam?.tag && (
-                                          <p className='text-sm text-muted-foreground'>[{match.homeTeam.tag}]</p>
-                                        )}
-                                      </div>
-                                      <div className='px-4'>
-                                        <div className='text-lg font-bold text-muted-foreground'>VS</div>
-                                        {match.status === 'COMPLETED' && match.homeScore !== null && match.awayScore !== null && (
-                                          <div className='text-sm text-center'>
-                                            <span className={match.homeScore > match.awayScore ? 'font-bold text-primary' : ''}>
-                                              {match.homeScore}
-                                            </span>
-                                            {' - '}
-                                            <span className={match.awayScore > match.homeScore ? 'font-bold text-primary' : ''}>
-                                              {match.awayScore}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className='flex-1 text-right'>
-                                        <p className='font-medium'>{match.awayTeam?.name || 'TBD'}</p>
-                                        {match.awayTeam?.tag && (
-                                          <p className='text-sm text-muted-foreground'>[{match.awayTeam.tag}]</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <Badge
-                                      variant='outline'
-                                      className={`ml-4 ${
-                                        match.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
-                                        match.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
-                                        'bg-gray-500/10 text-gray-500'
-                                      }`}
-                                    >
-                                      {match.status === 'SCHEDULED' ? 'Upcoming' : match.status}
-                                    </Badge>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className='text-sm text-muted-foreground'>No matches in this round yet</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                          );
+                        }
+
+                        return (
+                          <BracketView
+                            matches={mappedMatches}
+                            tournamentFormat={tournament.format} // Assuming tournament.format matches the expected enum string
+                            // onMatchClick={(matchId) => { console.log('Match clicked:', matchId); }} // Optional: handler for match clicks
+                          />
+                        );
+                      })()
                     ) : (
+                      // Fallback for when tournament.brackets is empty or null
                       <div className='text-center py-8 text-muted-foreground'>
                         <Trophy className='h-12 w-12 mx-auto mb-2 opacity-50' />
                         <p>Bracket not generated yet</p>

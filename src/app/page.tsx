@@ -3,679 +3,666 @@
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { trpc } from '@/lib/trpc/client'
 import {
   Trophy,
-  Users,
-  DollarSign,
-  TrendingUp,
   Zap,
-  Calendar,
-  Medal,
-  Award,
+  Target,
+  Crown,
+  Swords,
+  Shield,
   ArrowRight,
   Gamepad2,
-  UserPlus,
-  Target,
-  Github,
-  Twitter,
-  Mail,
-  Activity,
+  Play,
+  TrendingUp,
+  Users,
+  Calendar,
+  Star,
+  Award,
+  CheckCircle,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import Cs2SVG from '@/assets/cs2.svg'
+import ValorantSVG from '@/assets/valorant.svg'
+import LeagueSVG from '@/assets/league-of-legends.svg'
+import FortniteSVG from '@/assets/fortnite.svg'
+
 
 export default function LandingPage() {
   const { data: session } = useSession()
-  const { data: platformStats, isLoading: statsLoading } = trpc.stats.getPlatformStats.useQuery()
-  const { data: liveTournaments, isLoading: liveLoading } = trpc.stats.getLiveTournaments.useQuery()
-  const { data: upcomingTournaments, isLoading: upcomingLoading } =
-    trpc.stats.getUpcomingTournaments.useQuery()
-  const { data: leaderboards, isLoading: leaderboardsLoading } = trpc.stats.getLeaderboards.useQuery()
-  const { data: recentActivity, isLoading: activityLoading } = trpc.stats.getRecentActivity.useQuery()
+  const { data: platformStats } = trpc.stats.getPlatformStats.useQuery()
+  const { data: liveTournaments } = trpc.stats.getLiveTournaments.useQuery()
+  const { data: upcomingTournaments } = trpc.stats.getUpcomingTournaments.useQuery()
+  const { data: leaderboards } = trpc.stats.getLeaderboards.useQuery()
 
   const isOrganizer = session?.user?.role === 'ORGANIZER' || session?.user?.role === 'ADMIN'
 
   return (
-    <div className='min-h-screen bg-background'>
-      {/* Navigation */}
-      <nav className='border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50'>
-        <div className='container mx-auto px-4 py-4 flex justify-between items-center'>
-          <Link href='/' className='flex items-center gap-2'>
-            <Gamepad2 className='h-8 w-8 text-primary' />
-            <span className='text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent'>
-              Esports Arena
-            </span>
-          </Link>
-          <div className='flex gap-3'>
-            {session ? (
-              <Link href='/dashboard'>
-                <Button className='gradient-purple glow-purple-hover'>Dashboard</Button>
-              </Link>
-            ) : (
-              <>
-                <Link href='/login'>
-                  <Button variant='ghost'>Sign In</Button>
-                </Link>
-                <Link href='/register'>
-                  <Button className='gradient-purple glow-purple-hover'>Get Started</Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 animate-pulse" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgwLDI1NSwyNTUsMC4xKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20" />
+      </div>
 
-      {/* Hero Section */}
-      <section className='relative py-20 md:py-32 overflow-hidden'>
-        <div className='absolute inset-0 bg-gradient-to-br from-purple-500/10 via-cyan-500/10 to-transparent' />
-        <div className='container mx-auto px-4 relative'>
-          <div className='text-center max-w-4xl mx-auto'>
-            <h1 className='text-5xl md:text-7xl font-bold mb-6 leading-tight'>
-              Compete in{' '}
-              <span className='text-gradient-purple-cyan'>Esports Tournaments</span>
-            </h1>
-            <p className='text-xl md:text-2xl text-muted-foreground mb-8'>
-              The ultimate platform for organizing and competing in esports tournaments.
-              <br />
-              Join thousands of players and teams battling for glory.
-            </p>
-            <div className='flex flex-col sm:flex-row gap-4 justify-center mb-16'>
-              {session && isOrganizer ? (
-                <Link href='/dashboard/tournaments/create'>
-                  <Button size='lg' className='gradient-purple glow-purple text-lg px-8'>
-                    <Trophy className='mr-2 h-5 w-5' />
-                    Create Your First Tournament
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="border-b border-cyan-500/20 backdrop-blur-xl bg-black/50 sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="relative">
+                <Gamepad2 className="h-8 w-8 text-cyan-400 group-hover:text-pink-400 transition-colors" />
+                <div className="absolute inset-0 blur-xl bg-cyan-400 opacity-50 group-hover:opacity-75 transition-opacity" />
+              </div>
+              <span className="text-2xl font-black tracking-wider">
+                <span className="text-cyan-400">ESPORTS</span>
+                <span className="text-pink-400">ARENA</span>
+              </span>
+            </Link>
+            <div className="flex gap-3">
+              {session ? (
+                <Link href="/dashboard">
+                  <Button className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold shadow-lg shadow-cyan-500/50 hover:shadow-purple-500/50 transition-all">
+                    DASHBOARD
                   </Button>
                 </Link>
               ) : (
-                <Link href='/tournaments?filter=open'>
-                  <Button size='lg' className='gradient-purple glow-purple text-lg px-8'>
-                    <Trophy className='mr-2 h-5 w-5' />
-                    Register Now
-                  </Button>
-                </Link>
-              )}
-              <Link href='/tournaments'>
-                <Button size='lg' variant='outline' className='text-lg px-8'>
-                  Explore Tournaments
-                  <ArrowRight className='ml-2 h-5 w-5' />
-                </Button>
-              </Link>
-            </div>
-
-            {/* Platform Stats */}
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto'>
-              {statsLoading ? (
                 <>
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className='h-24' />
-                  ))}
-                </>
-              ) : (
-                <>
-                  <Card className='border-primary/20 bg-gradient-to-br from-purple-500/5 to-transparent'>
-                    <CardContent className='pt-6 text-center'>
-                      <Trophy className='h-8 w-8 mx-auto mb-2 text-primary' />
-                      <div className='text-3xl font-bold'>{platformStats?.totalTournaments || 0}</div>
-                      <div className='text-sm text-muted-foreground'>Tournaments</div>
-                    </CardContent>
-                  </Card>
-                  <Card className='border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent'>
-                    <CardContent className='pt-6 text-center'>
-                      <Users className='h-8 w-8 mx-auto mb-2 text-cyan-500' />
-                      <div className='text-3xl font-bold'>{platformStats?.totalTeams || 0}</div>
-                      <div className='text-sm text-muted-foreground'>Teams</div>
-                    </CardContent>
-                  </Card>
-                  <Card className='border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent'>
-                    <CardContent className='pt-6 text-center'>
-                      <Award className='h-8 w-8 mx-auto mb-2 text-green-500' />
-                      <div className='text-3xl font-bold'>{platformStats?.completedTournaments || 0}</div>
-                      <div className='text-sm text-muted-foreground'>Completed</div>
-                    </CardContent>
-                  </Card>
-                  <Card className='border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-transparent'>
-                    <CardContent className='pt-6 text-center'>
-                      <DollarSign className='h-8 w-8 mx-auto mb-2 text-yellow-500' />
-                      <div className='text-3xl font-bold'>{platformStats?.tournamentsWithPrizes || 0}</div>
-                      <div className='text-sm text-muted-foreground'>With Prizes</div>
-                    </CardContent>
-                  </Card>
+                  <Link href="/login">
+                    <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10">
+                      SIGN IN
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-400 hover:to-purple-400 text-white font-bold shadow-lg shadow-pink-500/50 transition-all">
+                      GET STARTED
+                    </Button>
+                  </Link>
                 </>
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </nav>
 
-      {/* Live & Upcoming Tournaments */}
-      <section className='py-16 bg-muted/30'>
-        <div className='container mx-auto px-4'>
-          <div className='grid md:grid-cols-2 gap-8'>
-            {/* Live Tournaments */}
-            <div>
-              <div className='flex items-center justify-between mb-6'>
-                <h2 className='text-3xl font-bold flex items-center gap-2'>
-                  <Zap className='h-8 w-8 text-red-500' />
-                  Live Tournaments
-                </h2>
-                <Link href='/tournaments?filter=live'>
-                  <Button variant='ghost' size='sm'>
-                    View All <ArrowRight className='ml-1 h-4 w-4' />
-                  </Button>
-                </Link>
+        {/* Hero Section */}
+        <section className="relative min-h-[90vh] flex items-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-pink-500/5 mix-blend-overlay" />
+          
+          <div className="container mx-auto px-4 py-20">
+            <div className="max-w-6xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-400/30 bg-cyan-400/5 backdrop-blur-sm mb-8">
+                <Zap className="h-4 w-4 text-cyan-400 animate-pulse" />
+                <span className="text-cyan-400 text-sm font-bold tracking-wider">NEXT-GEN TOURNAMENT PLATFORM</span>
               </div>
-              {liveLoading ? (
-                <div className='space-y-4'>
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className='h-32' />
-                  ))}
-                </div>
-              ) : liveTournaments && liveTournaments.length > 0 ? (
-                <div className='space-y-4'>
-                  {liveTournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} isLive />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className='py-12 text-center'>
-                    <Zap className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
-                    <p className='text-muted-foreground'>No live tournaments right now</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
 
-            {/* Upcoming Tournaments */}
-            <div>
-              <div className='flex items-center justify-between mb-6'>
-                <h2 className='text-3xl font-bold flex items-center gap-2'>
-                  <Calendar className='h-8 w-8 text-blue-500' />
-                  Open Registration
-                </h2>
-                <Link href='/tournaments?filter=open'>
-                  <Button variant='ghost' size='sm'>
-                    View All <ArrowRight className='ml-1 h-4 w-4' />
-                  </Button>
-                </Link>
-              </div>
-              {upcomingLoading ? (
-                <div className='space-y-4'>
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className='h-32' />
-                  ))}
-                </div>
-              ) : upcomingTournaments && upcomingTournaments.length > 0 ? (
-                <div className='space-y-4'>
-                  {upcomingTournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} />
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className='py-12 text-center'>
-                    <Calendar className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
-                    <p className='text-muted-foreground'>No upcoming tournaments</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+              <h1 className="text-6xl md:text-8xl font-black mb-6 leading-none">
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 animate-pulse">
+                  DOMINATE
+                </span>
+                <span className="block text-white">THE ARENA</span>
+              </h1>
 
-      {/* Leaderboards */}
-      <section className='py-16'>
-        <div className='container mx-auto px-4'>
-          <h2 className='text-4xl font-bold text-center mb-12'>
-            <TrendingUp className='inline h-10 w-10 mr-2 text-primary' />
-            Leaderboards
-          </h2>
-          {leaderboardsLoading ? (
-            <div className='grid md:grid-cols-3 gap-8'>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className='h-96' />
-              ))}
-            </div>
-          ) : (
-            <div className='grid md:grid-cols-3 gap-8'>
-              {/* Top Teams */}
-              <Card className='border-primary/20'>
-                <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Trophy className='h-5 w-5 text-yellow-500' />
-                    Top Teams by Win Rate
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {leaderboards?.topTeams && leaderboards.topTeams.length > 0 ? (
-                    <div className='space-y-4'>
-                      {leaderboards.topTeams.map((team, idx) => (
-                        <Link key={team.id} href={`/teams/${team.id}`}>
-                          <div className='flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors'>
-                            <div className='text-2xl font-bold text-muted-foreground w-8'>
-                              #{idx + 1}
-                            </div>
-                            {team.logo ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={team.logo} alt={team.name ?? 'Team'} className='h-10 w-10 rounded-full' />
-                            ) : (
-                              <div className='h-10 w-10 rounded-full bg-gradient-purple flex items-center justify-center'>
-                                <Users className='h-5 w-5 text-white' />
-                              </div>
-                            )}
-                            <div className='flex-1 min-w-0'>
-                              <p className='font-semibold truncate'>{team.name}</p>
-                              <p className='text-sm text-muted-foreground'>
-                                {team.wins}W - {team.losses}L
-                              </p>
-                            </div>
-                            <div className='text-right'>
-                              <div className='text-lg font-bold text-green-500'>{team.winRate}%</div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className='text-center py-8 text-muted-foreground'>No team data yet</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Top Players */}
-              <Card className='border-cyan-500/20'>
-                <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Medal className='h-5 w-5 text-cyan-500' />
-                    Top Players
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {leaderboards?.topPlayers && leaderboards.topPlayers.length > 0 ? (
-                    <div className='space-y-4'>
-                      {leaderboards.topPlayers.map((player, idx) => (
-                        <div
-                          key={player.id}
-                          className='flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors'
-                        >
-                          <div className='text-2xl font-bold text-muted-foreground w-8'>
-                            #{idx + 1}
-                          </div>
-                          {player.avatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={player.avatar} alt={player.name ?? 'Player'} className='h-10 w-10 rounded-full' />
-                          ) : (
-                            <div className='h-10 w-10 rounded-full bg-gradient-cyan flex items-center justify-center'>
-                              <UserPlus className='h-5 w-5 text-white' />
-                            </div>
-                          )}
-                          <div className='flex-1 min-w-0'>
-                            <p className='font-semibold truncate'>{player.name}</p>
-                            <p className='text-sm text-muted-foreground'>Tournament Wins</p>
-                          </div>
-                          <div className='text-right'>
-                            <div className='text-lg font-bold text-cyan-500'>{player.winCount}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className='text-center py-8 text-muted-foreground'>No player data yet</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Recent Champions */}
-              <Card className='border-purple-500/20'>
-                <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Award className='h-5 w-5 text-purple-500' />
-                    Recent Champions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {leaderboards?.recentChampions && leaderboards.recentChampions.length > 0 ? (
-                    <div className='space-y-4'>
-                      {leaderboards.recentChampions.map((champion) => (
-                        <Link key={champion.tournamentId} href={`/tournaments/${champion.tournamentId}`}>
-                          <div className='p-3 rounded-lg hover:bg-muted/50 transition-colors'>
-                            {champion.winnerTeam ? (
-                              <div className='flex items-center gap-2 mb-2'>
-                                {champion.winnerTeam.logo ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={champion.winnerTeam.logo}
-                                    alt={champion.winnerTeam.name}
-                                    className='h-8 w-8 rounded-full'
-                                  />
-                                ) : (
-                                  <Trophy className='h-8 w-8 text-yellow-500' />
-                                )}
-                                <span className='font-semibold'>{champion.winnerTeam.name}</span>
-                              </div>
-                            ) : null}
-                            <p className='text-sm text-muted-foreground truncate'>
-                              {champion.tournamentName}
-                            </p>
-                            <p className='text-xs text-muted-foreground mt-1'>
-                              {champion.gameIcon} {champion.gameName} •{' '}
-                              {new Date(champion.completedAt || '').toLocaleDateString()}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className='text-center py-8 text-muted-foreground'>No champions yet</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Recent Activity Feed */}
-      <section className='py-16 bg-muted/30'>
-        <div className='container mx-auto px-4'>
-          <h2 className='text-4xl font-bold text-center mb-12'>
-            <Activity className='inline h-10 w-10 mr-2 text-primary' />
-            Recent Activity
-          </h2>
-          <Card className='max-w-3xl mx-auto'>
-            <CardContent className='pt-6'>
-              {activityLoading ? (
-                <div className='space-y-4'>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className='h-16' />
-                  ))}
-                </div>
-              ) : recentActivity && recentActivity.length > 0 ? (
-                <div className='space-y-1'>
-                  {recentActivity.map((activity) => (
-                    <Link key={activity.id} href={activity.link}>
-                      <div className='flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group'>
-                        <div className='mt-1'>
-                          {activity.type === 'registration' && (
-                            <UserPlus className='h-4 w-4 text-blue-500' />
-                          )}
-                          {activity.type === 'completion' && (
-                            <Trophy className='h-4 w-4 text-yellow-500' />
-                          )}
-                          {activity.type === 'new_tournament' && (
-                            <Calendar className='h-4 w-4 text-green-500' />
-                          )}
-                        </div>
-                        <div className='flex-1 min-w-0'>
-                          <p className='text-sm group-hover:text-primary transition-colors'>
-                            {activity.message}
-                          </p>
-                          <p className='text-xs text-muted-foreground mt-0.5'>
-                            {getTimeAgo(activity.timestamp)}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className='text-center py-8 text-muted-foreground'>No recent activity</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className='py-16'>
-        <div className='container mx-auto px-4'>
-          <h2 className='text-4xl font-bold text-center mb-4'>How It Works</h2>
-          <p className='text-center text-muted-foreground mb-12 max-w-2xl mx-auto'>
-            Get started in three simple steps and join the competitive esports community
-          </p>
-          <div className='grid md:grid-cols-3 gap-8 max-w-5xl mx-auto'>
-            <Card className='border-primary/20 hover:border-primary/50 transition-colors'>
-              <CardHeader>
-                <div className='h-12 w-12 rounded-full bg-gradient-purple flex items-center justify-center mb-4'>
-                  <UserPlus className='h-6 w-6 text-white' />
-                </div>
-                <CardTitle>1. Create Account</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Sign up as a player or organizer. Set up your profile and choose your role in the
-                  competitive scene.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className='border-cyan-500/20 hover:border-cyan-500/50 transition-colors'>
-              <CardHeader>
-                <div className='h-12 w-12 rounded-full bg-gradient-cyan flex items-center justify-center mb-4'>
-                  <Target className='h-6 w-6 text-white' />
-                </div>
-                <CardTitle>2. Join Tournament</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Browse available tournaments, create or join a team, and register for competitions
-                  in your favorite games.
-                </CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card className='border-green-500/20 hover:border-green-500/50 transition-colors'>
-              <CardHeader>
-                <div className='h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mb-4'>
-                  <Trophy className='h-6 w-6 text-white' />
-                </div>
-                <CardTitle>3. Compete & Win</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Play your matches, track your progress, and climb the rankings. Prove you&apos;re the
-                  best!
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className='py-20 bg-gradient-to-br from-purple-500/10 via-cyan-500/10 to-transparent'>
-        <div className='container mx-auto px-4 text-center'>
-          <h2 className='text-4xl md:text-5xl font-bold mb-6'>
-            Ready to Start Your Journey?
-          </h2>
-          <p className='text-xl text-muted-foreground mb-8 max-w-2xl mx-auto'>
-            Join thousands of players competing in tournaments every day
-          </p>
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-            <Link href='/register'>
-              <Button size='lg' className='gradient-purple glow-purple text-lg px-8'>
-                Create Free Account
-                <ArrowRight className='ml-2 h-5 w-5' />
-              </Button>
-            </Link>
-            <Link href='/tournaments'>
-              <Button size='lg' variant='outline' className='text-lg px-8'>
-                Explore Tournaments
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className='border-t bg-card/50 backdrop-blur-sm py-12'>
-        <div className='container mx-auto px-4'>
-          <div className='grid md:grid-cols-4 gap-8 mb-8'>
-            <div>
-              <div className='flex items-center gap-2 mb-4'>
-                <Gamepad2 className='h-6 w-6 text-primary' />
-                <span className='text-lg font-bold'>Esports Arena</span>
-              </div>
-              <p className='text-sm text-muted-foreground'>
-                The ultimate platform for esports tournament management and competition.
+              <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto font-light">
+                Join the ultimate esports tournament platform. Compete, organize, and prove you're the best.
               </p>
-            </div>
-            <div>
-              <h3 className='font-semibold mb-4'>Platform</h3>
-              <ul className='space-y-2 text-sm text-muted-foreground'>
-                <li>
-                  <Link href='/tournaments' className='hover:text-primary transition-colors'>
-                    Tournaments
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+                {session && isOrganizer ? (
+                  <Link href="/dashboard/tournaments/create">
+                    <Button size="lg" className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-400 hover:via-purple-400 hover:to-pink-400 text-white font-black text-lg px-12 py-6 shadow-2xl shadow-purple-500/50 hover:shadow-cyan-500/50 transition-all">
+                      <Trophy className="mr-2 h-6 w-6" />
+                      CREATE TOURNAMENT
+                    </Button>
                   </Link>
-                </li>
-                <li>
-                  <Link href='/teams' className='hover:text-primary transition-colors'>
-                    Teams
+                ) : (
+                  <Link href="/tournaments?filter=open">
+                    <Button size="lg" className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-400 hover:via-purple-400 hover:to-pink-400 text-white font-black text-lg px-12 py-6 shadow-2xl shadow-purple-500/50 hover:shadow-cyan-500/50 transition-all group">
+                      <Play className="mr-2 h-6 w-6 group-hover:animate-pulse" />
+                      ENTER ARENA
+                    </Button>
                   </Link>
-                </li>
-                <li>
-                  <Link href='/dashboard' className='hover:text-primary transition-colors'>
-                    Dashboard
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className='font-semibold mb-4'>Support</h3>
-              <ul className='space-y-2 text-sm text-muted-foreground'>
-                <li>
-                  <a href='#' className='hover:text-primary transition-colors'>
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='hover:text-primary transition-colors'>
-                    Rules
-                  </a>
-                </li>
-                <li>
-                  <a href='#' className='hover:text-primary transition-colors'>
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className='font-semibold mb-4'>Connect</h3>
-              <div className='flex gap-3'>
-                <a
-                  href='#'
-                  className='h-10 w-10 rounded-full bg-muted hover:bg-primary/20 flex items-center justify-center transition-colors'
-                >
-                  <Github className='h-5 w-5' />
-                </a>
-                <a
-                  href='#'
-                  className='h-10 w-10 rounded-full bg-muted hover:bg-primary/20 flex items-center justify-center transition-colors'
-                >
-                  <Twitter className='h-5 w-5' />
-                </a>
-                <a
-                  href='#'
-                  className='h-10 w-10 rounded-full bg-muted hover:bg-primary/20 flex items-center justify-center transition-colors'
-                >
-                  <Mail className='h-5 w-5' />
-                </a>
+                )}
+                <Link href="/tournaments">
+                  <Button size="lg" variant="outline" className="border-2 border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 font-bold text-lg px-12 py-6">
+                    EXPLORE
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Platform Stats - Only 3 */}
+              <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto">
+                <StatCard
+                  icon={<Trophy className="h-8 w-8" />}
+                  value={platformStats?.totalTournaments || 0}
+                  label="ACTIVE"
+                  color="cyan"
+                />
+                <StatCard
+                  icon={<Users className="h-8 w-8" />}
+                  value={platformStats?.totalTeams || 0}
+                  label="TEAMS"
+                  color="purple"
+                />
+                <StatCard
+                  icon={<Crown className="h-8 w-8" />}
+                  value={platformStats?.tournamentsWithPrizes || 0}
+                  label="PRIZES"
+                  color="pink"
+                />
               </div>
             </div>
           </div>
-          <div className='border-t pt-8 text-center text-sm text-muted-foreground'>
-            <p>© 2026 Esports Arena. All rights reserved.</p>
+        </section>
+
+        {/* Featured Games Section */}
+        <section className="py-20 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 to-transparent" />
+          <div className="container mx-auto px-4 relative">
+            <div className="text-center mb-12">
+              <h2 className="text-5xl font-black mb-4">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                  SUPPORTED GAMES
+                </span>
+              </h2>
+              <p className="text-gray-400 text-lg">Compete in your favorite esports titles</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              <GameCard 
+                name="VALORANT" 
+                players="2.5K+"
+                gradient="from-red-500 to-orange-500"
+                Image={ValorantSVG}
+              />
+              <GameCard 
+                name="LEAGUE" 
+                players="3.2K+"
+                gradient="from-blue-500 to-cyan-500"
+                Image={LeagueSVG}
+              />
+              <GameCard 
+                name="CS2" 
+                players="1.8K+"
+                gradient="from-yellow-500 to-orange-500"
+                Image={Cs2SVG}
+              />
+              <GameCard 
+                name="FORTNITE" 
+                players="2.1K+"
+                gradient="from-purple-500 to-pink-500"
+                Image={FortniteSVG}
+              />
+            </div>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        {/* Tournament Features Section */}
+        <section className="py-20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-pink-500/5" />
+          <div className="container mx-auto px-4 relative">
+            <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-400/30 bg-cyan-400/5 backdrop-blur-sm mb-6">
+                  <Trophy className="h-4 w-4 text-cyan-400" />
+                  <span className="text-cyan-400 text-sm font-bold tracking-wider">FOR ORGANIZERS</span>
+                </div>
+                <h2 className="text-5xl font-black mb-6 leading-tight">
+                  <span className="text-white">CREATE</span>
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+                    PROFESSIONAL
+                  </span>
+                  <br />
+                  <span className="text-white">TOURNAMENTS</span>
+                </h2>
+                <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                  Everything you need to run epic esports tournaments. From bracket generation 
+                  to match scheduling, we've got you covered.
+                </p>
+                <div className="space-y-4">
+                  <FeatureItem icon={<CheckCircle />} text="Automatic bracket generation" />
+                  <FeatureItem icon={<Users />} text="Team management & registration" />
+                  <FeatureItem icon={<Trophy />} text="Real-time match tracking" />
+                  <FeatureItem icon={<Calendar />} text="Flexible scheduling system" />
+                </div>
+              </div>
+              
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative aspect-square rounded-2xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden">
+                  <div className="text-center p-8">
+                    <Trophy className="h-24 w-24 text-cyan-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-gray-600 text-sm">[ Tournament Dashboard ]</p>
+                    {/* TODO Replace with image/gif of the game */}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Player Features Section */}
+        <section className="py-20 relative">
+          <div className="container mx-auto px-4 relative">
+            <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <div className="relative group order-2 md:order-1">
+                <div className="absolute -inset-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-3xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative aspect-square rounded-2xl border-2 border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden">
+                  <div className="text-center p-8">
+                    <Swords className="h-24 w-24 text-pink-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-gray-600 text-sm">[ Player Stats Dashboard ]</p>
+                    {/* TODO Replace with image/gif of the game */}
+                  </div>
+                </div>
+              </div>
+
+              <div className="order-1 md:order-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-pink-400/30 bg-pink-400/5 backdrop-blur-sm mb-6">
+                  <Star className="h-4 w-4 text-pink-400" />
+                  <span className="text-pink-400 text-sm font-bold tracking-wider">FOR PLAYERS</span>
+                </div>
+                <h2 className="text-5xl font-black mb-6 leading-tight">
+                  <span className="text-white">PROVE YOUR</span>
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
+                    DOMINANCE
+                  </span>
+                </h2>
+                <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                  Join tournaments, track your stats, and climb the leaderboards. 
+                  Build your reputation and become a legend.
+                </p>
+                <div className="space-y-4">
+                  <FeatureItem icon={<TrendingUp />} text="Track your win rate & stats" color="pink" />
+                  <FeatureItem icon={<Trophy />} text="Earn achievements & badges" color="pink" />
+                  <FeatureItem icon={<Users />} text="Find & join teams" color="pink" />
+                  <FeatureItem icon={<Crown />} text="Compete for prizes" color="pink" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Live & Upcoming */}
+        <section className="py-20 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent" />
+          <div className="container mx-auto px-4 relative">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl blur-xl opacity-25 group-hover:opacity-50 transition-opacity" />
+                <Card className="relative bg-black/80 border-2 border-red-500/30 backdrop-blur-xl">
+                  <CardContent className="p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-3xl font-black flex items-center gap-3">
+                        <div className="relative">
+                          <Zap className="h-8 w-8 text-red-400 animate-pulse" />
+                          <div className="absolute inset-0 blur-xl bg-red-400 opacity-50" />
+                        </div>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-pink-400">
+                          LIVE NOW
+                        </span>
+                      </h2>
+                      <Link href="/tournaments?filter=live">
+                        <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-400/10">
+                          VIEW ALL →
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="space-y-3">
+                      {liveTournaments?.slice(0, 3).map((tournament) => (
+                        <TournamentCardNeon key={tournament.id} tournament={tournament} isLive />
+                      )) || (
+                        <p className="text-center py-8 text-gray-500">No live tournaments</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur-xl opacity-25 group-hover:opacity-50 transition-opacity" />
+                <Card className="relative bg-black/80 border-2 border-cyan-500/30 backdrop-blur-xl">
+                  <CardContent className="p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-3xl font-black flex items-center gap-3">
+                        <div className="relative">
+                          <Target className="h-8 w-8 text-cyan-400" />
+                          <div className="absolute inset-0 blur-xl bg-cyan-400 opacity-50" />
+                        </div>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+                          OPEN NOW
+                        </span>
+                      </h2>
+                      <Link href="/tournaments?filter=open">
+                        <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10">
+                          VIEW ALL →
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="space-y-3">
+                      {upcomingTournaments?.slice(0, 3).map((tournament) => (
+                        <TournamentCardNeon key={tournament.id} tournament={tournament} />
+                      )) || (
+                        <p className="text-center py-8 text-gray-500">No open tournaments</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Leaderboards */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-5xl font-black mb-4">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
+                  HALL OF FAME
+                </span>
+              </h2>
+              <p className="text-gray-400">The best of the best</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <LeaderboardCard
+                title="TOP TEAMS"
+                icon={<Shield className="h-5 w-5" />}
+                items={leaderboards?.topTeams?.slice(0, 5) || []}
+                color="cyan"
+                renderItem={(team: any, idx: number) => (
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-cyan-400/5 transition-all group cursor-pointer">
+                    <div className="text-2xl font-black text-gray-600 w-8">#{idx + 1}</div>
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+                      <Trophy className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate text-white group-hover:text-cyan-400 transition-colors">
+                        {team.name}
+                      </p>
+                      <p className="text-xs text-gray-500">{team.wins}W - {team.losses}L</p>
+                    </div>
+                    <div className="text-cyan-400 font-black text-lg">{team.winRate}%</div>
+                  </div>
+                )}
+              />
+
+              <LeaderboardCard
+                title="TOP PLAYERS"
+                icon={<Crown className="h-5 w-5" />}
+                items={leaderboards?.topPlayers?.slice(0, 5) || []}
+                color="purple"
+                renderItem={(player: any, idx: number) => (
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-400/5 transition-all group cursor-pointer">
+                    <div className="text-2xl font-black text-gray-600 w-8">#{idx + 1}</div>
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
+                      <Star className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold truncate text-white group-hover:text-purple-400 transition-colors">
+                        {player.name}
+                      </p>
+                      <p className="text-xs text-gray-500">Wins</p>
+                    </div>
+                    <div className="text-purple-400 font-black text-lg">{player.winCount}</div>
+                  </div>
+                )}
+              />
+
+              <LeaderboardCard
+                title="RECENT WINNERS"
+                icon={<Award className="h-5 w-5" />}
+                items={leaderboards?.recentChampions?.slice(0, 5) || []}
+                color="pink"
+                renderItem={(champion: any) => (
+                  <Link href={`/tournaments/${champion.tournamentId}`}>
+                    <div className="p-3 rounded-lg hover:bg-pink-400/5 transition-all group cursor-pointer">
+                      {champion.winnerTeam && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <Trophy className="h-6 w-6 text-yellow-400" />
+                          <span className="font-bold text-white group-hover:text-pink-400 transition-colors">
+                            {champion.winnerTeam.name}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-400 truncate">{champion.tournamentName}</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {new Date(champion.completedAt || '').toLocaleDateString()}
+                      </p>
+                    </div>
+                  </Link>
+                )}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section className="py-20 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-purple-500/5 to-pink-500/5" />
+          <div className="container mx-auto px-4 relative">
+            <div className="text-center mb-12">
+              <h2 className="text-5xl font-black mb-4">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400">
+                  HOW IT WORKS
+                </span>
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <StepCard
+                number="01"
+                icon={<Swords className="h-12 w-12" />}
+                title="CREATE ACCOUNT"
+                description="Sign up and join the competitive scene"
+                color="cyan"
+              />
+              <StepCard
+                number="02"
+                icon={<Target className="h-12 w-12" />}
+                title="JOIN TOURNAMENT"
+                description="Register your team and prepare for battle"
+                color="purple"
+              />
+              <StepCard
+                number="03"
+                icon={<Crown className="h-12 w-12" />}
+                title="CLAIM VICTORY"
+                description="Compete, win, and earn your place in history"
+                color="pink"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-32 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20" />
+          <div className="container mx-auto px-4 text-center relative">
+            <h2 className="text-6xl md:text-7xl font-black mb-6">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+                READY TO COMPETE?
+              </span>
+            </h2>
+            <p className="text-2xl text-gray-400 mb-12 max-w-2xl mx-auto">
+              Join thousands of players in the arena
+            </p>
+            <Link href="/register">
+              <Button size="lg" className="bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-400 hover:via-purple-400 hover:to-pink-400 text-white font-black text-xl px-16 py-8 shadow-2xl shadow-purple-500/50 hover:shadow-cyan-500/50 transition-all">
+                START NOW
+                <ArrowRight className="ml-2 h-6 w-6" />
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="border-t border-cyan-500/20 backdrop-blur-xl bg-black/50 py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="h-6 w-6 text-cyan-400" />
+                <span className="text-lg font-black">
+                  <span className="text-cyan-400">ESPORTS</span>
+                  <span className="text-pink-400">ARENA</span>
+                </span>
+              </div>
+              <p className="text-gray-500 text-sm">© 2026 ESPORTSARENA. ALL RIGHTS RESERVED.</p>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }
 
-// Tournament Card Component
-type TournamentCardType = {
-  id: string
-  name: string
-  game?: {
-    icon?: string | null
-    name?: string
+// Components
+function StatCard({ icon, value, label, color }: any) {
+  const colorClasses = {
+    cyan: 'from-cyan-500 to-blue-500 text-cyan-400 border-cyan-500/30',
+    purple: 'from-purple-500 to-pink-500 text-purple-400 border-purple-500/30',
+    pink: 'from-pink-500 to-red-500 text-pink-400 border-pink-500/30',
   }
-  format?: string
-  maxTeams?: number
-  _count?: {
-    registrations?: number
-  }
-  startDate: Date | string
+
+  return (
+    <div className="relative group">
+      <div className={`absolute -inset-1 bg-gradient-to-r ${colorClasses[color].split(' ')[0]} ${colorClasses[color].split(' ')[1]} rounded-xl blur opacity-25 group-hover:opacity-50 transition-opacity`} />
+      <Card className={`relative bg-black/80 border ${colorClasses[color].split(' ')[2]} backdrop-blur-xl`}>
+        <CardContent className="p-6 text-center">
+          <div className={`${colorClasses[color].split(' ')[3]} mb-2 flex justify-center`}>{icon}</div>
+          <div className="text-4xl font-black text-white">{value}</div>
+          <div className="text-xs font-bold text-gray-500 tracking-widest">{label}</div>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
-function TournamentCard({
-  tournament,
-  isLive = false,
-}: {
-  tournament: TournamentCardType
-  isLive?: boolean
-}) {
+function GameCard({ name, players, gradient, Image }: any) {
   return (
-    <Link href={`/tournaments/${tournament.id}`}>
-      <Card className={cn(
-        'hover:shadow-lg transition-all duration-300 glow-purple-hover',
-        isLive && 'border-red-500/50 bg-red-500/5'
-      )}>
-        <CardContent className='p-4'>
-          <div className='flex items-start justify-between mb-3'>
-            <div className='flex-1'>
-              <div className='flex items-center gap-2 mb-2'>
-                {tournament.game?.icon && <span className='text-lg'>{tournament.game.icon}</span>}
-                <Badge variant='outline' className='text-xs'>
-                  {tournament.game?.name}
-                </Badge>
-                {isLive && (
-                  <Badge className='bg-red-500 text-white animate-pulse'>
-                    <Zap className='h-3 w-3 mr-1' />
-                    LIVE
-                  </Badge>
-                )}
-              </div>
-              <h3 className='font-semibold text-lg leading-tight mb-1'>{tournament.name}</h3>
-              <p className='text-sm text-muted-foreground'>
-                {tournament.format?.replace(/_/g, ' ')}
-              </p>
+    <div className="relative group cursor-pointer">
+      <div className={`absolute -inset-1 bg-gradient-to-r ${gradient} rounded-2xl blur-xl opacity-25 group-hover:opacity-50 transition-opacity`} />
+      <Card className="relative bg-black/80 border-2 border-gray-800 hover:border-gray-700 backdrop-blur-xl overflow-hidden aspect-square">
+        <CardContent className="p-0 h-full flex flex-col items-center justify-center relative">
+          {/* Placeholder for game image */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`} />
+          <div className="relative z-10 text-center p-6">
+            <div className='w-24 h-24 flex items-center justify-center mx-auto'>
+            <Image className="h-28 w-28 mx-auto mb-4 text-red-white opacity-70" fill='currentColor'/>
             </div>
-          </div>
-          <div className='flex items-center justify-between text-sm'>
-            <div className='flex items-center gap-1 text-muted-foreground'>
-              <Users className='h-4 w-4' />
-              <span>
-                {tournament._count?.registrations || 0}
-                {tournament.maxTeams && `/${tournament.maxTeams}`} teams
-              </span>
-            </div>
-            <div className='flex items-center gap-1 text-muted-foreground'>
-              <Calendar className='h-4 w-4' />
-              <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-            </div>
+            <h3 className="text-xl font-black text-white mb-2">{name}</h3>
+            <p className="text-sm text-gray-400">{players} Players</p>
+            <p className="text-xs text-gray-600 mt-2">[ Replace with game image/GIF ]</p>
           </div>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function FeatureItem({ icon, text, color = "cyan" }: any) {
+  const colorClasses = {
+    cyan: "text-cyan-400",
+    pink: "text-pink-400",
+  }
+  
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`${colorClasses[color]}`}>{icon}</div>
+      <span className="text-gray-300">{text}</span>
+    </div>
+  )
+}
+
+function TournamentCardNeon({ tournament, isLive = false }: any) {
+  return (
+    <Link href={`/tournaments/${tournament.id}`}>
+      <div className={`p-4 rounded-xl border-2 ${isLive ? 'border-red-500/30 bg-red-500/5' : 'border-gray-800 bg-gray-900/50'} hover:bg-gray-800/50 transition-all group cursor-pointer`}>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              {tournament.game?.icon && <span className="text-lg">{tournament.game.icon}</span>}
+              {isLive && (
+                <Badge className="bg-red-500 text-white text-xs font-bold">
+                  <Zap className="h-3 w-3 mr-1 animate-pulse" />
+                  LIVE
+                </Badge>
+              )}
+            </div>
+            <h3 className="font-bold text-white group-hover:text-cyan-400 transition-colors leading-tight">
+              {tournament.name}
+            </h3>
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {tournament._count?.registrations || 0} teams
+          </span>
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {new Date(tournament.startDate).toLocaleDateString()}
+          </span>
+        </div>
+      </div>
     </Link>
   )
 }
 
-// Helper function for time ago
-function getTimeAgo(date: Date) {
-  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(date).toLocaleDateString()
+function LeaderboardCard({ title, icon, items, color, renderItem }: any) {
+  const colorClasses = {
+    cyan: 'border-cyan-500/30 from-cyan-500 to-blue-500',
+    purple: 'border-purple-500/30 from-purple-500 to-pink-500',
+    pink: 'border-pink-500/30 from-pink-500 to-red-500',
+  }
+
+  return (
+    <div className="relative group">
+      <div className={`absolute -inset-1 bg-gradient-to-r ${colorClasses[color].split(' ')[1]} ${colorClasses[color].split(' ')[2]} rounded-2xl blur-xl opacity-25 group-hover:opacity-50 transition-opacity`} />
+      <Card className={`relative bg-black/80 border-2 ${colorClasses[color].split(' ')[0]} backdrop-blur-xl`}>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <div className={`text-${color}-400`}>{icon}</div>
+            <h3 className="text-sm font-black tracking-widest text-gray-400">{title}</h3>
+          </div>
+          <div className="space-y-2">
+            {items.length > 0 ? (
+              items.map((item: any, idx: number) => (
+                <div key={idx}>{renderItem(item, idx)}</div>
+              ))
+            ) : (
+              <p className="text-center py-8 text-gray-600 text-sm">No data yet</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function StepCard({ number, icon, title, description, color }: any) {
+  const colorClasses = {
+    cyan: 'from-cyan-500 to-blue-500 text-cyan-400',
+    purple: 'from-purple-500 to-pink-500 text-purple-400',
+    pink: 'from-pink-500 to-red-500 text-pink-400',
+  }
+
+  return (
+    <div className="relative group">
+      <div className={`absolute -inset-1 bg-gradient-to-r ${colorClasses[color].split(' ')[0]} ${colorClasses[color].split(' ')[1]} rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity`} />
+      <Card className="relative bg-black/80 border-2 border-gray-800 hover:border-gray-700 backdrop-blur-xl transition-all">
+        <CardContent className="p-8 text-center">
+          <div className="text-6xl font-black text-gray-800 mb-4">{number}</div>
+          <div className={`${colorClasses[color].split(' ')[2]} mb-4 flex justify-center`}>
+            {icon}
+          </div>
+          <h3 className="text-xl font-black text-white mb-2">{title}</h3>
+          <p className="text-sm text-gray-500">{description}</p>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
