@@ -27,6 +27,8 @@ import Cs2SVG from '@/assets/cs2.svg'
 import ValorantSVG from '@/assets/valorant.svg'
 import LeagueSVG from '@/assets/league-of-legends.svg'
 import FortniteSVG from '@/assets/fortnite.svg'
+import Image from "next/image";
+
 
 
 export default function LandingPage() {
@@ -235,8 +237,14 @@ export default function LandingPage() {
                 <div className="relative aspect-square rounded-2xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden">
                   <div className="text-center p-8">
                     <Trophy className="h-24 w-24 text-cyan-400 mx-auto mb-4 opacity-50" />
-                    <p className="text-gray-600 text-sm">[ Tournament Dashboard ]</p>
-                    {/* TODO Replace with image/gif of the game */}
+                    <Image
+                      src="/images/dashboard.png"
+                      alt="Dashboard preview"
+                      width={1200}
+                      height={800}
+                      priority
+                      className="rounded-xl shadow-xl"
+                   />
                   </div>
                 </div>
               </div>
@@ -551,11 +559,11 @@ function GameCard({ name, players, gradient, Image }: any) {
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`} />
           <div className="relative z-10 text-center p-6">
             <div className='w-24 h-24 flex items-center justify-center mx-auto'>
-            <Image className="h-28 w-28 mx-auto mb-4 text-red-white opacity-70" fill='currentColor'/>
+            <Image className="h-28 w-28 mx-auto mb-4 text-red-white" fill='currentColor'/>
             </div>
             <h3 className="text-xl font-black text-white mb-2">{name}</h3>
             <p className="text-sm text-gray-400">{players} Players</p>
-            <p className="text-xs text-gray-600 mt-2">[ Replace with game image/GIF ]</p>
+            {/* TODO Replace with image/gif of the game */}
           </div>
         </CardContent>
       </Card>
