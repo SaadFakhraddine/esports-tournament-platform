@@ -66,6 +66,21 @@ export function generateDoubleEliminationBracket(teams: Team[]): Match[] {
       matches.push(match)
     }
   }
+  
+  // Ensure we have at least one match
+  if (matches.length === 0 && teamCount > 0) {
+    // Create at least one match
+    matches.push({
+      round: 1,
+      position: 0,
+      bracketType: 'WINNERS',
+      homeTeamId: sortedTeams[0]?.id || null,
+      awayTeamId: sortedTeams[1]?.id || null,
+      nextMatchPosition: null,
+      nextMatchSlot: null,
+      loserToPosition: null,
+    })
+  }
 
   // Generate Losers Bracket (more complex, alternates between dropdowns and advancement)
   const losersRounds = winnersRounds * 2 - 1

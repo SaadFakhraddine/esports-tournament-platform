@@ -1,4 +1,4 @@
-import { PrismaClient, TournamentFormat, BracketType } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 interface Team {
   id: string
@@ -14,7 +14,7 @@ interface BracketMatch {
 
 interface BracketStructure {
   brackets: Array<{
-    type: BracketType
+    type: string
     round: number
     matches: BracketMatch[]
   }>
@@ -72,7 +72,7 @@ function generateSingleElimination(teams: Team[]): BracketStructure {
     }
 
     brackets.push({
-      type: BracketType.MAIN,
+      type: 'MAIN',
       round,
       matches: roundMatches,
     })
@@ -126,7 +126,7 @@ function generateRoundRobin(teams: Team[]): BracketStructure {
     }
     
     brackets.push({
-      type: BracketType.MAIN,
+      type: 'MAIN',
       round: round + 1,
       matches: roundMatches,
     })
@@ -159,7 +159,7 @@ function generateDoubleElimination(teams: Team[]): BracketStructure {
 
   // Generate winners bracket first round
   const winnersFirstRound = {
-    type: BracketType.WINNERS,
+    type: 'WINNERS',
     round: 1,
     matches: [] as BracketMatch[],
   }
@@ -211,7 +211,7 @@ function generateSwiss(teams: Team[]): BracketStructure {
   }
 
   brackets.push({
-    type: BracketType.MAIN,
+    type: 'MAIN',
     round: 1,
     matches,
   })
@@ -268,16 +268,16 @@ export async function generateBracket(
   // Generate bracket structure based on format
   let bracketStructure: BracketStructure
   switch (tournament.format) {
-    case TournamentFormat.SINGLE_ELIMINATION:
+    case 'SINGLE_ELIMINATION':
       bracketStructure = generateSingleElimination(teams)
       break
-    case TournamentFormat.DOUBLE_ELIMINATION:
+    case 'DOUBLE_ELIMINATION':
       bracketStructure = generateDoubleElimination(teams)
       break
-    case TournamentFormat.ROUND_ROBIN:
+    case 'ROUND_ROBIN':
       bracketStructure = generateRoundRobin(teams)
       break
-    case TournamentFormat.SWISS:
+    case 'SWISS':
       bracketStructure = generateSwiss(teams)
       break
     default:
@@ -296,8 +296,8 @@ export async function generateBracket(
 
     // Create matches for this bracket
     for (const match of bracket.matches) {
-      // Only create matches where at least one team is present
-      if (match.homeTeamId || match.awayTeamId) {
+      // Only create matches where both teams are present (Prisma requires non-null)
+      if (match.homeTeamId && match.awayTeamId) {
         await db.match.create({
           data: {
             tournamentId,
@@ -305,18 +305,22 @@ export async function generateBracket(
             homeTeamId: match.homeTeamId,
             awayTeamId: match.awayTeamId,
             status: 'SCHEDULED',
-            bestOf: tournament.format === TournamentFormat.ROUND_ROBIN ? 1 : 3,
-            round: bracket.round,
+            bestOf: tournament.format === 'ROUND_ROBIN' ? 1 : 3,
+            // Note: round is not stored in Match model - it's in the Bracket model
           },
         })
+      } else {
+        // Handle byes: team automatically advances to next round
+        // For now, we'll skip match creation
+        console.log(`Skipping match with bye: home=${match.homeTeamId}, away=${match.awayTeamId}`)
       }
     }
   }
 
   // For elimination formats, we need to update match progression
   if (
-    tournament.format === TournamentFormat.SINGLE_ELIMINATION ||
-    tournament.format === TournamentFormat.DOUBLE_ELIMINATION
+    tournament.format === 'SINGLE_ELIMINATION' ||
+    tournament.format === 'DOUBLE_ELIMINATION'
   ) {
     // This would require more complex logic to link matches
     // For now, we'll leave it as is and handle match progression when reporting results

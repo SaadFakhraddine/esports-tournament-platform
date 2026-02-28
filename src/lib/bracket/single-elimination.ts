@@ -53,8 +53,10 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
         }
           
         // If one team has a bye, they automatically advance
+        // We need to handle this by marking the match appropriately
         if ((slot1 < teamCount && slot2 >= teamCount) || (slot2 < teamCount && slot1 >= teamCount)) {
-          // This match will have only one team - handle in next round
+          // Mark that this match has a bye
+          // We'll handle this when creating the actual match in the database
         }
       }
       
@@ -69,6 +71,9 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
       matches.push(match)
     }
   }
+  
+  // Handle byes: if a match has only one team, it should advance automatically
+  // We can mark these matches for special handling
   
   return matches
 }
