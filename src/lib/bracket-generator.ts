@@ -7,8 +7,8 @@ interface Team {
 
 interface BracketMatch {
   round: number
-  homeTeamId: string
-  awayTeamId: string
+  homeTeamId: string | null
+  awayTeamId: string | null
   nextMatchSlot?: 'home' | 'away'
 }
 
@@ -56,12 +56,12 @@ function generateSingleElimination(teams: Team[]): BracketStructure {
         const slot2 = position * 2 + 1
 
         if (slot1 < totalTeams) {
-          match.homeTeamId = sortedTeams[slot1].id
+          match.homeTeamId = sortedTeams[slot1]?.id || null
         }
         if (slot2 < totalTeams) {
-          match.awayTeamId = sortedTeams[slot2].id
+          match.awayTeamId = sortedTeams[slot2]?.id || null
         }
-        
+          
         // Set next match slot for progression
         if (round < totalRounds) {
           match.nextMatchSlot = position % 2 === 0 ? 'home' : 'away'
@@ -170,8 +170,8 @@ function generateDoubleElimination(teams: Team[]): BracketStructure {
 
     winnersFirstRound.matches.push({
       round: 1,
-      homeTeamId: topSeed.id,
-      awayTeamId: bottomSeed.id,
+      homeTeamId: topSeed?.id || null,
+      awayTeamId: bottomSeed?.id || null,
       nextMatchSlot: i % 2 === 0 ? 'home' : 'away',
     })
   }
@@ -205,8 +205,8 @@ function generateSwiss(teams: Team[]): BracketStructure {
   for (let i = 0; i < midpoint; i++) {
     matches.push({
       round: 1,
-      homeTeamId: sortedTeams[i].id,
-      awayTeamId: sortedTeams[midpoint + i].id,
+      homeTeamId: sortedTeams[i]?.id || null,
+      awayTeamId: sortedTeams[midpoint + i]?.id || null,
     })
   }
 
@@ -258,10 +258,12 @@ export async function generateBracket(
   })
 
   // Prepare team data with seeds
-  const teams: Team[] = tournament.registrations.map((reg) => ({
-    id: reg.team.id,
-    seed: reg.seed,
-  }))
+  const teams: Team[] = tournament.registrations
+    .filter(reg => reg.team?.id) // Ensure team exists
+    .map((reg) => ({
+      id: reg.team.id,
+      seed: reg.seed,
+    }))
 
   // Generate bracket structure based on format
   let bracketStructure: BracketStructure
@@ -294,17 +296,20 @@ export async function generateBracket(
 
     // Create matches for this bracket
     for (const match of bracket.matches) {
-      await db.match.create({
-        data: {
-          tournamentId,
-          bracketId: createdBracket.id,
-          homeTeamId: match.homeTeamId,
-          awayTeamId: match.awayTeamId,
-          status: 'SCHEDULED',
-          bestOf: tournament.format === TournamentFormat.ROUND_ROBIN ? 1 : 3,
-          round: bracket.round,
-        },
-      })
+      // Only create matches where at least one team is present
+      if (match.homeTeamId || match.awayTeamId) {
+        await db.match.create({
+          data: {
+            tournamentId,
+            bracketId: createdBracket.id,
+            homeTeamId: match.homeTeamId,
+            awayTeamId: match.awayTeamId,
+            status: 'SCHEDULED',
+            bestOf: tournament.format === TournamentFormat.ROUND_ROBIN ? 1 : 3,
+            round: bracket.round,
+          },
+        })
+      }
     }
   }
 

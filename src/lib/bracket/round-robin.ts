@@ -42,8 +42,8 @@ export function generateRoundRobinBracket(teams: Team[]): Match[] {
         matches.push({
           round: round + 1,
           position: matches.filter(m => m.round === round + 1).length,
-          homeTeamId: isHome ? home : away,
-          awayTeamId: isHome ? away : home,
+          homeTeamId: isHome ? home! : away!,
+          awayTeamId: isHome ? away! : home!,
         })
       }
     }

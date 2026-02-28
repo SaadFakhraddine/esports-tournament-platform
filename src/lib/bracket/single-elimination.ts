@@ -43,7 +43,7 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
         // Calculate team indices using standard tournament seeding
         const slot1 = position * 2
         const slot2 = position * 2 + 1
-        
+          
         // Handle byes: teams in the first slots get byes
         if (slot1 < teamCount) {
           match.homeTeamId = sortedTeams[slot1]?.id || null
@@ -51,7 +51,7 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
         if (slot2 < teamCount) {
           match.awayTeamId = sortedTeams[slot2]?.id || null
         }
-        
+          
         // If one team has a bye, they automatically advance
         if ((slot1 < teamCount && slot2 >= teamCount) || (slot2 < teamCount && slot1 >= teamCount)) {
           // This match will have only one team - handle in next round
