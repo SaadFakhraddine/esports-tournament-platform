@@ -6,59 +6,68 @@ import {
   organizerProcedure,
 } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
-import { MatchStatus } from '@prisma/client'
+import { MatchStatus, Prisma } from '@prisma/client'
+
+// Helper to fetch match with bracket and transform to include round
+async function getMatchWithRound(ctx: any, matchId: string) {
+  const match = await ctx.db.match.findUnique({
+    where: { id: matchId },
+    include: {
+      tournament: {
+        select: {
+          id: true,
+          name: true,
+          format: true,
+        },
+      },
+      bracket: {
+        select: {
+          type: true,
+          round: true,
+        },
+      },
+      homeTeam: {
+        select: {
+          id: true,
+          name: true,
+          tag: true,
+          logo: true,
+        },
+      },
+      awayTeam: {
+        select: {
+          id: true,
+          name: true,
+          tag: true,
+          logo: true,
+        },
+      },
+      resultSubmitter: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  })
+  
+  if (!match) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Match not found',
+    })
+  }
+  
+  // Transform to include round field for frontend compatibility
+  return {
+    ...match,
+    round: match.bracket.round,
+  }
+}
 
 export const matchRouter = createTRPCRouter({
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    const match = await ctx.db.match.findUnique({
-      where: { id: input.id },
-      include: {
-        tournament: {
-          select: {
-            id: true,
-            name: true,
-            format: true,
-          },
-        },
-        bracket: {
-          select: {
-            type: true,
-            round: true,
-          },
-        },
-        homeTeam: {
-          select: {
-            id: true,
-            name: true,
-            tag: true,
-            logo: true,
-          },
-        },
-        awayTeam: {
-          select: {
-            id: true,
-            name: true,
-            tag: true,
-            logo: true,
-          },
-        },
-        resultSubmitter: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    })
-
-    if (!match) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Match not found',
-      })
-    }
-
-    return match
+    return getMatchWithRound(ctx, input.id)
   }),
 
   submitResult: protectedProcedure
@@ -131,7 +140,31 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
-      return updated
+      // Fetch the updated match with bracket
+      const matchWithBracket = await ctx.db.match.findUnique({
+        where: { id: input.matchId },
+        include: {
+          bracket: {
+            select: {
+              round: true,
+              type: true,
+            },
+          },
+        },
+      })
+      
+      if (!matchWithBracket) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Match not found after update',
+        })
+      }
+      
+      // Transform to include round
+      return {
+        ...matchWithBracket,
+        round: matchWithBracket.bracket.round,
+      } as any
     }),
 
   dispute: protectedProcedure
@@ -175,7 +208,8 @@ export const matchRouter = createTRPCRouter({
         },
       })
 
-      return updated
+      // Return the updated match with bracket info
+      return getMatchWithRound(ctx, input.matchId)
     }),
 
   adminOverride: organizerProcedure
