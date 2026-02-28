@@ -38,3 +38,4 @@ prisma/migrations/
 
 echo "*.md" >> .gitignore
 echo "!README.md" >> .gitignore
+.aider*

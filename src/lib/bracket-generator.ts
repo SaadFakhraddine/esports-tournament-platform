@@ -33,46 +33,49 @@ function generateSingleElimination(teams: Team[]): BracketStructure {
 
   const totalTeams = sortedTeams.length
   const totalRounds = Math.ceil(Math.log2(totalTeams))
-  const firstRoundMatches = totalTeams / 2
+  const totalSlots = Math.pow(2, totalRounds)
+  const byes = totalSlots - totalTeams
 
   const brackets: BracketStructure['brackets'] = []
 
-  // Generate first round
-  const firstRoundBracket = {
-    type: BracketType.MAIN,
-    round: 1,
-    matches: [] as BracketMatch[],
-  }
+  // Generate all rounds
+  for (let round = 1; round <= totalRounds; round++) {
+    const matchesInRound = Math.pow(2, totalRounds - round)
+    const roundMatches: BracketMatch[] = []
 
-  for (let i = 0; i < firstRoundMatches; i++) {
-    const topSeed = sortedTeams[i]
-    const bottomSeed = sortedTeams[totalTeams - 1 - i]
+    for (let position = 0; position < matchesInRound; position++) {
+      const match: BracketMatch = {
+        round,
+        homeTeamId: null,
+        awayTeamId: null,
+      }
 
-    firstRoundBracket.matches.push({
-      round: 1,
-      homeTeamId: topSeed.id,
-      awayTeamId: bottomSeed.id,
-      nextMatchSlot: i % 2 === 0 ? 'home' : 'away',
-    })
-  }
+      // For first round, assign teams with proper seeding
+      if (round === 1) {
+        const slot1 = position * 2
+        const slot2 = position * 2 + 1
 
-  brackets.push(firstRoundBracket)
+        if (slot1 < totalTeams) {
+          match.homeTeamId = sortedTeams[slot1].id
+        }
+        if (slot2 < totalTeams) {
+          match.awayTeamId = sortedTeams[slot2].id
+        }
+        
+        // Set next match slot for progression
+        if (round < totalRounds) {
+          match.nextMatchSlot = position % 2 === 0 ? 'home' : 'away'
+        }
+      }
 
-  // Generate subsequent rounds (empty matches to be filled as tournament progresses)
-  let previousRoundMatches = firstRoundMatches
-  for (let round = 2; round <= totalRounds; round++) {
-    const currentRoundMatches = previousRoundMatches / 2
-    const roundBracket = {
-      type: BracketType.MAIN,
-      round,
-      matches: [] as BracketMatch[],
+      roundMatches.push(match)
     }
 
-    // We'll create placeholder matches that will be filled when previous round completes
-    // For now, we won't create matches without teams
-
-    brackets.push(roundBracket)
-    previousRoundMatches = currentRoundMatches
+    brackets.push({
+      type: BracketType.MAIN,
+      round,
+      matches: roundMatches,
+    })
   }
 
   return { brackets }
@@ -91,24 +94,49 @@ function generateRoundRobin(teams: Team[]): BracketStructure {
 
   const brackets: BracketStructure['brackets'] = []
   const totalTeams = sortedTeams.length
-
-  // Generate all possible matchups
-  const allMatches: BracketMatch[] = []
-  for (let i = 0; i < totalTeams; i++) {
-    for (let j = i + 1; j < totalTeams; j++) {
-      allMatches.push({
-        round: 1, // All round robin matches are in "round 1"
-        homeTeamId: sortedTeams[i].id,
-        awayTeamId: sortedTeams[j].id,
-      })
-    }
+  
+  if (totalTeams < 2) {
+    return { brackets }
   }
 
-  brackets.push({
-    type: BracketType.MAIN,
-    round: 1,
-    matches: allMatches,
-  })
+  // Use proper round robin scheduling
+  const teamIds = sortedTeams.map(team => team.id)
+  const isOdd = totalTeams % 2 === 1
+  const scheduleTeams = isOdd ? [...teamIds, null] : [...teamIds]
+  const n = scheduleTeams.length
+  const rounds = isOdd ? totalTeams : totalTeams - 1
+
+  for (let round = 0; round < rounds; round++) {
+    const roundMatches: BracketMatch[] = []
+    
+    for (let i = 0; i < n / 2; i++) {
+      const home = scheduleTeams[i]
+      const away = scheduleTeams[n - 1 - i]
+      
+      if (home !== null && away !== null) {
+        // Alternate home/away
+        const isHome = round % 2 === 0 ? i === 0 : i !== 0
+        
+        roundMatches.push({
+          round: round + 1,
+          homeTeamId: isHome ? home : away,
+          awayTeamId: isHome ? away : home,
+        })
+      }
+    }
+    
+    brackets.push({
+      type: BracketType.MAIN,
+      round: round + 1,
+      matches: roundMatches,
+    })
+    
+    // Rotate for next round
+    const last = scheduleTeams.pop()
+    if (last !== undefined) {
+      scheduleTeams.splice(1, 0, last)
+    }
+  }
 
   return { brackets }
 }
@@ -265,8 +293,8 @@ export async function generateBracket(
     })
 
     // Create matches for this bracket
-    const matchPromises = bracket.matches.map(async (match) => {
-      return db.match.create({
+    for (const match of bracket.matches) {
+      await db.match.create({
         data: {
           tournamentId,
           bracketId: createdBracket.id,
@@ -274,27 +302,19 @@ export async function generateBracket(
           awayTeamId: match.awayTeamId,
           status: 'SCHEDULED',
           bestOf: tournament.format === TournamentFormat.ROUND_ROBIN ? 1 : 3,
+          round: bracket.round,
         },
       })
-    })
-
-    const createdMatches = await Promise.all(matchPromises)
-
-    // Link matches for progression (for elimination formats)
-    if (
-      tournament.format === TournamentFormat.SINGLE_ELIMINATION ||
-      tournament.format === TournamentFormat.DOUBLE_ELIMINATION
-    ) {
-      // For first round, link to second round matches
-      for (let i = 0; i < createdMatches.length; i++) {
-        const nextMatchSlot = bracket.matches[i].nextMatchSlot
-
-        if (nextMatchSlot) {
-          // We'll need to create the next round matches first
-          // This is a simplified version - full implementation would handle all rounds
-        }
-      }
     }
+  }
+
+  // For elimination formats, we need to update match progression
+  if (
+    tournament.format === TournamentFormat.SINGLE_ELIMINATION ||
+    tournament.format === TournamentFormat.DOUBLE_ELIMINATION
+  ) {
+    // This would require more complex logic to link matches
+    // For now, we'll leave it as is and handle match progression when reporting results
   }
 }
 

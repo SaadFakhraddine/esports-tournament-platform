@@ -14,29 +14,47 @@ interface Match {
 export function generateRoundRobinBracket(teams: Team[]): Match[] {
   const matches: Match[] = []
   const teamCount = teams.length
-
-  // Generate all possible matchups
-  let round = 1
-  let position = 0
-
-  for (let i = 0; i < teamCount; i++) {
-    for (let j = i + 1; j < teamCount; j++) {
-      matches.push({
-        round,
-        position,
-        homeTeamId: teams[i]!.id,
-        awayTeamId: teams[j]!.id,
-      })
-      position++
-
-      // Distribute matches across rounds (optional, for better scheduling)
-      if (position % Math.floor(teamCount / 2) === 0) {
-        round++
-        position = 0
+  
+  if (teamCount < 2) {
+    return matches
+  }
+  
+  // Use the circle method for proper round robin scheduling
+  const teamIds = teams.map(team => team.id)
+  
+  // If odd number of teams, add a dummy for bye
+  const isOdd = teamCount % 2 === 1
+  const scheduleTeams = isOdd ? [...teamIds, null] : [...teamIds]
+  const n = scheduleTeams.length
+  
+  const rounds = isOdd ? teamCount : teamCount - 1
+  
+  for (let round = 0; round < rounds; round++) {
+    for (let i = 0; i < n / 2; i++) {
+      const home = scheduleTeams[i]
+      const away = scheduleTeams[n - 1 - i]
+      
+      // Skip if either is the dummy (bye)
+      if (home !== null && away !== null) {
+        // Alternate home/away each round
+        const isHome = round % 2 === 0 ? i === 0 : i !== 0
+        
+        matches.push({
+          round: round + 1,
+          position: matches.filter(m => m.round === round + 1).length,
+          homeTeamId: isHome ? home : away,
+          awayTeamId: isHome ? away : home,
+        })
       }
     }
+    
+    // Rotate teams for next round (keep first team fixed)
+    const last = scheduleTeams.pop()
+    if (last !== undefined) {
+      scheduleTeams.splice(1, 0, last)
+    }
   }
-
+  
   return matches
 }
 
