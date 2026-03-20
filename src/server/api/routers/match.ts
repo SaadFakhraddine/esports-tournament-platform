@@ -99,16 +99,20 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
-      // Check if user is part of either team or is the tournament organizer
-      const isHomeTeamOwner = match.homeTeam.ownerId === ctx.session.user.id
-      const isAwayTeamOwner = match.awayTeam.ownerId === ctx.session.user.id
       const isOrganizer = match.tournament.organizerId === ctx.session.user.id
       const isAdmin = ctx.session.user.role === 'ADMIN'
 
-      if (!isHomeTeamOwner && !isAwayTeamOwner && !isOrganizer && !isAdmin) {
+      if (!isOrganizer && !isAdmin) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to submit result for this match',
+        })
+      }
+
+      if (!match.homeTeamId || !match.awayTeamId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Both teams must be set before submitting a result',
         })
       }
 
@@ -118,6 +122,13 @@ export const matchRouter = createTRPCRouter({
           ? match.homeTeamId
           : input.awayScore > input.homeScore
             ? match.awayTeamId
+            : null
+
+      const loserTeamId =
+        winnerTeamId === match.homeTeamId
+          ? match.awayTeamId
+          : winnerTeamId === match.awayTeamId
+            ? match.homeTeamId
             : null
 
       await ctx.db.match.update({
@@ -133,13 +144,29 @@ export const matchRouter = createTRPCRouter({
       })
 
       // If there's a next match, update it with the winner
-      if (match.nextMatchId && winnerTeamId) {
+      if (match.nextMatchId && match.nextMatchSlot && winnerTeamId) {
         await ctx.db.match.update({
           where: { id: match.nextMatchId },
           data: {
             ...(match.nextMatchSlot === 'home'
               ? { homeTeamId: winnerTeamId }
               : { awayTeamId: winnerTeamId }),
+          },
+        })
+      }
+
+      // Double elimination: if configured, also advance the loser
+      if (
+        match.nextMatchLoserId &&
+        match.nextMatchLoserSlot &&
+        loserTeamId
+      ) {
+        await ctx.db.match.update({
+          where: { id: match.nextMatchLoserId },
+          data: {
+            ...(match.nextMatchLoserSlot === 'home'
+              ? { homeTeamId: loserTeamId }
+              : { awayTeamId: loserTeamId }),
           },
         })
       }
@@ -184,6 +211,7 @@ export const matchRouter = createTRPCRouter({
         include: {
           homeTeam: true,
           awayTeam: true,
+          tournament: true,
         },
       })
 
@@ -194,10 +222,10 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
-      const isHomeTeamOwner = match.homeTeam.ownerId === ctx.session.user.id
-      const isAwayTeamOwner = match.awayTeam.ownerId === ctx.session.user.id
+      const isOrganizer = match.tournament.organizerId === ctx.session.user.id
+      const isAdmin = ctx.session.user.role === 'ADMIN'
 
-      if (!isHomeTeamOwner && !isAwayTeamOwner) {
+      if (!isOrganizer && !isAdmin) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to dispute this match',
@@ -249,11 +277,25 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
+      if (!match.homeTeamId || !match.awayTeamId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Both teams must be set before overriding a result',
+        })
+      }
+
       const winnerTeamId =
         input.homeScore > input.awayScore
           ? match.homeTeamId
           : input.awayScore > input.homeScore
             ? match.awayTeamId
+            : null
+
+      const loserTeamId =
+        winnerTeamId === match.homeTeamId
+          ? match.awayTeamId
+          : winnerTeamId === match.awayTeamId
+            ? match.homeTeamId
             : null
 
       const updated = await ctx.db.match.update({
@@ -270,13 +312,29 @@ export const matchRouter = createTRPCRouter({
       })
 
       // Update next match with winner
-      if (match.nextMatchId && winnerTeamId) {
+      if (match.nextMatchId && match.nextMatchSlot && winnerTeamId) {
         await ctx.db.match.update({
           where: { id: match.nextMatchId },
           data: {
             ...(match.nextMatchSlot === 'home'
               ? { homeTeamId: winnerTeamId }
               : { awayTeamId: winnerTeamId }),
+          },
+        })
+      }
+
+      // Double elimination: also advance loser (if configured)
+      if (
+        match.nextMatchLoserId &&
+        match.nextMatchLoserSlot &&
+        loserTeamId
+      ) {
+        await ctx.db.match.update({
+          where: { id: match.nextMatchLoserId },
+          data: {
+            ...(match.nextMatchLoserSlot === 'home'
+              ? { homeTeamId: loserTeamId }
+              : { awayTeamId: loserTeamId }),
           },
         })
       }

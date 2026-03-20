@@ -270,6 +270,8 @@ export const userRouter = createTRPCRouter({
         // Recent completed matches for user's teams
         ctx.db.match.findMany({
           where: {
+            homeTeamId: { not: null },
+            awayTeamId: { not: null },
             OR: [
               { homeTeamId: { in: teamIds } },
               { awayTeamId: { in: teamIds } },
@@ -356,11 +358,14 @@ export const userRouter = createTRPCRouter({
       recentMatches.forEach((match) => {
         const userTeamWon = teamIds.includes(match.winnerTeamId || '')
 
+        const homeTeamName = match.homeTeam?.name ?? 'TBD'
+        const awayTeamName = match.awayTeam?.name ?? 'TBD'
+
         activities.push({
           id: match.id,
           type: 'match',
           title: userTeamWon ? 'Match Won! 🎉' : 'Match Completed',
-          description: `${match.homeTeam.name} ${match.homeScore} - ${match.awayScore} ${match.awayTeam.name}`,
+          description: `${homeTeamName} ${match.homeScore} - ${match.awayScore} ${awayTeamName}`,
           link: `/tournaments/${match.tournament.id}`,
           timestamp: match.completedAt || new Date(),
           metadata: { tournamentName: match.tournament.name },

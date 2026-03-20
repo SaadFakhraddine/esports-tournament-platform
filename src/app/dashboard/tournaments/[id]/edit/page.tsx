@@ -23,12 +23,15 @@ import {
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
 import { TournamentForm } from '@/components/tournament/tournament-form'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useState } from 'react'
 
 export default function TournamentManagePage() {
   const { data: session, status } = useSession()
@@ -52,8 +55,38 @@ export default function TournamentManagePage() {
   const regenerateBracketMutation = trpc.tournament.regenerateBracket.useMutation()
   const autoSeedMutation = trpc.tournament.autoSeedTeams.useMutation()
   const startTournamentMutation = trpc.tournament.startTournament.useMutation()
+  const submitResultMutation = trpc.match.submitResult.useMutation()
 
   const utils = trpc.useUtils()
+
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportMatchId, setReportMatchId] = useState<string | null>(null)
+  const [reportHomeScore, setReportHomeScore] = useState('0')
+  const [reportAwayScore, setReportAwayScore] = useState('0')
+
+  const submitReportedResult = async () => {
+    if (!reportMatchId) return
+
+    const home = Number(reportHomeScore)
+    const away = Number(reportAwayScore)
+
+    if (!Number.isFinite(home) || !Number.isFinite(away) || home < 0 || away < 0) {
+      alert('Scores must be numbers >= 0')
+      return
+    }
+
+    try {
+      await submitResultMutation.mutateAsync({
+        matchId: reportMatchId,
+        homeScore: Math.trunc(home),
+        awayScore: Math.trunc(away),
+      })
+      await utils.tournament.getById.invalidate({ id: tournamentId })
+      setReportOpen(false)
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to submit result')
+    }
+  }
 
   if (status === 'loading' || tournamentLoading) {
     return (
@@ -718,8 +751,10 @@ export default function TournamentManagePage() {
                                             {match.homeTeamId && match.awayTeamId && (
                                               <DropdownMenuItem
                                                 onClick={() => {
-                                                  // TODO: Open report result modal
-                                                  console.log('Report result:', match.id)
+                                                  setReportMatchId(match.id)
+                                                  setReportHomeScore(String(match.homeScore ?? 0))
+                                                  setReportAwayScore(String(match.awayScore ?? 0))
+                                                  setReportOpen(true)
                                                 }}
                                               >
                                                 <Trophy className='h-4 w-4 mr-2' />
@@ -767,6 +802,45 @@ export default function TournamentManagePage() {
             </Card>
           </TabsContent>
         </Tabs>
+        <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Report Match Result</DialogTitle>
+            </DialogHeader>
+
+            <div className='grid gap-4'>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>Home Score</p>
+                  <Input
+                    type='number'
+                    min={0}
+                    value={reportHomeScore}
+                    onChange={(e) => setReportHomeScore(e.target.value)}
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <p className='text-sm text-muted-foreground'>Away Score</p>
+                  <Input
+                    type='number'
+                    min={0}
+                    value={reportAwayScore}
+                    onChange={(e) => setReportAwayScore(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant='outline' onClick={() => setReportOpen(false)} disabled={submitResultMutation.isPending}>
+                Cancel
+              </Button>
+              <Button onClick={submitReportedResult} disabled={submitResultMutation.isPending || !reportMatchId}>
+                {submitResultMutation.isPending ? 'Submitting...' : 'Submit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

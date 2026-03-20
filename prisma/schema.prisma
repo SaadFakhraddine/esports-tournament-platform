@@ -308,8 +308,8 @@ model Match {
   id                String      @id @default(cuid())
   tournamentId      String
   bracketId         String
-  homeTeamId        String
-  awayTeamId        String
+  homeTeamId        String?
+  awayTeamId        String?
   homeScore         Int?
   awayScore         Int?
   status            MatchStatus @default(PENDING)
@@ -320,6 +320,8 @@ model Match {
   bestOf            Int         @default(1) // Best of 1, 3, 5, etc.
   nextMatchId       String? // ID of the match the winner advances to
   nextMatchSlot     String? // "home" or "away" - which slot in next match
+  nextMatchLoserId  String? // ID of the match the loser advances to (double elimination)
+  nextMatchLoserSlot String? // "home" or "away" - which slot in next match (loser side)
   resultSubmittedBy String? // User who submitted the result
   disputeReason     String?     @db.Text
   createdAt         DateTime    @default(now())
@@ -328,8 +330,8 @@ model Match {
   // Relations
   tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   bracket         Bracket    @relation(fields: [bracketId], references: [id], onDelete: Cascade)
-  homeTeam        Team       @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam        Team       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam        Team?      @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam        Team?      @relation("AwayTeam", fields: [awayTeamId], references: [id])
   winner          Team?      @relation("MatchWinner", fields: [winnerTeamId], references: [id])
   nextMatch       Match?     @relation("MatchProgression", fields: [nextMatchId], references: [id], onDelete: SetNull)
   previousMatches Match[]    @relation("MatchProgression")

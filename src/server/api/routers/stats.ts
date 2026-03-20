@@ -152,7 +152,12 @@ export const statsRouter = createTRPCRouter({
         brackets: {
           select: {
             matches: {
-              where: { status: MatchStatus.COMPLETED, winnerTeamId: { not: null } },
+              where: {
+                status: MatchStatus.COMPLETED,
+                winnerTeamId: { not: null },
+                homeTeamId: { not: null },
+                awayTeamId: { not: null },
+              },
               orderBy: { completedAt: 'desc' },
               take: 1,
               select: {
@@ -171,10 +176,14 @@ export const statsRouter = createTRPCRouter({
       for (const bracket of tournament.brackets) {
         const finalMatch = bracket.matches[0]
         if (finalMatch?.winnerTeamId) {
+          const homeTeam = finalMatch.homeTeam
+          const awayTeam = finalMatch.awayTeam
+          if (!homeTeam || !awayTeam) continue
+
           const winnerTeam =
-            finalMatch.homeTeam.id === finalMatch.winnerTeamId
-              ? finalMatch.homeTeam
-              : finalMatch.awayTeam
+            homeTeam.id === finalMatch.winnerTeamId ? homeTeam : awayTeam
+
+          if (!winnerTeam) continue
 
           return [
             {
@@ -278,10 +287,14 @@ export const statsRouter = createTRPCRouter({
       for (const bracket of tournament.brackets) {
         const finalMatch = bracket.matches[0]
         if (finalMatch?.winnerTeamId) {
+          const homeTeam = finalMatch.homeTeam
+          const awayTeam = finalMatch.awayTeam
+          if (!homeTeam || !awayTeam) {
+            break
+          }
+
           winnerName =
-            finalMatch.homeTeam.id === finalMatch.winnerTeamId
-              ? finalMatch.homeTeam.name
-              : finalMatch.awayTeam.name
+            homeTeam.id === finalMatch.winnerTeamId ? homeTeam.name : awayTeam.name
           break
         }
       }
