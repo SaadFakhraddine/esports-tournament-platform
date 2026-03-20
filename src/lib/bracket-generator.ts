@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, BracketType } from '@prisma/client'
 
 interface Team {
   id: string
@@ -14,7 +14,7 @@ interface BracketMatch {
 
 interface BracketStructure {
   brackets: Array<{
-    type: string
+    type: BracketType
     round: number
     matches: BracketMatch[]
   }>
@@ -33,8 +33,7 @@ function generateSingleElimination(teams: Team[]): BracketStructure {
 
   const totalTeams = sortedTeams.length
   const totalRounds = Math.ceil(Math.log2(totalTeams))
-  const totalSlots = Math.pow(2, totalRounds)
-  const byes = totalSlots - totalTeams
+  // Byes are handled implicitly by leaving teams as null in early slots.
 
   const brackets: BracketStructure['brackets'] = []
 
@@ -158,7 +157,7 @@ function generateDoubleElimination(teams: Team[]): BracketStructure {
   const brackets: BracketStructure['brackets'] = []
 
   // Generate winners bracket first round
-  const winnersFirstRound = {
+  const winnersFirstRound: BracketStructure['brackets'][number] = {
     type: 'WINNERS',
     round: 1,
     matches: [] as BracketMatch[],

@@ -280,13 +280,31 @@ export default function TournamentDetailPage() {
                       (() => {
                         // Flatten and map matches to the format expected by BracketView
                         const mappedMatches = tournament.brackets.flatMap(bracket =>
-                          (bracket.matches || []).map((match: any) => ({ // Using 'any' for match type due to unknown exact API response structure
+                          (bracket.matches || []).map((match: {
+                            id: string;
+                            matchNumber?: number;
+                            scheduledAt?: Date | null;
+                            status: string;
+                            homeTeam?: {
+                              id: string;
+                              name: string;
+                              logo?: string | null;
+                            } | null;
+                            awayTeam?: {
+                              id: string;
+                              name: string;
+                              logo?: string | null;
+                            } | null;
+                            homeScore?: number | null;
+                            awayScore?: number | null;
+                            winnerId?: string | null;
+                          }, matchIndex: number) => ({
                             id: match.id,
                             round: bracket.round, // Use the round from the bracket
                             // NOTE: 'matchNumber' is expected by BracketView's Match interface.
                             // Assuming it might be available on the 'match' object from the API.
                             // If not, this might cause a runtime error if BracketView strictly requires it.
-                            matchNumber: match.matchNumber,
+                            matchNumber: match.matchNumber ?? matchIndex + 1,
                             scheduledAt: match.scheduledAt,
                             status: match.status,
                             team1: match.homeTeam ? {
@@ -299,8 +317,8 @@ export default function TournamentDetailPage() {
                               name: match.awayTeam.name,
                               logo: match.awayTeam.logo, // Assuming logo might be available
                             } : null,
-                            team1Score: match.homeScore,
-                            team2Score: match.awayScore,
+                            team1Score: match.homeScore ?? 0,
+                            team2Score: match.awayScore ?? 0,
                             winnerId: match.winnerId,
                           }))
                         );

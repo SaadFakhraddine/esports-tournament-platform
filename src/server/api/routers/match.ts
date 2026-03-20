@@ -4,12 +4,16 @@ import {
   protectedProcedure,
   publicProcedure,
   organizerProcedure,
+  createTRPCContext,
 } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
-import { MatchStatus, Prisma } from '@prisma/client'
+import { MatchStatus } from '@prisma/client'
 
 // Helper to fetch match with bracket and transform to include round
-async function getMatchWithRound(ctx: any, matchId: string) {
+async function getMatchWithRound(
+  ctx: Awaited<ReturnType<typeof createTRPCContext>>,
+  matchId: string,
+) {
   const match = await ctx.db.match.findUnique({
     where: { id: matchId },
     include: {
@@ -116,7 +120,7 @@ export const matchRouter = createTRPCRouter({
             ? match.awayTeamId
             : null
 
-      const updated = await ctx.db.match.update({
+      await ctx.db.match.update({
         where: { id: input.matchId },
         data: {
           homeScore: input.homeScore,
@@ -164,7 +168,7 @@ export const matchRouter = createTRPCRouter({
       return {
         ...matchWithBracket,
         round: matchWithBracket.bracket.round,
-      } as any
+      }
     }),
 
   dispute: protectedProcedure
@@ -200,7 +204,7 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
-      const updated = await ctx.db.match.update({
+      await ctx.db.match.update({
         where: { id: input.matchId },
         data: {
           status: MatchStatus.DISPUTED,

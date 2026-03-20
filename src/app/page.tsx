@@ -27,7 +27,7 @@ import Cs2SVG from '@/assets/cs2.svg'
 import ValorantSVG from '@/assets/valorant.svg'
 import LeagueSVG from '@/assets/league-of-legends.svg'
 import FortniteSVG from '@/assets/fortnite.svg'
-import Image from 'next/image';
+import type { SVGProps } from 'react'
 
 
 
@@ -107,7 +107,7 @@ export default function LandingPage() {
               </h1>
 
               <p className='text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto font-light'>
-                Join the ultimate esports tournament platform. Compete, organize, and prove you're the best.
+                Join the ultimate esports tournament platform. Compete, organize, and prove you&apos;re the best.
               </p>
 
               <div className='flex flex-col sm:flex-row gap-4 justify-center mb-16'>
@@ -222,7 +222,7 @@ export default function LandingPage() {
                 </h2>
                 <p className='text-gray-400 text-lg mb-8 leading-relaxed'>
                   Everything you need to run epic esports tournaments. From bracket generation 
-                  to match scheduling, we've got you covered.
+                  to match scheduling, we&apos;ve got you covered.
                 </p>
                 <div className='space-y-4'>
                   <FeatureItem icon={<CheckCircle />} text='Automatic bracket generation' />
@@ -432,17 +432,15 @@ export default function LandingPage() {
                 renderItem={(champion: ChampionItem) => (
                   <Link href={`/tournaments/${champion.tournamentId}`}>
                     <div className='p-3 rounded-lg hover:bg-pink-400/5 transition-all group cursor-pointer'>
-                      {champion.winnerTeam && (
-                        <div className='flex items-center gap-2 mb-2'>
-                          <Trophy className='h-6 w-6 text-yellow-400' />
-                          <span className='font-bold text-white group-hover:text-pink-400 transition-colors'>
-                            {champion.winnerTeam.name}
-                          </span>
-                        </div>
-                      )}
+                      <div className='flex items-center gap-2 mb-2'>
+                        <Trophy className='h-6 w-6 text-yellow-400' />
+                        <span className='font-bold text-white group-hover:text-pink-400 transition-colors'>
+                          {champion.winnerTeam.name}
+                        </span>
+                      </div>
                       <p className='text-sm text-gray-400 truncate'>{champion.tournamentName}</p>
                       <p className='text-xs text-gray-600 mt-1'>
-                        {new Date(champion.completedAt || '').toLocaleDateString()}
+                        {champion.completedAt.toLocaleDateString()}
                       </p>
                     </div>
                   </Link>
@@ -570,7 +568,7 @@ interface GameCardProps {
   name: string;
   players: string;
   gradient: string;
-  Image: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  Image: React.ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 function GameCard({ name, players, gradient, Image }: GameCardProps) {
@@ -583,11 +581,10 @@ function GameCard({ name, players, gradient, Image }: GameCardProps) {
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`} />
           <div className='relative z-10 text-center p-6'>
             <div className='h-28 w-28 mx-auto mb-4 flex items-center justify-center'>
-              <Image className='h-full w-full' />
+              <Image className='h-full w-full' aria-label={name} />
             </div>
             <h3 className='text-xl font-black text-white mb-2'>{name}</h3>
             <p className='text-sm text-gray-400'>{players} Players</p>
-            {/* TODO Replace with image/gif of the game */}
           </div>
         </CardContent>
       </Card>
@@ -676,20 +673,26 @@ interface PlayerItem {
 interface ChampionItem {
   tournamentId: string;
   tournamentName: string;
-  winnerTeam?: {
+  winnerTeam: {
     name: string;
   };
-  completedAt?: string;
+  completedAt: Date;
 }
 
 type LeaderboardItem = TeamItem | PlayerItem | ChampionItem;
 
-function LeaderboardCard({ title, icon, items, color, renderItem }: { 
-  title: string; 
-  icon: React.ReactNode; 
-  items: LeaderboardItem[]; 
-  color: 'cyan' | 'purple' | 'pink'; 
-  renderItem: (item: LeaderboardItem, idx: number) => React.ReactNode;
+function LeaderboardCard<T extends LeaderboardItem>({
+  title,
+  icon,
+  items,
+  color,
+  renderItem,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: T[];
+  color: 'cyan' | 'purple' | 'pink';
+  renderItem: (item: T, idx: number) => React.ReactNode;
 }) {
   const colorClasses = {
     cyan: {

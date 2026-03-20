@@ -19,8 +19,7 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
   
   // For single elimination, we need to handle byes when team count is not a power of 2
   const totalRounds = Math.ceil(Math.log2(teamCount))
-  const totalSlots = Math.pow(2, totalRounds)
-  const byes = totalSlots - teamCount
+  // Byes are handled implicitly by leaving teams as null in early slots.
   
   const matches: Match[] = []
   
@@ -62,7 +61,6 @@ export function generateSingleEliminationBracket(teams: Team[]): Match[] {
       
       // Set progression to next round
       if (round < totalRounds) {
-        const nextRound = round + 1
         const nextPosition = Math.floor(position / 2)
         match.nextMatchPosition = nextPosition
         match.nextMatchSlot = position % 2 === 0 ? 'home' : 'away'

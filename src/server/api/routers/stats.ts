@@ -133,14 +133,15 @@ export const statsRouter = createTRPCRouter({
       .slice(0, 5)
       .map((item) => ({
         id: item.player.id,
-        name: item.player.name || item.player.username,
+        // Ensure the frontend always receives a displayable string
+        name: item.player.name ?? item.player.username ?? 'Unknown',
         avatar: item.player.avatar,
         winCount: item.winCount,
       }))
 
     // Recent Champions (last 5 completed tournaments with winners)
     const recentCompletedTournaments = await ctx.db.tournament.findMany({
-      where: { status: TournamentStatus.COMPLETED },
+      where: { status: TournamentStatus.COMPLETED, endDate: { not: null } },
       orderBy: { endDate: 'desc' },
       take: 5,
       select: {
@@ -151,7 +152,7 @@ export const statsRouter = createTRPCRouter({
         brackets: {
           select: {
             matches: {
-              where: { status: MatchStatus.COMPLETED },
+              where: { status: MatchStatus.COMPLETED, winnerTeamId: { not: null } },
               orderBy: { completedAt: 'desc' },
               take: 1,
               select: {
@@ -165,28 +166,30 @@ export const statsRouter = createTRPCRouter({
       },
     })
 
-    const recentChampions = recentCompletedTournaments.map((tournament) => {
-      // Find the winner from the final match
-      let winnerTeam = null
+    const recentChampions = recentCompletedTournaments.flatMap((tournament) => {
+      // Find the winner from the final match (guaranteed by winnerTeamId filter above)
       for (const bracket of tournament.brackets) {
         const finalMatch = bracket.matches[0]
         if (finalMatch?.winnerTeamId) {
-          winnerTeam =
+          const winnerTeam =
             finalMatch.homeTeam.id === finalMatch.winnerTeamId
               ? finalMatch.homeTeam
               : finalMatch.awayTeam
-          break
+
+          return [
+            {
+              tournamentId: tournament.id,
+              tournamentName: tournament.name,
+              gameName: tournament.game.name,
+              gameIcon: tournament.game.icon,
+              winnerTeam,
+              completedAt: tournament.endDate!, // filtered to non-null above
+            },
+          ]
         }
       }
 
-      return {
-        tournamentId: tournament.id,
-        tournamentName: tournament.name,
-        gameName: tournament.game.name,
-        gameIcon: tournament.game.icon,
-        winnerTeam,
-        completedAt: tournament.endDate,
-      }
+      return []
     })
 
     return {
@@ -307,7 +310,7 @@ export const statsRouter = createTRPCRouter({
   }),
 
   getLiveTournaments: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.tournament.findMany({
+    const tournaments = await ctx.db.tournament.findMany({
       where: { status: TournamentStatus.IN_PROGRESS },
       orderBy: { startDate: 'desc' },
       take: 6,
@@ -324,10 +327,19 @@ export const statsRouter = createTRPCRouter({
         },
       },
     })
+
+    // Normalize nullable game icon to avoid `| null` types on the frontend
+    return tournaments.map((t) => ({
+      ...t,
+      game: {
+        ...t.game,
+        icon: t.game.icon ?? undefined,
+      },
+    }))
   }),
 
   getUpcomingTournaments: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.tournament.findMany({
+    const tournaments = await ctx.db.tournament.findMany({
       where: { status: TournamentStatus.REGISTRATION },
       orderBy: { startDate: 'asc' },
       take: 6,
@@ -345,5 +357,14 @@ export const statsRouter = createTRPCRouter({
         },
       },
     })
+
+    // Normalize nullable game icon to avoid `| null` types on the frontend
+    return tournaments.map((t) => ({
+      ...t,
+      game: {
+        ...t.game,
+        icon: t.game.icon ?? undefined,
+      },
+    }))
   }),
 })
