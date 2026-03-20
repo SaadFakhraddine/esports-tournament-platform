@@ -104,15 +104,35 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
     setIsTogglingRegistration(true)
     const currentStatus = tournament.status || 'DRAFT'
     const isCurrentlyOpen = currentStatus === 'REGISTRATION'
+    const now = new Date()
 
-    const newStatus = isCurrentlyOpen
-      ? 'REGISTRATION'
-      : (currentStatus === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'SEEDING')
+    if (isCurrentlyOpen) {
+      // Close registration immediately and reflect it in the date window.
+      setFormData((prev) => ({
+        ...prev,
+        registrationEnd: now,
+      }))
 
-    toggleRegistrationMutation.mutate({
-      id: tournament.id,
-      status: newStatus as 'IN_PROGRESS' | 'SEEDING' | 'REGISTRATION',
-    })
+      toggleRegistrationMutation.mutate({
+        id: tournament.id,
+        status: 'SEEDING',
+        registrationEnd: now,
+      })
+    } else {
+      // Open registration immediately and reflect it in the date window.
+      setFormData((prev) => ({
+        ...prev,
+        registrationStart: now,
+        registrationEnd: prev.registrationEnd || now,
+      }))
+
+      toggleRegistrationMutation.mutate({
+        id: tournament.id,
+        status: 'REGISTRATION',
+        registrationStart: now,
+        registrationEnd: formData.registrationEnd || now,
+      })
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -378,7 +398,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
               <Alert className='mt-2'>
                 <Info className='h-4 w-4' />
                 <AlertDescription className='text-sm'>
-                  Registration is currently open. Teams can register now regardless of the scheduled dates above.
+                  Registration is currently open. Teams can register.
                   Click &quot;Close&quot; to manually lock registration.
                 </AlertDescription>
               </Alert>
@@ -387,7 +407,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
               <Alert className='mt-2'>
                 <Info className='h-4 w-4' />
                 <AlertDescription className='text-sm'>
-                  Registration is currently closed. Date fields are disabled. Click &quot;Open&quot; to enable editing and allow teams to register.
+                  Registration is currently closed. Click &quot;Open&quot; to start the registration window now.
                 </AlertDescription>
               </Alert>
             )}
