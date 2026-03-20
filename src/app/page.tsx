@@ -237,14 +237,13 @@ export default function LandingPage() {
                 <div className='relative aspect-square rounded-2xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden'>
                   <div className='text-center p-8'>
                     <Trophy className='h-24 w-24 text-cyan-400 mx-auto mb-4 opacity-50' />
-                    <Image
-                      src='/images/dashboard.png'
-                      alt='Dashboard preview'
-                      width={1200}
-                      height={800}
-                      priority
-                      className='rounded-xl shadow-xl'
-                   />
+                    <div className='relative w-full h-48 rounded-xl overflow-hidden bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center'>
+                      <div className='absolute inset-0 bg-grid-white/5' />
+                      <div className='relative z-10 text-center'>
+                        <div className='text-4xl font-black text-white/50 mb-2'>DASHBOARD</div>
+                        <div className='text-sm text-gray-500'>Tournament Management Preview</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -320,9 +319,11 @@ export default function LandingPage() {
                       </Link>
                     </div>
                     <div className='space-y-3'>
-                      {liveTournaments?.slice(0, 3).map((tournament) => (
-                        <TournamentCardNeon key={tournament.id} tournament={tournament} isLive />
-                      )) || (
+                      {liveTournaments && liveTournaments.length > 0 ? (
+                        liveTournaments.slice(0, 3).map((tournament) => (
+                          <TournamentCardNeon key={tournament.id} tournament={tournament} isLive />
+                        ))
+                      ) : (
                         <p className='text-center py-8 text-gray-500'>No live tournaments</p>
                       )}
                     </div>
@@ -351,9 +352,11 @@ export default function LandingPage() {
                       </Link>
                     </div>
                     <div className='space-y-3'>
-                      {upcomingTournaments?.slice(0, 3).map((tournament) => (
-                        <TournamentCardNeon key={tournament.id} tournament={tournament} />
-                      )) || (
+                      {upcomingTournaments && upcomingTournaments.length > 0 ? (
+                        upcomingTournaments.slice(0, 3).map((tournament) => (
+                          <TournamentCardNeon key={tournament.id} tournament={tournament} />
+                        ))
+                      ) : (
                         <p className='text-center py-8 text-gray-500'>No open tournaments</p>
                       )}
                     </div>
@@ -382,7 +385,7 @@ export default function LandingPage() {
                 icon={<Shield className='h-5 w-5' />}
                 items={leaderboards?.topTeams?.slice(0, 5) || []}
                 color='cyan'
-                renderItem={(team: any, idx: number) => (
+                renderItem={(team: TeamItem, idx: number) => (
                   <div className='flex items-center gap-3 p-3 rounded-lg hover:bg-cyan-400/5 transition-all group cursor-pointer'>
                     <div className='text-2xl font-black text-gray-600 w-8'>#{idx + 1}</div>
                     <div className='h-10 w-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center'>
@@ -404,7 +407,7 @@ export default function LandingPage() {
                 icon={<Crown className='h-5 w-5' />}
                 items={leaderboards?.topPlayers?.slice(0, 5) || []}
                 color='purple'
-                renderItem={(player: any, idx: number) => (
+                renderItem={(player: PlayerItem, idx: number) => (
                   <div className='flex items-center gap-3 p-3 rounded-lg hover:bg-purple-400/5 transition-all group cursor-pointer'>
                     <div className='text-2xl font-black text-gray-600 w-8'>#{idx + 1}</div>
                     <div className='h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center'>
@@ -426,7 +429,7 @@ export default function LandingPage() {
                 icon={<Award className='h-5 w-5' />}
                 items={leaderboards?.recentChampions?.slice(0, 5) || []}
                 color='pink'
-                renderItem={(champion: any) => (
+                renderItem={(champion: ChampionItem) => (
                   <Link href={`/tournaments/${champion.tournamentId}`}>
                     <div className='p-3 rounded-lg hover:bg-pink-400/5 transition-all group cursor-pointer'>
                       {champion.winnerTeam && (
@@ -563,7 +566,14 @@ function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value:
   )
 }
 
-function GameCard({ name, players, gradient, Image }: any) {
+interface GameCardProps {
+  name: string;
+  players: string;
+  gradient: string;
+  Image: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
+function GameCard({ name, players, gradient, Image }: GameCardProps) {
   return (
     <div className='relative group cursor-pointer'>
       <div className={`absolute -inset-1 bg-gradient-to-r ${gradient} rounded-2xl blur-xl opacity-25 group-hover:opacity-50 transition-opacity`} />
@@ -572,8 +582,8 @@ function GameCard({ name, players, gradient, Image }: any) {
           {/* Placeholder for game image */}
           <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-20`} />
           <div className='relative z-10 text-center p-6'>
-            <div className='w-24 h-24 flex items-center justify-center mx-auto'>
-            <Image className='h-28 w-28 mx-auto mb-4 text-red-white' fill='currentColor'/>
+            <div className='h-28 w-28 mx-auto mb-4 flex items-center justify-center'>
+              <Image className='h-full w-full' />
             </div>
             <h3 className='text-xl font-black text-white mb-2'>{name}</h3>
             <p className='text-sm text-gray-400'>{players} Players</p>
@@ -601,7 +611,22 @@ function FeatureItem({ icon, text, color = 'cyan' }: { icon: React.ReactNode; te
   )
 }
 
-function TournamentCardNeon({ tournament, isLive = false }: any) {
+interface TournamentCardNeonProps {
+  tournament: {
+    id: string;
+    name: string;
+    game?: {
+      icon?: string;
+    };
+    _count?: {
+      registrations: number;
+    };
+    startDate: string | Date;
+  };
+  isLive?: boolean;
+}
+
+function TournamentCardNeon({ tournament, isLive = false }: TournamentCardNeonProps) {
   return (
     <Link href={`/tournaments/${tournament.id}`}>
       <div className={`p-4 rounded-xl border-2 ${isLive ? 'border-red-500/30 bg-red-500/5' : 'border-gray-800 bg-gray-900/50'} hover:bg-gray-800/50 transition-all group cursor-pointer`}>
@@ -636,12 +661,35 @@ function TournamentCardNeon({ tournament, isLive = false }: any) {
   )
 }
 
+interface TeamItem {
+  name: string;
+  wins: number;
+  losses: number;
+  winRate: number;
+}
+
+interface PlayerItem {
+  name: string;
+  winCount: number;
+}
+
+interface ChampionItem {
+  tournamentId: string;
+  tournamentName: string;
+  winnerTeam?: {
+    name: string;
+  };
+  completedAt?: string;
+}
+
+type LeaderboardItem = TeamItem | PlayerItem | ChampionItem;
+
 function LeaderboardCard({ title, icon, items, color, renderItem }: { 
   title: string; 
   icon: React.ReactNode; 
-  items: any[]; 
+  items: LeaderboardItem[]; 
   color: 'cyan' | 'purple' | 'pink'; 
-  renderItem: (item: any, idx: number) => React.ReactNode;
+  renderItem: (item: LeaderboardItem, idx: number) => React.ReactNode;
 }) {
   const colorClasses = {
     cyan: {
@@ -677,7 +725,7 @@ function LeaderboardCard({ title, icon, items, color, renderItem }: {
           </div>
           <div className='space-y-2'>
             {items.length > 0 ? (
-              items.map((item: any, idx: number) => (
+              items.map((item, idx) => (
                 <div key={idx}>{renderItem(item, idx)}</div>
               ))
             ) : (
