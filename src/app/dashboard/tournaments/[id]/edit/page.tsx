@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Input } from '@/components/ui/input'
 import {
   Users,
   Trophy,
@@ -24,13 +25,13 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { TournamentForm } from '@/components/tournament/tournament-form'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useState } from 'react'
 
 export default function TournamentManagePage() {
@@ -453,6 +454,8 @@ export default function TournamentManagePage() {
           <TabsContent value='registrations' className='space-y-4'>
             <RegistrationsTab
               tournamentId={tournamentId}
+              gameId={tournament.game.id}
+              canAddTeams={tournament.status === 'REGISTRATION'}
               registrations={registrations}
               isLoading={registrationsLoading}
               onApprove={async (registrationId) => {
@@ -880,8 +883,13 @@ function RegistrationsTab({
   isLoading,
   onApprove,
   onReject,
+  tournamentId,
+  gameId,
+  canAddTeams,
 }: {
   tournamentId: string
+  gameId: string
+  canAddTeams: boolean
   registrations?: Array<{
     id: string
     status: string
@@ -898,65 +906,202 @@ function RegistrationsTab({
   onApprove: (registrationId: string) => Promise<void>
   onReject: (registrationId: string) => Promise<void>
 }) {
+  const [teamSearch, setTeamSearch] = useState('')
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+
+  const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
+    {
+      game: gameId,
+      search: teamSearch || undefined,
+      limit: 5,
+    },
+    { enabled: canAddTeams }
+  )
+
+  const addTeamMutation = trpc.tournament.addTeamToTournament.useMutation({
+    onSuccess: async () => {
+      setTeamSearch('')
+      setSelectedTeamIds([])
+    },
+  })
+
+  const addTeamsMutation = trpc.tournament.addTeamsToTournament.useMutation({
+    onSuccess: async () => {
+      setTeamSearch('')
+      setSelectedTeamIds([])
+    },
+  })
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Team Registrations</CardTitle>
-        <CardDescription>Approve or reject team registration requests</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className='space-y-4'>
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className='h-20' />
-            ))}
+    <div className='space-y-4'>
+      {/* Add Team (Organizer/Admin) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Users className='h-4 w-4' />
+            Add Team
+          </CardTitle>
+          <CardDescription>Select teams to add to this tournament.</CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='flex gap-3'>
+            <Input
+              placeholder='Search by team name or tag...'
+              value={teamSearch}
+              onChange={(e) => setTeamSearch(e.target.value)}
+              disabled={!canAddTeams || addTeamMutation.isPending || teamsLoading}
+            />
           </div>
-        ) : !registrations || registrations.length === 0 ? (
-          <div className='text-center py-8'>
-            <p className='text-sm text-muted-foreground'>No team registrations yet</p>
-          </div>
-        ) : (
-          <div className='space-y-4'>
-            {registrations.map((registration) => (
-              <div
-                key={registration.id}
-                className='flex items-center justify-between p-4 border rounded-lg'
-              >
-                <div className='flex-1'>
-                  <p className='font-medium'>{registration.team.name}</p>
-                  <p className='text-sm text-muted-foreground'>
-                    Registered {new Date(registration.registeredAt).toLocaleDateString()}
-                  </p>
+
+          {!canAddTeams ? (
+            <p className='text-sm text-muted-foreground'>
+              Tournament registration is closed.
+            </p>
+          ) : teamsLoading ? (
+            <div className='space-y-3'>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className='h-16 w-full' />
+              ))}
+            </div>
+          ) : (teams?.teams?.length || 0) === 0 ? (
+            <p className='text-sm text-muted-foreground'>No teams found.</p>
+          ) : (
+            <div className='space-y-2'>
+              {teams?.teams.map((team) => {
+                const checked = selectedTeamIds.includes(team.id)
+
+                return (
+                  <div
+                    key={team.id}
+                    className='flex items-center justify-between gap-3 p-3 border rounded-lg'
+                  >
+                    <div className='flex items-center gap-3 min-w-0'>
+                      <input
+                        type='checkbox'
+                        className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedTeamIds((prev) =>
+                            prev.includes(team.id)
+                              ? prev.filter((id) => id !== team.id)
+                              : [...prev, team.id]
+                          )
+                        }}
+                      />
+                      <Avatar className='h-10 w-10 shrink-0'>
+                        <AvatarImage src={team.logo || undefined} />
+                        <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className='min-w-0'>
+                        <p className='font-medium truncate'>{team.name}</p>
+                        {team.tag && (
+                          <p className='text-xs text-muted-foreground truncate'>[{team.tag}]</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      size='sm'
+                      onClick={() =>
+                        addTeamMutation.mutate({
+                          tournamentId,
+                          teamId: team.id,
+                        })
+                      }
+                      disabled={addTeamMutation.isPending}
+                    >
+                      {addTeamMutation.isPending ? 'Adding...' : 'Add'}
+                    </Button>
+                  </div>
+                )
+              })}
+
+              {selectedTeamIds.length > 0 && (
+                <div className='flex justify-end pt-2'>
+                  <Button
+                    onClick={() =>
+                      addTeamsMutation.mutate({
+                        tournamentId,
+                        teamIds: selectedTeamIds,
+                      })
+                    }
+                    disabled={addTeamsMutation.isPending}
+                  >
+                    {addTeamsMutation.isPending
+                      ? 'Adding...'
+                      : `Add selected (${selectedTeamIds.length})`}
+                  </Button>
                 </div>
-                <div className='flex items-center gap-3'>
-                  {registration.status === 'APPROVED' ? (
-                    <Badge variant='outline' className='bg-green-500/10 text-green-500'>
-                      <CheckCircle2 className='h-3 w-3 mr-1' />
-                      Approved
-                    </Badge>
-                  ) : registration.status === 'REJECTED' ? (
-                    <Badge variant='outline' className='bg-red-500/10 text-red-500'>
-                      <XCircle className='h-3 w-3 mr-1' />
-                      Rejected
-                    </Badge>
-                  ) : (
-                    <>
-                      <Button size='sm' variant='outline' onClick={() => onReject(registration.id)}>
-                        <XCircle className='h-4 w-4 mr-1' />
-                        Reject
-                      </Button>
-                      <Button size='sm' onClick={() => onApprove(registration.id)}>
-                        <CheckCircle2 className='h-4 w-4 mr-1' />
-                        Approve
-                      </Button>
-                    </>
-                  )}
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Existing Team Registrations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Team Registrations</CardTitle>
+          <CardDescription>Approve or reject team registration requests</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className='space-y-4'>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className='h-20' />
+              ))}
+            </div>
+          ) : !registrations || registrations.length === 0 ? (
+            <div className='text-center py-8'>
+              <p className='text-sm text-muted-foreground'>No team registrations yet</p>
+            </div>
+          ) : (
+            <div className='space-y-4'>
+              {registrations.map((registration) => (
+                <div
+                  key={registration.id}
+                  className='flex items-center justify-between p-4 border rounded-lg'
+                >
+                  <div className='flex-1'>
+                    <p className='font-medium'>{registration.team.name}</p>
+                    <p className='text-sm text-muted-foreground'>
+                      Registered {new Date(registration.registeredAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className='flex items-center gap-3'>
+                    {registration.status === 'APPROVED' ? (
+                      <Badge variant='outline' className='bg-green-500/10 text-green-500'>
+                        <CheckCircle2 className='h-3 w-3 mr-1' />
+                        Approved
+                      </Badge>
+                    ) : registration.status === 'REJECTED' ? (
+                      <Badge variant='outline' className='bg-red-500/10 text-red-500'>
+                        <XCircle className='h-3 w-3 mr-1' />
+                        Rejected
+                      </Badge>
+                    ) : (
+                      <>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          onClick={() => onReject(registration.id)}
+                        >
+                          <XCircle className='h-4 w-4 mr-1' />
+                          Reject
+                        </Button>
+                        <Button size='sm' onClick={() => onApprove(registration.id)}>
+                          <CheckCircle2 className='h-4 w-4 mr-1' />
+                          Approve
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }
