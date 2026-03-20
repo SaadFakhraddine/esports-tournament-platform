@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import { TeamRole } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
 export const teamRouter = createTRPCRouter({
   create: protectedProcedure
@@ -11,6 +12,7 @@ export const teamRouter = createTRPCRouter({
         tag: z.string().min(2).max(10).optional(),
         logo: z.string().url().optional(),
         description: z.string().optional(),
+        // Accept either Game.id (preferred) or Game.slug/name for backwards compatibility.
         game: z.string().min(2),
       })
     )
@@ -26,11 +28,33 @@ export const teamRouter = createTRPCRouter({
         })
       }
 
-      const { game, ...teamData } = input
+      const { game: gameInput, ...teamData } = input
+      const normalizedGameInput = gameInput.trim()
+
+      // Normalize "game" input into a real Game.id.
+      // Older UI versions stored the raw user input into `team.gameId`.
+      const gameRecord = await ctx.db.game.findFirst({
+        where: {
+          OR: [
+            { id: normalizedGameInput },
+            { slug: normalizedGameInput },
+            { name: { equals: normalizedGameInput, mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true },
+      })
+
+      if (!gameRecord) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Game not found',
+        })
+      }
+
       const team = await ctx.db.team.create({
         data: {
           ...teamData,
-          gameId: game,
+          gameId: gameRecord.id,
           ownerId: ctx.session.user.id,
           members: {
             create: {
@@ -53,19 +77,60 @@ export const teamRouter = createTRPCRouter({
         cursor: z.string().optional(),
       })
     )
-    .query(async ({ ctx, input }) => {
+  .query(async ({ ctx, input }) => {
       const { game, search, limit, cursor } = input
+      const normalizedGameFilter = game?.trim()
+
+      // Normalize the `game` filter into possible legacy values.
+      // We support cases where `team.gameId` might contain Game.id, slug, or name.
+      let gameCondition: Prisma.TeamWhereInput | undefined
+      if (normalizedGameFilter) {
+        const gameRecord = await ctx.db.game.findFirst({
+          where: {
+            OR: [
+              { id: normalizedGameFilter },
+              { slug: normalizedGameFilter },
+              { name: { equals: normalizedGameFilter, mode: 'insensitive' } },
+            ],
+          },
+          select: { id: true, slug: true, name: true },
+        })
+
+        if (gameRecord) {
+          gameCondition = {
+            OR: [
+              { gameId: { equals: gameRecord.id } },
+              { gameId: { equals: gameRecord.slug, mode: 'insensitive' } },
+              { gameId: { equals: gameRecord.name, mode: 'insensitive' } },
+              // Legacy data might have whitespace or casing differences; contains helps recover it.
+              { gameId: { contains: gameRecord.slug, mode: 'insensitive' } },
+              { gameId: { contains: gameRecord.name, mode: 'insensitive' } },
+            ],
+          }
+        } else {
+          // If we can't resolve the game, fall back to matching whatever is stored in team.gameId.
+          gameCondition = {
+            OR: [
+              { gameId: { equals: normalizedGameFilter, mode: 'insensitive' } },
+              { gameId: { contains: normalizedGameFilter, mode: 'insensitive' } },
+            ],
+          }
+        }
+      }
+
+      const andConditions: Prisma.TeamWhereInput[] = []
+      if (gameCondition) andConditions.push(gameCondition)
+      if (search) {
+        andConditions.push({
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { tag: { contains: search, mode: 'insensitive' } },
+          ],
+        })
+      }
 
       const teams = await ctx.db.team.findMany({
-        where: {
-          ...(game && { gameId: game }),
-          ...(search && {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { tag: { contains: search, mode: 'insensitive' } },
-            ],
-          }),
-        },
+        where: andConditions.length > 0 ? { AND: andConditions } : {},
         take: limit + 1,
         ...(cursor && {
           skip: 1,

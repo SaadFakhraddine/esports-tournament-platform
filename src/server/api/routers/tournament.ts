@@ -453,7 +453,20 @@ export const tournamentRouter = createTRPCRouter({
       }
 
       // Prevent mixing games inside a tournament
-      if (team.gameId !== tournament.gameId) {
+      const normalizedTeamGame = await ctx.db.game.findFirst({
+        where: {
+          OR: [
+            { id: team.gameId.trim() },
+            { slug: team.gameId.trim() },
+            { name: { equals: team.gameId.trim(), mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true },
+      })
+
+      const normalizedTeamGameId = normalizedTeamGame?.id ?? team.gameId
+
+      if (normalizedTeamGameId !== tournament.gameId) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Team game does not match tournament game',
@@ -590,7 +603,21 @@ export const tournamentRouter = createTRPCRouter({
       }
 
       for (const team of teams) {
-        if (team.gameId !== tournament.gameId) {
+        const teamGameIdTrimmed = team.gameId.trim()
+        const normalizedTeamGame = await ctx.db.game.findFirst({
+          where: {
+            OR: [
+              { id: teamGameIdTrimmed },
+              { slug: teamGameIdTrimmed },
+              { name: { equals: teamGameIdTrimmed, mode: 'insensitive' } },
+            ],
+          },
+          select: { id: true },
+        })
+
+        const normalizedTeamGameId = normalizedTeamGame?.id ?? team.gameId
+
+        if (normalizedTeamGameId !== tournament.gameId) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'All teams must match the tournament game',
