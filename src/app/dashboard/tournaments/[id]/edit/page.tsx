@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function TournamentManagePage() {
   const { data: session, status } = useSession()
@@ -908,15 +908,23 @@ function RegistrationsTab({
 }) {
   const [teamSearch, setTeamSearch] = useState('')
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+  const [debouncedTeamSearch, setDebouncedTeamSearch] = useState(teamSearch)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedTeamSearch(teamSearch), 350)
+    return () => clearTimeout(t)
+  }, [teamSearch])
 
   const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
     {
       game: gameId,
-      search: teamSearch || undefined,
-      limit: 5,
+      search: debouncedTeamSearch || undefined,
+      limit: 10,
     },
     { enabled: canAddTeams }
   )
+  const hasTeams = (teams?.teams?.length ?? 0) > 0
+  const showTeamsSkeleton = teamsLoading && !hasTeams
 
   const addTeamMutation = trpc.tournament.addTeamToTournament.useMutation({
     onSuccess: async () => {
@@ -949,7 +957,7 @@ function RegistrationsTab({
               placeholder='Search by team name or tag...'
               value={teamSearch}
               onChange={(e) => setTeamSearch(e.target.value)}
-              disabled={!canAddTeams || addTeamMutation.isPending || teamsLoading}
+              disabled={!canAddTeams || addTeamMutation.isPending}
             />
           </div>
 
@@ -957,7 +965,7 @@ function RegistrationsTab({
             <p className='text-sm text-muted-foreground'>
               Tournament registration is closed.
             </p>
-          ) : teamsLoading ? (
+          ) : showTeamsSkeleton ? (
             <div className='space-y-3'>
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} className='h-16 w-full' />
