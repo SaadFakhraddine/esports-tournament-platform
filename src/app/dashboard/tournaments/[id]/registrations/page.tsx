@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,9 @@ export default function TournamentRegistrationsPage() {
     teamName: null,
   })
 
+  const [teamSearch, setTeamSearch] = useState('')
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+
   const { data: tournament } = trpc.tournament.getById.useQuery(
     { id: tournamentId },
     { enabled: !!tournamentId }
@@ -63,6 +67,32 @@ export default function TournamentRegistrationsPage() {
     { tournamentId },
     { enabled: !!tournamentId }
   )
+
+  const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
+    {
+      game: tournament?.game?.id,
+      search: teamSearch || undefined,
+      limit: 5,
+    },
+    { enabled: !!tournament }
+  )
+
+  const addTeamMutation = trpc.tournament.addTeamToTournament.useMutation({
+    onSuccess: () => {
+      refetch()
+      setTeamSearch('')
+    },
+  })
+
+  const addTeamsMutation = trpc.tournament.addTeamsToTournament.useMutation({
+    onSuccess: () => {
+      refetch()
+      setTeamSearch('')
+      setSelectedTeamIds([])
+    },
+  })
+
+  const canAddTeams = tournament?.status === 'REGISTRATION'
 
   const approveMutation = trpc.tournament.approveRegistration.useMutation({
     onSuccess: () => {
@@ -170,6 +200,111 @@ export default function TournamentRegistrationsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Add Team (Organizer/Admin) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <Users className='h-4 w-4' />
+              Add Team
+            </CardTitle>
+            <CardDescription>Select a team to add to this tournament.</CardDescription>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <div className='flex gap-3'>
+              <Input
+                placeholder='Search by team name or tag...'
+                value={teamSearch}
+                onChange={(e) => setTeamSearch(e.target.value)}
+                disabled={!canAddTeams || addTeamMutation.isPending || teamsLoading}
+              />
+            </div>
+
+            {!canAddTeams ? (
+              <Alert variant='destructive'>
+                <AlertDescription>This tournament is not open for adding teams.</AlertDescription>
+              </Alert>
+            ) : teamsLoading ? (
+              <div className='space-y-3'>
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className='h-16 w-full' />
+                ))}
+              </div>
+            ) : (teams?.teams?.length || 0) === 0 ? (
+              <p className='text-sm text-muted-foreground'>No teams found.</p>
+            ) : (
+              <div className='space-y-2'>
+                <div className='space-y-2'>
+                  {teams?.teams.map((team) => {
+                    const checked = selectedTeamIds.includes(team.id)
+                    return (
+                      <div
+                        key={team.id}
+                        className='flex items-center justify-between gap-3 p-3 border rounded-lg'
+                      >
+                        <div className='flex items-center gap-3 min-w-0'>
+                          <input
+                            type='checkbox'
+                            className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                            checked={checked}
+                            disabled={!canAddTeams}
+                            onChange={() => {
+                              setSelectedTeamIds((prev) =>
+                                prev.includes(team.id)
+                                  ? prev.filter((id) => id !== team.id)
+                                  : [...prev, team.id]
+                              )
+                            }}
+                          />
+                          <Avatar className='h-10 w-10 shrink-0'>
+                            <AvatarImage src={team.logo || undefined} />
+                            <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className='min-w-0'>
+                            <p className='font-medium truncate'>{team.name}</p>
+                            {team.tag && (
+                              <p className='text-xs text-muted-foreground truncate'>[{team.tag}]</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size='sm'
+                          onClick={() =>
+                            addTeamMutation.mutate({
+                              tournamentId,
+                              teamId: team.id,
+                            })
+                          }
+                          disabled={addTeamMutation.isPending || !canAddTeams}
+                        >
+                          {addTeamMutation.isPending ? 'Adding...' : 'Add'}
+                        </Button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {selectedTeamIds.length > 0 && (
+                  <div className='flex justify-end pt-2'>
+                    <Button
+                      onClick={() =>
+                        addTeamsMutation.mutate({
+                          tournamentId,
+                          teamIds: selectedTeamIds,
+                        })
+                      }
+                      disabled={addTeamsMutation.isPending || !canAddTeams}
+                    >
+                      {addTeamsMutation.isPending
+                        ? 'Adding...'
+                        : `Add selected (${selectedTeamIds.length})`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
         <Tabs defaultValue='pending'>

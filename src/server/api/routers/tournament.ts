@@ -393,6 +393,280 @@ export const tournamentRouter = createTRPCRouter({
       return registration
     }),
 
+  addTeamToTournament: organizerProcedure
+    .input(
+      z.object({
+        tournamentId: z.string(),
+        teamId: z.string(),
+        seed: z.number().int().min(1).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: {
+          _count: {
+            select: {
+              registrations: {
+                where: { status: RegistrationStatus.APPROVED },
+              },
+            },
+          },
+        },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to add teams to this tournament',
+        })
+      }
+
+      if (tournament.status !== TournamentStatus.REGISTRATION) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament is not open for adding teams',
+        })
+      }
+
+      if (tournament._count.registrations >= tournament.maxTeams) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament is full',
+        })
+      }
+
+      const team = await ctx.db.team.findUnique({ where: { id: input.teamId } })
+
+      if (!team) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Team not found',
+        })
+      }
+
+      // Prevent mixing games inside a tournament
+      if (team.gameId !== tournament.gameId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Team game does not match tournament game',
+        })
+      }
+
+      // Prevent conflict of interest: organizers cannot add their own teams (unless admin)
+      if (team.ownerId === ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You cannot add your own team to a tournament you organize',
+        })
+      }
+
+      const existing = await ctx.db.tournamentRegistration.findUnique({
+        where: {
+          tournamentId_teamId: {
+            tournamentId: input.tournamentId,
+            teamId: input.teamId,
+          },
+        },
+      })
+
+      if (existing) {
+        // Promote an existing registration to APPROVED (seed optional)
+        const updated = await ctx.db.tournamentRegistration.update({
+          where: { id: existing.id },
+          data: {
+            status: RegistrationStatus.APPROVED,
+            ...(input.seed !== undefined ? { seed: input.seed } : {}),
+          },
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+                tag: true,
+                logo: true,
+              },
+            },
+          },
+        })
+
+        return updated
+      }
+
+      const registration = await ctx.db.tournamentRegistration.create({
+        data: {
+          tournamentId: input.tournamentId,
+          teamId: input.teamId,
+          status: RegistrationStatus.APPROVED,
+          seed: input.seed,
+        },
+        include: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              tag: true,
+              logo: true,
+            },
+          },
+        },
+      })
+
+      return registration
+    }),
+
+  addTeamsToTournament: organizerProcedure
+    .input(
+      z.object({
+        tournamentId: z.string(),
+        teamIds: z.array(z.string()).min(1).max(100),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.tournamentId },
+        include: {
+          _count: {
+            select: {
+              registrations: {
+                where: { status: RegistrationStatus.APPROVED },
+              },
+            },
+          },
+        },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to add teams to this tournament',
+        })
+      }
+
+      if (tournament.status !== TournamentStatus.REGISTRATION) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament is not open for adding teams',
+        })
+      }
+
+      const uniqueTeamIds = Array.from(new Set(input.teamIds))
+
+      const approvedCount = tournament._count.registrations
+      const remaining = tournament.maxTeams - approvedCount
+
+      if (remaining <= 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Tournament is full',
+        })
+      }
+
+      // Validate teams + game compatibility up-front
+      const teams = await ctx.db.team.findMany({
+        where: { id: { in: uniqueTeamIds } },
+        select: { id: true, gameId: true, ownerId: true },
+      })
+
+      if (teams.length !== uniqueTeamIds.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'One or more teams not found',
+        })
+      }
+
+      for (const team of teams) {
+        if (team.gameId !== tournament.gameId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'All teams must match the tournament game',
+          })
+        }
+
+        // Prevent non-admin organizers from adding their own teams
+        if (team.ownerId === ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You cannot add your own team to a tournament you organize',
+          })
+        }
+      }
+
+      // Determine how many *newly-approved* slots will be consumed
+      const existing = await ctx.db.tournamentRegistration.findMany({
+        where: {
+          tournamentId: input.tournamentId,
+          teamId: { in: uniqueTeamIds },
+        },
+        select: { id: true, teamId: true, status: true },
+      })
+
+      const existingByTeamId = new Map(existing.map((r) => [r.teamId, r]))
+
+      let approvalsNeeded = 0
+      for (const teamId of uniqueTeamIds) {
+        const r = existingByTeamId.get(teamId)
+        if (!r) approvalsNeeded++
+        else if (r.status !== RegistrationStatus.APPROVED) approvalsNeeded++
+      }
+
+      if (approvalsNeeded > remaining) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Not enough slots. You can add up to ${remaining} more team(s).`,
+        })
+      }
+
+      const result = await ctx.db.$transaction(async (tx) => {
+        const processed: Array<{ teamId: string; registrationId: string }> = []
+
+        for (const teamId of uniqueTeamIds) {
+          const r = existingByTeamId.get(teamId)
+
+          if (!r) {
+            const created = await tx.tournamentRegistration.create({
+              data: {
+                tournamentId: input.tournamentId,
+                teamId,
+                status: RegistrationStatus.APPROVED,
+              },
+            })
+            processed.push({ teamId, registrationId: created.id })
+            continue
+          }
+
+          if (r.status === RegistrationStatus.APPROVED) {
+            processed.push({ teamId, registrationId: r.id })
+            continue
+          }
+
+          const updated = await tx.tournamentRegistration.update({
+            where: { id: r.id },
+            data: { status: RegistrationStatus.APPROVED },
+          })
+          processed.push({ teamId, registrationId: updated.id })
+        }
+
+        return processed
+      })
+
+      return result
+    }),
+
   approveRegistration: organizerProcedure
     .input(
       z.object({
