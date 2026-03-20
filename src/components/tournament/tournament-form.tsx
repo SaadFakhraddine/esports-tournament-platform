@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { trpc } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
@@ -46,6 +46,13 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
   const utils = trpc.useUtils()
   const [error, setError] = useState<string | null>(null)
   const [isTogglingRegistration, setIsTogglingRegistration] = useState(false)
+  const [statusOverride, setStatusOverride] = useState<string | undefined>(tournament?.status)
+
+  useEffect(() => {
+    setStatusOverride(tournament?.status)
+  }, [tournament?.status])
+
+  const effectiveStatus = statusOverride ?? tournament?.status
 
   // Fetch all games
   const { data: games, isLoading: gamesLoading } = trpc.game.getAll.useQuery()
@@ -105,6 +112,10 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
     const currentStatus = tournament.status || 'DRAFT'
     const isCurrentlyOpen = currentStatus === 'REGISTRATION'
     const now = new Date()
+    const desiredRegistrationEnd = (() => {
+      const current = formData.registrationEnd ?? now
+      return current.getTime() < now.getTime() ? now : current
+    })()
 
     if (isCurrentlyOpen) {
       // Close registration immediately and reflect it in the date window.
@@ -113,6 +124,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
         registrationEnd: now,
       }))
 
+      setStatusOverride('SEEDING')
       toggleRegistrationMutation.mutate({
         id: tournament.id,
         status: 'SEEDING',
@@ -123,14 +135,15 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
       setFormData((prev) => ({
         ...prev,
         registrationStart: now,
-        registrationEnd: prev.registrationEnd || now,
+        registrationEnd: desiredRegistrationEnd,
       }))
 
+      setStatusOverride('REGISTRATION')
       toggleRegistrationMutation.mutate({
         id: tournament.id,
         status: 'REGISTRATION',
         registrationStart: now,
-        registrationEnd: formData.registrationEnd || now,
+        registrationEnd: desiredRegistrationEnd,
       })
     }
   }
@@ -334,29 +347,29 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                   <Badge
                     variant='outline'
                     className={
-                      tournament.status === 'REGISTRATION'
+                      effectiveStatus === 'REGISTRATION'
                         ? 'bg-green-500/10 text-green-500 border-green-500/20'
                         : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
                     }
                   >
-                    {tournament.status === 'REGISTRATION' ? 'Open' : 'Closed'}
+                    {effectiveStatus === 'REGISTRATION' ? 'Open' : 'Closed'}
                   </Badge>
                   <Button
                     type='button'
                     size='sm'
-                    variant={tournament.status === 'REGISTRATION' ? 'destructive' : 'default'}
-                    className={tournament.status === 'REGISTRATION' ? '' : 'gradient-purple'}
+                    variant={effectiveStatus === 'REGISTRATION' ? 'destructive' : 'default'}
+                    className={effectiveStatus === 'REGISTRATION' ? '' : 'gradient-purple'}
                     onClick={handleToggleRegistration}
                     disabled={isTogglingRegistration || tournament.status === 'COMPLETED' || tournament.status === 'CANCELLED'}
                   >
                     {isTogglingRegistration ? (
                       <Loader2 className='h-4 w-4 mr-2 animate-spin' />
-                    ) : tournament.status === 'REGISTRATION' ? (
+                    ) : effectiveStatus === 'REGISTRATION' ? (
                       <Lock className='h-4 w-4 mr-2' />
                     ) : (
                       <LockOpen className='h-4 w-4 mr-2' />
                     )}
-                    {tournament.status === 'REGISTRATION' ? 'Close' : 'Open'}
+                    {effectiveStatus === 'REGISTRATION' ? 'Close' : 'Open'}
                   </Button>
                 </div>
               )}
@@ -374,7 +387,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                   placeholderText='Select start date and time'
                   minDate={new Date()}
                   required
-                  disabled={mode === 'edit' && tournament?.status !== 'REGISTRATION'}
+                  disabled={mode === 'edit' && effectiveStatus !== 'REGISTRATION'}
                 />
               </div>
 
@@ -390,11 +403,11 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                   placeholderText='Select end date and time'
                   minDate={formData.registrationStart || new Date()}
                   required
-                  disabled={mode === 'edit' && tournament?.status !== 'REGISTRATION'}
+                  disabled={mode === 'edit' && effectiveStatus !== 'REGISTRATION'}
                 />
               </div>
             </div>
-            {mode === 'edit' && tournament?.status === 'REGISTRATION' && (
+            {mode === 'edit' && effectiveStatus === 'REGISTRATION' && (
               <Alert className='mt-2'>
                 <Info className='h-4 w-4' />
                 <AlertDescription className='text-sm'>
@@ -403,7 +416,10 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                 </AlertDescription>
               </Alert>
             )}
-            {mode === 'edit' && tournament?.status !== 'REGISTRATION' && tournament?.status !== 'COMPLETED' && tournament?.status !== 'CANCELLED' && (
+            {mode === 'edit' &&
+              effectiveStatus !== 'REGISTRATION' &&
+              effectiveStatus !== 'COMPLETED' &&
+              effectiveStatus !== 'CANCELLED' && (
               <Alert className='mt-2'>
                 <Info className='h-4 w-4' />
                 <AlertDescription className='text-sm'>
