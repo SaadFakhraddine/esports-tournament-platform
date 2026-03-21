@@ -3,6 +3,7 @@ import { organizerProcedure } from '@/server/api/trpc'
 import { createTournamentSchema, updateTournamentSchema } from '@/lib/validators/tournament'
 import { TRPCError } from '@trpc/server'
 import { TournamentStatus } from '@prisma/client'
+import { assertTournamentOrganizerOrAdmin, throwTournamentNotFound } from './guards'
 
 export const tournamentCrud = {
   create: organizerProcedure.input(createTournamentSchema).mutation(async ({ ctx, input }) => {
@@ -35,19 +36,13 @@ export const tournamentCrud = {
       where: { id },
     })
 
-    if (!tournament) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Tournament not found',
-      })
-    }
+    if (!tournament) throwTournamentNotFound()
 
-    if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'You do not have permission to update this tournament',
-      })
-    }
+    assertTournamentOrganizerOrAdmin(
+      ctx.session.user,
+      tournament.organizerId,
+      'You do not have permission to update this tournament',
+    )
 
     if (
       data.status === TournamentStatus.REGISTRATION &&
@@ -76,19 +71,13 @@ export const tournamentCrud = {
         where: { id: input.id },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to delete this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to delete this tournament',
+      )
 
       await ctx.db.tournament.delete({
         where: { id: input.id },

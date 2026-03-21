@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import { getTournamentsSchema } from '@/lib/validators/tournament'
-import { TRPCError } from '@trpc/server'
 import { RegistrationStatus, TournamentStatus } from '@prisma/client'
+import { assertTournamentOrganizerOrAdmin, throwTournamentNotFound } from './guards'
 
 export const tournamentQueries = {
   getAll: publicProcedure.input(getTournamentsSchema).query(async ({ ctx, input }) => {
@@ -98,12 +98,7 @@ export const tournamentQueries = {
       },
     })
 
-    if (!tournament) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Tournament not found',
-      })
-    }
+    if (!tournament) throwTournamentNotFound()
 
     const isOrganizer = ctx.session?.user?.id === tournament.organizerId
     const isAdmin = ctx.session?.user?.role === 'ADMIN'
@@ -206,19 +201,13 @@ export const tournamentQueries = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to manage this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to manage this tournament',
+      )
 
       const [bracketsCount, matchesCount] = await Promise.all([
         ctx.db.bracket.count({ where: { tournamentId: input.id } }),
@@ -244,19 +233,13 @@ export const tournamentQueries = {
         select: { organizerId: true },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to view this bracket',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to view this bracket',
+      )
 
       const brackets = await ctx.db.bracket.findMany({
         where: { tournamentId: input.tournamentId },
@@ -307,12 +290,7 @@ export const tournamentQueries = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
       const isOrganizer = ctx.session?.user?.id === tournament.organizerId
       const isAdmin = ctx.session?.user?.role === 'ADMIN'
@@ -355,12 +333,7 @@ export const tournamentQueries = {
         select: { organizerId: true },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
       const brackets = await ctx.db.bracket.findMany({
         where: { tournamentId: input.tournamentId },
@@ -430,19 +403,13 @@ export const tournamentQueries = {
         where: { id: input.tournamentId },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to view registrations',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to view registrations',
+      )
 
       const registrations = await ctx.db.tournamentRegistration.findMany({
         where: { tournamentId: input.tournamentId },

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { organizerProcedure } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import { RegistrationStatus, TournamentStatus } from '@prisma/client'
+import { assertTournamentOrganizerOrAdmin, throwTournamentNotFound } from './guards'
 
 export const tournamentBracket = {
   generateBracket: organizerProcedure
@@ -13,19 +14,13 @@ export const tournamentBracket = {
         where: { id: input.tournamentId },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to generate brackets for this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to generate brackets for this tournament',
+      )
 
       await autoSeedTeams(ctx.db, input.tournamentId)
 
@@ -50,19 +45,13 @@ export const tournamentBracket = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to regenerate brackets for this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to regenerate brackets for this tournament',
+      )
 
       if (tournament.status === 'IN_PROGRESS' || tournament.status === 'COMPLETED') {
         throw new TRPCError({
@@ -94,19 +83,13 @@ export const tournamentBracket = {
         where: { id: input.tournamentId },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to seed teams for this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to seed teams for this tournament',
+      )
 
       await autoSeedTeams(ctx.db, input.tournamentId)
 
@@ -130,19 +113,13 @@ export const tournamentBracket = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to start this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to start this tournament',
+      )
 
       if (tournament.status === TournamentStatus.IN_PROGRESS) {
         throw new TRPCError({

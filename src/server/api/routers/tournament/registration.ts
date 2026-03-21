@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { organizerProcedure, protectedProcedure } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import { RegistrationStatus, TournamentStatus } from '@prisma/client'
+import { assertTournamentOrganizerOrAdmin, throwTournamentNotFound } from './guards'
 
 export const tournamentRegistration = {
   register: protectedProcedure
@@ -137,19 +138,13 @@ export const tournamentRegistration = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to add teams to this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to add teams to this tournament',
+      )
 
       if (tournament.status !== TournamentStatus.REGISTRATION) {
         throw new TRPCError({
@@ -262,19 +257,13 @@ export const tournamentRegistration = {
         },
       })
 
-      if (!tournament) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Tournament not found',
-        })
-      }
+      if (!tournament) throwTournamentNotFound()
 
-      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to add teams to this tournament',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        tournament.organizerId,
+        'You do not have permission to add teams to this tournament',
+      )
 
       if (tournament.status !== TournamentStatus.REGISTRATION) {
         throw new TRPCError({
@@ -405,15 +394,11 @@ export const tournamentRegistration = {
         })
       }
 
-      if (
-        registration.tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to approve this registration',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        registration.tournament.organizerId,
+        'You do not have permission to approve this registration',
+      )
 
       if (
         registration.tournament.status !== TournamentStatus.REGISTRATION &&
@@ -454,15 +439,11 @@ export const tournamentRegistration = {
         })
       }
 
-      if (
-        registration.tournament.organizerId !== ctx.session.user.id &&
-        ctx.session.user.role !== 'ADMIN'
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to reject this registration',
-        })
-      }
+      assertTournamentOrganizerOrAdmin(
+        ctx.session.user,
+        registration.tournament.organizerId,
+        'You do not have permission to reject this registration',
+      )
 
       if (
         registration.tournament.status !== TournamentStatus.REGISTRATION &&
