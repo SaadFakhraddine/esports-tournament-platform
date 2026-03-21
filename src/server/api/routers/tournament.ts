@@ -15,6 +15,18 @@ import { RegistrationStatus, TournamentStatus } from '@prisma/client'
 
 export const tournamentRouter = createTRPCRouter({
   create: organizerProcedure.input(createTournamentSchema).mutation(async ({ ctx, input }) => {
+    const organizerExists = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { id: true },
+    })
+    if (!organizerExists) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message:
+          'Your session does not match a user in the database. Sign out and sign in again (common after a database reset).',
+      })
+    }
+
     const tournament = await ctx.db.tournament.create({
       data: {
         ...input,
