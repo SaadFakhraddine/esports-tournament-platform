@@ -1,5 +1,6 @@
 import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
 import { TournamentStatus } from '@prisma/client'
+import { z } from 'zod'
 
 export const statsRouter = createTRPCRouter({
   getPlatformStats: publicProcedure.query(async ({ ctx }) => {
@@ -179,7 +180,16 @@ export const statsRouter = createTRPCRouter({
     }
   }),
 
-  getRecentActivity: publicProcedure.query(async ({ ctx }) => {
+  getRecentActivity: publicProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(30).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+    const limit = input?.limit ?? 10
     const [recentRegistrations, recentCompletions, newTournaments] = await Promise.all([
       // Recent tournament registrations
       ctx.db.tournamentRegistration.findMany({
@@ -278,8 +288,8 @@ export const statsRouter = createTRPCRouter({
       })
     })
 
-    // Sort by timestamp and return top 10
-    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10)
+    // Sort by timestamp and cap
+    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, limit)
   }),
 
   getLiveTournaments: publicProcedure.query(async ({ ctx }) => {

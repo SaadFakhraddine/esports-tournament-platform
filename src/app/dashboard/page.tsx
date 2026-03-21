@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
@@ -24,10 +25,43 @@ export default function DashboardPage() {
   const { data: teams, isLoading: teamsLoading } = trpc.team.getMyTeams.useQuery(undefined, {
     enabled: !!session,
   })
-  const { data: recentActivity, isLoading: activityLoading } = trpc.user.getRecentActivity.useQuery(
+  const { data: personalActivity, isLoading: personalActivityLoading } = trpc.user.getRecentActivity.useQuery(
     { limit: 8 },
     { enabled: !!session }
   )
+  const { data: platformActivity, isLoading: platformActivityLoading } = trpc.stats.getRecentActivity.useQuery(
+    { limit: 12 },
+    { enabled: !!session, staleTime: 60_000 }
+  )
+
+  const recentActivity = useMemo(() => {
+    const toDate = (d: Date | string) => (d instanceof Date ? d : new Date(d))
+
+    const personal = (personalActivity ?? []).map((a) => ({
+      ...a,
+      timestamp: toDate(a.timestamp),
+    }))
+
+    const platform = (platformActivity ?? []).map((a) => ({
+      id: `platform-${a.id}`,
+      type: a.type,
+      title:
+        a.type === 'registration'
+          ? 'Team registered'
+          : a.type === 'completion'
+            ? 'Tournament completed'
+            : 'Registration opened',
+      description: a.message,
+      link: a.link,
+      timestamp: toDate(a.timestamp),
+    }))
+
+    return [...personal, ...platform]
+      .sort((x, y) => y.timestamp.getTime() - x.timestamp.getTime())
+      .slice(0, 8)
+  }, [personalActivity, platformActivity])
+
+  const activityLoading = personalActivityLoading || platformActivityLoading
 
   if (status === 'loading' || !session) {
     return <DashboardSkeleton />
@@ -149,7 +183,7 @@ export default function DashboardPage() {
                 Recent Activity
               </CardTitle>
               <CardDescription>
-                Your latest updates and notifications
+                Your updates mixed with platform-wide registrations, results, and new tournaments
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -358,6 +392,10 @@ function ActivityItem({ activity }: { activity: ActivityItemType }) {
         return <Calendar className='h-4 w-4 text-blue-500' />
       case 'invitation':
         return <Users className='h-4 w-4 text-purple-500' />
+      case 'completion':
+        return <Trophy className='h-4 w-4 text-amber-500' />
+      case 'new_tournament':
+        return <Calendar className='h-4 w-4 text-cyan-500' />
       default:
         return <Activity className='h-4 w-4' />
     }

@@ -28,15 +28,36 @@ import ValorantSVG from '@/assets/valorant.svg'
 import LeagueSVG from '@/assets/league-of-legends.svg'
 import FortniteSVG from '@/assets/fortnite.svg'
 import type { SVGProps } from 'react'
-
-
+import { useEffect, useRef, useState } from 'react'
 
 export default function LandingPage() {
   const { data: session } = useSession()
   const { data: platformStats } = trpc.stats.getPlatformStats.useQuery()
   const { data: liveTournaments } = trpc.stats.getLiveTournaments.useQuery()
   const { data: upcomingTournaments } = trpc.stats.getUpcomingTournaments.useQuery()
-  const { data: leaderboards } = trpc.stats.getLeaderboards.useQuery()
+
+  const hallOfFameRef = useRef<HTMLElement>(null)
+  const [leaderboardsEnabled, setLeaderboardsEnabled] = useState(false)
+  useEffect(() => {
+    const el = hallOfFameRef.current
+    if (!el || leaderboardsEnabled) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setLeaderboardsEnabled(true)
+        }
+      },
+      { root: null, rootMargin: '280px 0px', threshold: 0.01 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [leaderboardsEnabled])
+
+  const { data: leaderboards, isLoading: leaderboardsLoading } = trpc.stats.getLeaderboards.useQuery(undefined, {
+    enabled: leaderboardsEnabled,
+    staleTime: 5 * 60_000,
+  })
+  const hallLoading = !leaderboardsEnabled || leaderboardsLoading
 
   const isOrganizer = session?.user?.role === 'ORGANIZER' || session?.user?.role === 'ADMIN'
 
@@ -367,8 +388,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Leaderboards */}
-        <section className='py-20'>
+        {/* Leaderboards — fetch when section nears viewport */}
+        <section ref={hallOfFameRef} className='py-20'>
           <div className='container mx-auto px-4'>
             <div className='text-center mb-12'>
               <h2 className='text-5xl font-black mb-4'>
@@ -383,6 +404,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='TOP TEAMS'
                 icon={<Shield className='h-5 w-5' />}
+                loading={hallLoading}
                 items={leaderboards?.topTeams?.slice(0, 5) || []}
                 color='cyan'
                 renderItem={(team: TeamItem, idx: number) => (
@@ -405,6 +427,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='TOP PLAYERS'
                 icon={<Crown className='h-5 w-5' />}
+                loading={hallLoading}
                 items={leaderboards?.topPlayers?.slice(0, 5) || []}
                 color='purple'
                 renderItem={(player: PlayerItem, idx: number) => (
@@ -427,6 +450,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='RECENT WINNERS'
                 icon={<Award className='h-5 w-5' />}
+                loading={hallLoading}
                 items={leaderboards?.recentChampions?.slice(0, 5) || []}
                 color='pink'
                 renderItem={(champion: ChampionItem) => (
@@ -440,7 +464,7 @@ export default function LandingPage() {
                       </div>
                       <p className='text-sm text-gray-400 truncate'>{champion.tournamentName}</p>
                       <p className='text-xs text-gray-600 mt-1'>
-                        {champion.completedAt.toLocaleDateString()}
+                        {new Date(champion.completedAt).toLocaleDateString()}
                       </p>
                     </div>
                   </Link>
@@ -687,12 +711,14 @@ function LeaderboardCard<T extends LeaderboardItem>({
   items,
   color,
   renderItem,
+  loading = false,
 }: {
   title: string;
   icon: React.ReactNode;
   items: T[];
   color: 'cyan' | 'purple' | 'pink';
   renderItem: (item: T, idx: number) => React.ReactNode;
+  loading?: boolean;
 }) {
   const colorClasses = {
     cyan: {
@@ -727,7 +753,11 @@ function LeaderboardCard<T extends LeaderboardItem>({
             <h3 className='text-sm font-black tracking-widest text-gray-400'>{title}</h3>
           </div>
           <div className='space-y-2'>
-            {items.length > 0 ? (
+            {loading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className='h-14 rounded-lg bg-gray-900/80 animate-pulse border border-white/5' />
+              ))
+            ) : items.length > 0 ? (
               items.map((item, idx) => (
                 <div key={idx}>{renderItem(item, idx)}</div>
               ))
