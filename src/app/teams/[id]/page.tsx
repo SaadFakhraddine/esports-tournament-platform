@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useState } from 'react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,11 +40,21 @@ export default function TeamDetailPage() {
   const router = useRouter()
   const { toast } = useToast()
   const teamId = params.id as string
+  const [activeTab, setActiveTab] = useState<'members' | 'tournaments'>('members')
 
-  const { data: team, isLoading } = trpc.team.getById.useQuery(
+  const { data: team, isLoading } = trpc.team.getOverviewById.useQuery(
     { id: teamId },
     { enabled: !!teamId }
   )
+  const { data: members, isLoading: membersLoading } = trpc.team.getMembers.useQuery(
+    { teamId },
+    { enabled: !!teamId && activeTab === 'members' }
+  )
+  const { data: registrations, isLoading: registrationsLoading } =
+    trpc.team.getRegistrationsByTeamId.useQuery(
+      { teamId },
+      { enabled: !!teamId && activeTab === 'tournaments' }
+    )
 
   const deleteTeamMutation = trpc.team.delete.useMutation()
   const removeMemberMutation = trpc.team.removeMember.useMutation()
@@ -75,7 +86,10 @@ export default function TeamDetailPage() {
         title: 'Success',
         description: `${userName} removed from team`,
       })
-      utils.team.getById.invalidate({ id: teamId })
+      await Promise.all([
+        utils.team.getMembers.invalidate({ teamId }),
+        utils.team.getOverviewById.invalidate({ id: teamId }),
+      ])
     } catch (error: unknown) {
       toast({
         title: 'Error',
@@ -136,7 +150,7 @@ export default function TeamDetailPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className='text-muted-foreground mt-1'>{team.registrations[0]?.tournament?.game?.name || 'N/A'}</p>
+                    <p className='text-muted-foreground mt-1'>{team.game.name}</p>
                   </div>
 
                   {/* Action Buttons */}
@@ -187,7 +201,7 @@ export default function TeamDetailPage() {
                   </div>
                   <div className='flex items-center gap-2'>
                     <Trophy className='h-4 w-4 text-muted-foreground' />
-                    <span>{team.registrations.length} tournaments</span>
+                    <span>{team._count.registrations} tournaments</span>
                   </div>
                   <div className='flex items-center gap-2'>
                     <Calendar className='h-4 w-4 text-muted-foreground' />
@@ -208,7 +222,7 @@ export default function TeamDetailPage() {
         </Card>
 
         {/* Tabs */}
-        <Tabs defaultValue='members' className='space-y-4'>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className='space-y-4'>
           <TabsList>
             <TabsTrigger value='members'>Members</TabsTrigger>
             <TabsTrigger value='tournaments'>Tournaments</TabsTrigger>
@@ -222,7 +236,7 @@ export default function TeamDetailPage() {
                   <div>
                     <CardTitle>Team Members</CardTitle>
                     <CardDescription>
-                      {team.members.length} member{team.members.length !== 1 ? 's' : ''}
+                      {team._count.members} member{team._count.members !== 1 ? 's' : ''}
                     </CardDescription>
                   </div>
                   {isOwner && (
@@ -236,8 +250,15 @@ export default function TeamDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className='space-y-4'>
-                  {team.members.map((member) => (
+                {membersLoading ? (
+                  <div className='space-y-4'>
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className='h-20 w-full' />
+                    ))}
+                  </div>
+                ) : (
+                  <div className='space-y-4'>
+                    {(members ?? []).map((member) => (
                     <div
                       key={member.id}
                       className='flex items-center justify-between p-4 border rounded-lg'
@@ -299,7 +320,8 @@ export default function TeamDetailPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -314,7 +336,13 @@ export default function TeamDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {team.registrations.length === 0 ? (
+                {registrationsLoading ? (
+                  <div className='space-y-4'>
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className='h-20 w-full' />
+                    ))}
+                  </div>
+                ) : (registrations ?? []).length === 0 ? (
                   <div className='text-center py-8'>
                     <p className='text-sm text-muted-foreground'>
                       No tournament registrations yet
@@ -322,7 +350,7 @@ export default function TeamDetailPage() {
                   </div>
                 ) : (
                   <div className='space-y-4'>
-                    {team.registrations.map((registration) => (
+                    {(registrations ?? []).map((registration) => (
                       <Link
                         key={registration.id}
                         href={`/tournaments/${registration.tournament.id}`}

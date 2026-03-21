@@ -47,9 +47,13 @@ export default function AddMemberPage() {
   const [inviteRole, setInviteRole] = useState<TeamRole>('PLAYER')
   const [isSendingInvite, setIsSendingInvite] = useState(false)
 
-  const { data: team, isLoading: teamLoading } = trpc.team.getById.useQuery(
+  const { data: team, isLoading: teamLoading } = trpc.team.getOverviewById.useQuery(
     { id: teamId },
     { enabled: !!teamId }
+  )
+  const { data: members, isLoading: membersLoading } = trpc.team.getMembers.useQuery(
+    { teamId },
+    { enabled: !!teamId && !!team }
   )
 
   const { data: searchResults, isLoading: searchLoading } = trpc.user.search.useQuery(
@@ -61,7 +65,7 @@ export default function AddMemberPage() {
   const sendInvitationMutation = trpc.invitation.send.useMutation()
   const utils = trpc.useUtils()
 
-  if (status === 'loading' || teamLoading) {
+  if (status === 'loading' || teamLoading || membersLoading) {
     return (
       <DashboardLayout userRole={session?.user?.role}>
         <div className='max-w-3xl mx-auto space-y-6'>
@@ -96,7 +100,7 @@ export default function AddMemberPage() {
     )
   }
 
-  const existingMemberIds = team.members.map((m) => m.user.id)
+  const existingMemberIds = (members ?? []).map((m) => m.user.id)
 
   const handleAddMember = async () => {
     if (!selectedUser) {
@@ -123,7 +127,10 @@ export default function AddMemberPage() {
       })
 
       // Invalidate queries
-      utils.team.getById.invalidate({ id: teamId })
+      await Promise.all([
+        utils.team.getOverviewById.invalidate({ id: teamId }),
+        utils.team.getMembers.invalidate({ teamId }),
+      ])
 
       router.push(`/teams/${teamId}`)
     } catch (error: unknown) {

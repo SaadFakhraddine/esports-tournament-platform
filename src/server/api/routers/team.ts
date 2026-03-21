@@ -175,6 +175,108 @@ export const teamRouter = createTRPCRouter({
     return team
   }),
 
+  getOverviewById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const team = await ctx.db.team.findUnique({
+      where: { id: input.id },
+      include: {
+        game: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            members: true,
+            registrations: true,
+          },
+        },
+      },
+    })
+
+    if (!team) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Team not found',
+      })
+    }
+
+    return team
+  }),
+
+  getMembers: publicProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const team = await ctx.db.team.findUnique({
+        where: { id: input.teamId },
+        select: { id: true },
+      })
+
+      if (!team) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Team not found',
+        })
+      }
+
+      return ctx.db.teamMember.findMany({
+        where: { teamId: input.teamId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: { joinedAt: 'asc' },
+      })
+    }),
+
+  getRegistrationsByTeamId: publicProcedure
+    .input(z.object({ teamId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const team = await ctx.db.team.findUnique({
+        where: { id: input.teamId },
+        select: { id: true },
+      })
+
+      if (!team) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Team not found',
+        })
+      }
+
+      return ctx.db.tournamentRegistration.findMany({
+        where: { teamId: input.teamId },
+        include: {
+          tournament: {
+            select: {
+              id: true,
+              name: true,
+              game: true,
+              startDate: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: { registeredAt: 'desc' },
+      })
+    }),
+
   update: protectedProcedure
     .input(
       z.object({

@@ -21,7 +21,7 @@ export default function EditTeamPage() {
   const { toast } = useToast()
   const teamId = params.id as string
 
-  const { data: team, isLoading } = trpc.team.getById.useQuery(
+  const { data: team, isLoading } = trpc.team.getOverviewById.useQuery(
     { id: teamId },
     { enabled: !!teamId }
   )
@@ -177,7 +177,7 @@ export default function EditTeamPage() {
                 <Label htmlFor='game'>Game</Label>
                 <Input
                   id='game'
-                  value={team.registrations[0]?.tournament?.game?.name || 'N/A'}
+                  value={team.game.name || 'N/A'}
                   disabled
                   className='bg-muted'
                 />
