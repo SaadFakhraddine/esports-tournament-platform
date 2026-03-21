@@ -159,10 +159,7 @@ export const authConfig: NextAuthConfig = {
       return true
     },
     async jwt({ token, user, trigger, session }) {
-      type TokenExtras = { invalidSession?: boolean; email?: string | null }
-
       if (user) {
-        delete (token as TokenExtras).invalidSession
         token.id = user.id
         token.email = user.email ?? token.email
 
@@ -177,36 +174,6 @@ export const authConfig: NextAuthConfig = {
           token.username = dbUser.username
           token.email = dbUser.email
         }
-      } else {
-        // JWT keeps old `id` after DB reset / user deleted — resync from DB or invalidate
-        const tokenId = typeof token.id === 'string' ? token.id : undefined
-        const tokenEmail =
-          typeof token.email === 'string' && token.email.length > 0 ? token.email : undefined
-
-        let dbUser =
-          tokenId != null
-            ? await db.user.findUnique({
-                where: { id: tokenId },
-                select: { id: true, email: true, role: true, username: true },
-              })
-            : null
-
-        if (!dbUser && tokenEmail) {
-          dbUser = await db.user.findUnique({
-            where: { email: tokenEmail },
-            select: { id: true, email: true, role: true, username: true },
-          })
-        }
-
-        if (dbUser) {
-          token.id = dbUser.id
-          token.email = dbUser.email
-          token.role = dbUser.role
-          token.username = dbUser.username
-          delete (token as TokenExtras).invalidSession
-        } else if (tokenId || tokenEmail) {
-          ;(token as TokenExtras).invalidSession = true
-        }
       }
 
       // Handle session update
@@ -217,9 +184,6 @@ export const authConfig: NextAuthConfig = {
       return token
     },
     async session({ session, token }) {
-      if ((token as { invalidSession?: boolean }).invalidSession) {
-        return { ...session, user: undefined as typeof session.user }
-      }
       if (token && session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as UserRole

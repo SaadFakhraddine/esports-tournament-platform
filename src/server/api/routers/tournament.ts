@@ -234,6 +234,212 @@ export const tournamentRouter = createTRPCRouter({
     }
   }),
 
+  /**
+   * Lightweight tournament data for the management/edit page.
+   * Avoids loading registrations/brackets/matches trees on initial render.
+   */
+  getManageOverviewById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.id },
+        include: {
+          game: {
+            select: { id: true },
+          },
+        },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      // Only the tournament organizer/admin can access the management page data.
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to manage this tournament',
+        })
+      }
+
+      const [bracketsCount, matchesCount] = await Promise.all([
+        ctx.db.bracket.count({ where: { tournamentId: input.id } }),
+        ctx.db.match.count({ where: { tournamentId: input.id } }),
+      ])
+
+      return {
+        ...tournament,
+        bracketsCount,
+        matchesCount,
+      }
+    }),
+
+  /**
+   * Heavy bracket/matches tree for the management/edit page.
+   * This is intentionally loaded lazily from the UI (Bracket/Matches tabs).
+   */
+  getBracketTree: protectedProcedure
+    .input(
+      z.object({
+        tournamentId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.tournamentId },
+        select: { organizerId: true },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      if (tournament.organizerId !== ctx.session.user.id && ctx.session.user.role !== 'ADMIN') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view this bracket',
+        })
+      }
+
+      const brackets = await ctx.db.bracket.findMany({
+        where: { tournamentId: input.tournamentId },
+        orderBy: { round: 'asc' },
+        include: {
+          matches: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              homeTeam: {
+                select: { id: true, name: true, tag: true, logo: true },
+              },
+              awayTeam: {
+                select: { id: true, name: true, tag: true, logo: true },
+              },
+              winner: {
+                select: { id: true, name: true, tag: true, logo: true },
+              },
+            },
+          },
+        },
+      })
+
+      return { brackets }
+    }),
+
+  /**
+   * Lightweight tournament data for the public tournament detail page.
+   * Includes registrations (teams tab) but intentionally excludes brackets/matches.
+   */
+  getPublicOverviewById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.id },
+        include: {
+          game: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              icon: true,
+            },
+          },
+          organizer: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      const isOrganizer = ctx.session?.user?.id === tournament.organizerId
+      const isAdmin = ctx.session?.user?.role === 'ADMIN'
+      const canSeeAllRegistrations = isOrganizer || isAdmin
+
+      const registrations = await ctx.db.tournamentRegistration.findMany({
+        where: {
+          tournamentId: input.id,
+          ...(canSeeAllRegistrations ? {} : { status: RegistrationStatus.APPROVED }),
+        },
+        include: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              tag: true,
+              logo: true,
+            },
+          },
+        },
+        orderBy: [
+          { status: 'asc' },
+          { seed: 'asc' }, // Ensure seeded teams appear in order
+        ],
+      })
+
+      const bracketsCount = await ctx.db.bracket.count({
+        where: { tournamentId: input.id },
+      })
+
+      return {
+        ...tournament,
+        registrations,
+        bracketsCount,
+      }
+    }),
+
+  /**
+   * Heavy bracket/matches tree for the public tournament detail page.
+   * Loaded lazily only when user opens the "Bracket" tab.
+   */
+  getPublicBracketTree: publicProcedure
+    .input(z.object({ tournamentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tournament = await ctx.db.tournament.findUnique({
+        where: { id: input.tournamentId },
+        select: { organizerId: true },
+      })
+
+      if (!tournament) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Tournament not found',
+        })
+      }
+
+      const brackets = await ctx.db.bracket.findMany({
+        where: { tournamentId: input.tournamentId },
+        orderBy: { round: 'asc' },
+        include: {
+          matches: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              homeTeam: { select: { id: true, name: true, tag: true, logo: true } },
+              awayTeam: { select: { id: true, name: true, tag: true, logo: true } },
+              winner: { select: { id: true, name: true, tag: true, logo: true } },
+            },
+          },
+        },
+      })
+
+      return { brackets }
+    }),
+
   update: organizerProcedure.input(updateTournamentSchema).mutation(async ({ ctx, input }) => {
     const { id, ...data } = input
 

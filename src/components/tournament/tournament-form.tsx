@@ -97,7 +97,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
     onSuccess: () => {
       setIsTogglingRegistration(false)
       if (tournament?.id) {
-        utils.tournament.getById.invalidate({ id: tournament.id })
+        utils.tournament.getManageOverviewById.invalidate({ id: tournament.id })
       }
     },
     onError: (error) => {

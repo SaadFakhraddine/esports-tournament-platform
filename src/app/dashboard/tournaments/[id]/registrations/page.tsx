@@ -64,9 +64,9 @@ export default function TournamentRegistrationsPage() {
   const [teamSearch, setTeamSearch] = useState('')
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
 
-  const { data: tournament, isLoading: tournamentLoading } = trpc.tournament.getById.useQuery(
+  const { data: tournament, isLoading: tournamentLoading } = trpc.tournament.getManageOverviewById.useQuery(
     { id: tournamentId },
-    { enabled: !!tournamentId }
+    { enabled: !!tournamentId && !!session }
   )
 
   const { data: registrations, isLoading, refetch } = trpc.tournament.getRegistrations.useQuery(
@@ -145,7 +145,7 @@ export default function TournamentRegistrationsPage() {
     return null
   }
 
-  const isOrganizer = session.user.id === tournament?.organizer?.id
+  const isOrganizer = session.user.id === tournament?.organizerId
   const isAdmin = session.user.role === 'ADMIN'
 
   if (tournamentLoading || !tournament) {

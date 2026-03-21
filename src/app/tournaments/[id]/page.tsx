@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { PublicLayout } from '@/components/layout/public-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,10 +35,21 @@ export default function TournamentDetailPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const tournamentId = params.id as string
+  const [activeTab, setActiveTab] = useState<'overview' | 'teams' | 'bracket'>('overview')
 
-  const { data: tournament, isLoading, error } = trpc.tournament.getById.useQuery(
+  const { data: tournament, isLoading, error } = trpc.tournament.getPublicOverviewById.useQuery(
     { id: tournamentId },
     { enabled: !!tournamentId }
+  )
+
+  const {
+    data: bracketTree,
+    isLoading: bracketTreeLoading,
+  } = trpc.tournament.getPublicBracketTree.useQuery(
+    { tournamentId },
+    {
+      enabled: !!tournamentId && activeTab === 'bracket' && (tournament?.bracketsCount ?? 0) > 0,
+    }
   )
 
   if (isLoading) {
@@ -160,7 +172,7 @@ export default function TournamentDetailPage() {
         <div className='grid gap-6 lg:grid-cols-3'>
           {/* Left Column - Main Info */}
           <div className='lg:col-span-2 space-y-6'>
-            <Tabs defaultValue='overview'>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
               <TabsList className='grid w-full grid-cols-3'>
                 <TabsTrigger value='overview'>Overview</TabsTrigger>
                 <TabsTrigger value='teams'>Teams</TabsTrigger>
@@ -269,17 +281,21 @@ export default function TournamentDetailPage() {
                   <CardHeader>
                     <CardTitle>Tournament Bracket</CardTitle>
                     <CardDescription>
-                      {tournament.brackets && tournament.brackets.length > 0
-                        ? 'View the tournament bracket and matchups'
-                        : 'Bracket will be available once tournament starts'}
+                      {bracketTreeLoading
+                        ? 'Loading tournament bracket...'
+                        : bracketTree?.brackets?.length
+                          ? 'View the tournament bracket and matchups'
+                          : 'Bracket will be available once tournament starts'}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {/* Use BracketView component */}
-                    {tournament.brackets && tournament.brackets.length > 0 ? (
+                    {bracketTreeLoading ? (
+                      <Skeleton className='h-96 w-full' />
+                    ) : bracketTree?.brackets && bracketTree.brackets.length > 0 ? (
                       (() => {
                         // Flatten and map matches to the format expected by BracketView
-                        const mappedMatches = tournament.brackets.flatMap(bracket =>
+                        const mappedMatches = bracketTree.brackets.flatMap(bracket =>
                           (bracket.matches || []).map((match: {
                             id: string;
                             matchNumber?: number;

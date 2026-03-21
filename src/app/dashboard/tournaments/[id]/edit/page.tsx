@@ -53,9 +53,21 @@ export default function TournamentManagePage() {
   const params = useParams()
   const tournamentId = params.id as string
 
-  const { data: tournament, isLoading: tournamentLoading } = trpc.tournament.getById.useQuery(
+  const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'registrations' | 'bracket' | 'matches'>(
+    'overview',
+  )
+
+  const { data: tournament, isLoading: tournamentLoading } = trpc.tournament.getManageOverviewById.useQuery(
     { id: tournamentId },
     { enabled: !!session && !!tournamentId }
+  )
+
+  const {
+    data: bracketTree,
+    isLoading: bracketTreeLoading,
+  } = trpc.tournament.getBracketTree.useQuery(
+    { tournamentId },
+    { enabled: !!session && !!tournamentId && (activeTab === 'bracket' || activeTab === 'matches') }
   )
 
   const { data: registrations, isLoading: registrationsLoading } =
@@ -76,7 +88,7 @@ export default function TournamentManagePage() {
 
   const setScheduleMutation = trpc.match.setSchedule.useMutation({
     onSuccess: async () => {
-      await utils.tournament.getById.invalidate({ id: tournamentId })
+      await utils.tournament.getBracketTree.invalidate({ tournamentId })
       setScheduleOpen(false)
       setScheduleMatchId(null)
       setScheduleAt(null)
@@ -96,7 +108,10 @@ export default function TournamentManagePage() {
 
   const updateMatchStatusMutation = trpc.match.updateStatus.useMutation({
     onSuccess: async () => {
-      await utils.tournament.getById.invalidate({ id: tournamentId })
+      await Promise.all([
+        utils.tournament.getBracketTree.invalidate({ tournamentId }),
+        utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+      ])
       setScheduleOpen(false)
       setScheduleMatchId(null)
       setScheduleAt(null)
@@ -121,7 +136,10 @@ export default function TournamentManagePage() {
         homeScore: Math.trunc(home),
         awayScore: Math.trunc(away),
       })
-      await utils.tournament.getById.invalidate({ id: tournamentId })
+      await Promise.all([
+        utils.tournament.getBracketTree.invalidate({ tournamentId }),
+        utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+      ])
       setReportOpen(false)
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : 'Failed to submit result')
@@ -159,9 +177,8 @@ export default function TournamentManagePage() {
 
   const pendingCount = registrations?.filter((r) => r.status === 'PENDING').length || 0
   const approvedCount = registrations?.filter((r) => r.status === 'APPROVED').length || 0
-  const hasBracket = tournament.brackets && tournament.brackets.length > 0
-  const totalMatches =
-    tournament.brackets?.reduce((sum, bracket) => sum + (bracket.matches?.length || 0), 0) || 0
+  const hasBracket = (tournament.bracketsCount ?? 0) > 0
+  const totalMatches = tournament.matchesCount ?? 0
   const canStart =
     approvedCount >= 2 &&
     hasBracket &&
@@ -269,7 +286,11 @@ export default function TournamentManagePage() {
         </div>
 
         {/* Management Tabs */}
-        <Tabs defaultValue='overview' className='space-y-4'>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          className='space-y-4'
+        >
           <TabsList className='grid w-full grid-cols-5'>
             <TabsTrigger value='overview'>Overview</TabsTrigger>
             <TabsTrigger value='settings'>Settings</TabsTrigger>
@@ -293,7 +314,7 @@ export default function TournamentManagePage() {
               />
               <StatCard
                 title='Matches'
-                value={tournament.brackets?.[0]?.matches?.length?.toString() || '0'}
+                value={totalMatches.toString()}
                 icon={<Trophy className='h-4 w-4 text-muted-foreground' />}
               />
               <StatCard
@@ -339,7 +360,10 @@ export default function TournamentManagePage() {
 
                         try {
                           await startTournamentMutation.mutateAsync({ tournamentId })
-                          utils.tournament.getById.invalidate({ id: tournamentId })
+                          await Promise.all([
+                            utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                            utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                          ])
                         } catch (error: unknown) {
                           alert(
                             `Cannot start tournament: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -447,7 +471,10 @@ export default function TournamentManagePage() {
                   onClick={async () => {
                     try {
                       await generateBracketMutation.mutateAsync({ tournamentId })
-                      utils.tournament.getById.invalidate({ id: tournamentId })
+                      await Promise.all([
+                        utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                        utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                      ])
                     } catch (error: unknown) {
                       alert(error instanceof Error ? error.message : 'An error occurred')
                     }
@@ -463,7 +490,10 @@ export default function TournamentManagePage() {
                   onClick={async () => {
                     try {
                       await autoSeedMutation.mutateAsync({ tournamentId })
-                      utils.tournament.getById.invalidate({ id: tournamentId })
+                      await Promise.all([
+                        utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                        utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                      ])
                       utils.tournament.getRegistrations.invalidate({ tournamentId })
                     } catch (error: unknown) {
                       alert(error instanceof Error ? error.message : 'An error occurred')
@@ -490,7 +520,10 @@ export default function TournamentManagePage() {
 
                     try {
                       await startTournamentMutation.mutateAsync({ tournamentId })
-                      utils.tournament.getById.invalidate({ id: tournamentId })
+                      await Promise.all([
+                        utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                        utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                      ])
                     } catch (error: unknown) {
                       const message = error instanceof Error ? error.message : 'Unknown error'
 
@@ -567,12 +600,10 @@ export default function TournamentManagePage() {
               onApprove={async (registrationId) => {
                 await approveRegistrationMutation.mutateAsync({ registrationId })
                 utils.tournament.getRegistrations.invalidate({ tournamentId })
-                utils.tournament.getById.invalidate({ id: tournamentId })
               }}
               onReject={async (registrationId) => {
                 await rejectRegistrationMutation.mutateAsync({ registrationId })
                 utils.tournament.getRegistrations.invalidate({ tournamentId })
-                utils.tournament.getById.invalidate({ id: tournamentId })
               }}
             />
           </TabsContent>
@@ -586,8 +617,7 @@ export default function TournamentManagePage() {
                     <CardTitle>Tournament Bracket</CardTitle>
                     <CardDescription>View and manage the tournament bracket</CardDescription>
                   </div>
-                  {tournament.brackets &&
-                    tournament.brackets.length > 0 &&
+                  {hasBracket &&
                     tournament.status !== 'IN_PROGRESS' &&
                     tournament.status !== 'COMPLETED' && (
                       <Button
@@ -601,7 +631,10 @@ export default function TournamentManagePage() {
                           ) {
                             try {
                               await regenerateBracketMutation.mutateAsync({ tournamentId })
-                              utils.tournament.getById.invalidate({ id: tournamentId })
+                              await Promise.all([
+                                utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                                utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                              ])
                             } catch (error: unknown) {
                               alert(error instanceof Error ? error.message : 'Something went wrong')
                             }
@@ -618,9 +651,11 @@ export default function TournamentManagePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {tournament.brackets && tournament.brackets.length > 0 ? (
+                {bracketTreeLoading ? (
+                  <Skeleton className='h-64 w-full' />
+                ) : bracketTree?.brackets?.length ? (
                   <div className='space-y-6'>
-                    {tournament.brackets.map((bracket) => (
+                    {bracketTree?.brackets?.map((bracket) => (
                       <div key={bracket.id} className='space-y-4'>
                         <div className='flex items-center gap-2'>
                           <h3 className='font-semibold'>
@@ -688,7 +723,10 @@ export default function TournamentManagePage() {
                       onClick={async () => {
                         try {
                           await generateBracketMutation.mutateAsync({ tournamentId })
-                          utils.tournament.getById.invalidate({ id: tournamentId })
+                          await Promise.all([
+                            utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
+                            utils.tournament.getBracketTree.invalidate({ tournamentId }),
+                          ])
                         } catch (error: unknown) {
                           alert(error instanceof Error ? error.message : 'Something went wrong')
                         }
@@ -713,8 +751,7 @@ export default function TournamentManagePage() {
                     <CardTitle>Match Schedule</CardTitle>
                     <CardDescription>Manage and schedule tournament matches</CardDescription>
                   </div>
-                  {tournament.brackets &&
-                    tournament.brackets.some((b) => b.matches && b.matches.length > 0) && (
+                  {bracketTree?.brackets?.some((b) => b.matches && b.matches.length > 0) && (
                       <div className='flex gap-2'>
                         <Button variant='outline' size='sm'>
                           <Filter className='h-4 w-4 mr-2' />
@@ -725,10 +762,12 @@ export default function TournamentManagePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {tournament.brackets && tournament.brackets.length > 0 ? (
+                {bracketTreeLoading ? (
+                  <Skeleton className='h-96 w-full' />
+                ) : bracketTree?.brackets?.length ? (
                   <div className='space-y-6'>
                     {/* Loop through brackets */}
-                    {tournament.brackets.map((bracket) => (
+                    {bracketTree?.brackets?.map((bracket) => (
                       <div key={bracket.id} className='space-y-4'>
                         <div className='flex items-center gap-2'>
                           <h3 className='font-semibold text-lg'>

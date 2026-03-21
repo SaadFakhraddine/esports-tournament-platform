@@ -46,7 +46,7 @@ export function RegistrationControl({
       setError(null)
       setIsDialogOpen(false)
       // Invalidate and refetch tournament data
-      utils.tournament.getById.invalidate({ id: tournament.id })
+      utils.tournament.getManageOverviewById.invalidate({ id: tournament.id })
       utils.tournament.getRegistrations.invalidate({ tournamentId: tournament.id })
     },
     onError: (err) => {
