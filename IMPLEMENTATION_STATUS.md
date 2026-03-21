@@ -61,7 +61,7 @@ This document tracks the implementation progress of the Esports Tournament Platf
 ## 🚧 Phase 2: Core Tournament Features (10% Complete)
 
 ### 2.1 Tournament CRUD Operations ✅
-- ✅ Created tRPC router: `src/server/api/routers/tournament.ts`
+- ✅ Created tRPC router: `src/server/api/routers/tournament/` (split: `queries`, `crud`, `registration`, `bracket`, `index`)
   - ✅ `create` - Create tournament with validation
   - ✅ `getAll` - List tournaments with filters and pagination
   - ✅ `getById` - Get tournament details with relations
