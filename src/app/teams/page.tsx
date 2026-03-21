@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { trpc } from '@/lib/trpc/client'
@@ -16,15 +16,19 @@ import { Users, Search, Plus } from 'lucide-react'
 export default function TeamsPage() {
   const { data: session } = useSession()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 250)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const { data, isLoading } = trpc.team.getAll.useQuery({
     limit: 20,
+    search: debouncedSearch || undefined,
   })
 
-  const filteredTeams = data?.teams.filter((team) =>
-    team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    team.tag?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const teams = data?.teams ?? []
 
   return (
     <DashboardLayout userRole={session?.user?.role}>
@@ -76,7 +80,7 @@ export default function TeamsPage() {
         )}
 
         {/* Empty State */}
-        {!isLoading && filteredTeams && filteredTeams.length === 0 && (
+        {!isLoading && teams.length === 0 && (
           <Card>
             <CardContent className='py-12 text-center'>
               <Users className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
@@ -94,9 +98,9 @@ export default function TeamsPage() {
         )}
 
         {/* Teams Grid */}
-        {!isLoading && filteredTeams && filteredTeams.length > 0 && (
+        {!isLoading && teams.length > 0 && (
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-            {filteredTeams.map((team) => (
+            {teams.map((team) => (
               <Card key={team.id} className='hover:shadow-lg transition-all hover:border-primary/50'>
                 <CardHeader>
                   <div className='flex items-start gap-3'>

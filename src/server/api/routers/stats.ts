@@ -3,22 +3,19 @@ import { TournamentStatus, MatchStatus } from '@prisma/client'
 
 export const statsRouter = createTRPCRouter({
   getPlatformStats: publicProcedure.query(async ({ ctx }) => {
-    const [totalTournaments, totalTeams, completedTournaments] = await Promise.all([
+    const [totalTournaments, totalTeams, completedTournaments, tournamentsWithPrizes] = await Promise.all([
       ctx.db.tournament.count(),
       ctx.db.team.count(),
       ctx.db.tournament.count({
         where: { status: TournamentStatus.COMPLETED },
       }),
+      ctx.db.tournament.count({
+        where: {
+          prizePool: { not: null },
+          NOT: { prizePool: '' },
+        },
+      }),
     ])
-
-    // Calculate total prize pool (sum of all numeric prize values)
-    const tournaments = await ctx.db.tournament.findMany({
-      where: { prizePool: { not: null } },
-      select: { prizePool: true },
-    })
-
-    // Simple approximation - count tournaments with prize pools
-    const tournamentsWithPrizes = tournaments.filter((t) => t.prizePool).length
 
     return {
       totalTournaments,

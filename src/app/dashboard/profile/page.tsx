@@ -26,14 +26,20 @@ import Link from 'next/link'
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const [isEditing, setIsEditing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'account' | 'teams' | 'tournaments'>('account')
 
   // Fetch real data
-  const { data: profile } = trpc.user.getProfile.useQuery()
-  const { data: stats } = trpc.user.getDashboardStats.useQuery()
-  const { data: myTeams } = trpc.team.getMyTeams.useQuery()
-  const { data: tournaments } = trpc.tournament.getParticipatingTournaments.useQuery({
-    limit: 20,
+  const { data: profile } = trpc.user.getProfile.useQuery(undefined, { enabled: !!session })
+  const { data: stats } = trpc.user.getDashboardStats.useQuery(undefined, { enabled: !!session })
+  const { data: myTeams, isLoading: myTeamsLoading } = trpc.team.getMyTeams.useQuery(undefined, {
+    enabled: !!session && activeTab === 'teams',
   })
+  const { data: tournaments, isLoading: tournamentsLoading } = trpc.tournament.getParticipatingTournaments.useQuery(
+    {
+      limit: 20,
+    },
+    { enabled: !!session && activeTab === 'tournaments' }
+  )
 
   if (status === 'loading') {
     return <div>Loading...</div>
@@ -49,6 +55,8 @@ export default function ProfilePage() {
         year: 'numeric',
       })
     : 'N/A'
+  const teamsList = myTeams ?? []
+  const tournamentsList = tournaments ?? []
 
   const handleSaveProfile = async () => {
     // TODO: Implement profile update logic
@@ -156,7 +164,11 @@ export default function ProfilePage() {
 
           {/* Main content */}
           <div className='md:col-span-2'>
-            <Tabs defaultValue='account' className='space-y-4'>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+              className='space-y-4'
+            >
               <TabsList className='grid w-full grid-cols-3'>
                 <TabsTrigger value='account'>Account</TabsTrigger>
                 <TabsTrigger value='teams'>Teams</TabsTrigger>
@@ -263,13 +275,13 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {!myTeams ? (
+                    {myTeamsLoading ? (
                       <div className='space-y-4'>
                         {[1, 2, 3].map((i) => (
                           <Skeleton key={i} className='h-20 w-full' />
                         ))}
                       </div>
-                    ) : myTeams.length === 0 ? (
+                    ) : teamsList.length === 0 ? (
                       <div className='text-center py-8 text-muted-foreground'>
                         <p>You&apos;re not a member of any teams yet.</p>
                         <Link href='/teams/create'>
@@ -278,7 +290,7 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       <div className='space-y-4'>
-                        {myTeams.map((team) => (
+                        {teamsList.map((team) => (
                           <Link key={team.id} href={`/teams/${team.id}`}>
                             <TeamListItem
                               name={team.name}
@@ -305,13 +317,13 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {!tournaments ? (
+                    {tournamentsLoading ? (
                       <div className='space-y-4'>
                         {[1, 2, 3].map((i) => (
                           <Skeleton key={i} className='h-20 w-full' />
                         ))}
                       </div>
-                    ) : tournaments.length === 0 ? (
+                    ) : tournamentsList.length === 0 ? (
                       <div className='text-center py-8 text-muted-foreground'>
                         <p>You haven&apos;t participated in any tournaments yet.</p>
                         <Link href='/tournaments'>
@@ -320,7 +332,7 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       <div className='space-y-4'>
-                        {tournaments.map((tournament) => (
+                        {tournamentsList.map((tournament) => (
                           <TournamentListItem
                             key={tournament.id}
                             id={tournament.id}

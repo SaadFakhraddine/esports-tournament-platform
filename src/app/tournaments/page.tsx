@@ -14,6 +14,7 @@ function TournamentsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   // Get filter from URL params
   const filterParam = searchParams?.get('filter') || 'all'
@@ -24,8 +25,22 @@ function TournamentsContent() {
     setActiveTab(filterParam)
   }, [filterParam])
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 250)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   const { data, isLoading } = trpc.tournament.getAll.useQuery({
-    limit: 100,
+    limit: 30,
+    status:
+      activeTab === 'live'
+        ? 'IN_PROGRESS'
+        : activeTab === 'open'
+          ? 'REGISTRATION'
+          : activeTab === 'completed'
+            ? 'COMPLETED'
+            : undefined,
+    search: debouncedSearch || undefined,
   })
 
   const handleTabChange = (value: string) => {
@@ -40,30 +55,7 @@ function TournamentsContent() {
     router.push(`/tournaments${params.toString() ? '?' + params.toString() : ''}`, { scroll: false })
   }
 
-  // Filter tournaments based on active tab and search
-  const filteredTournaments = (data?.tournaments || []).filter((tournament) => {
-    const matchesSearch = tournament.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-
-    let matchesFilter = true
-    switch (activeTab) {
-      case 'live':
-        matchesFilter = tournament.status === 'IN_PROGRESS'
-        break
-      case 'open':
-        matchesFilter = tournament.status === 'REGISTRATION'
-        break
-      case 'completed':
-        matchesFilter = tournament.status === 'COMPLETED'
-        break
-      case 'all':
-      default:
-        matchesFilter = true
-    }
-
-    return matchesSearch && matchesFilter
-  })
+  const filteredTournaments = data?.tournaments || []
 
   return (
     <PublicLayout>

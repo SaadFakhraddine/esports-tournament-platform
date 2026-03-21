@@ -14,10 +14,6 @@ export const userRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      console.log('========== MUTATION INPUT ==========')
-      console.log('Input:', input)
-      console.log('========== END ==========')
-
       const existing = await ctx.db.user.findUnique({
         where: { email: input.email },
       })
