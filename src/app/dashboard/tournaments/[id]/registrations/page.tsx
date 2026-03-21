@@ -3,7 +3,13 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { cn } from '@/lib/utils'
+import {
+  getRegistrationStatusForTeam,
+  isTeamBlockedFromQuickAdd,
+  quickAddStatusBadge,
+} from '@/lib/tournament-team-search'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -91,6 +97,22 @@ export default function TournamentRegistrationsPage() {
       setSelectedTeamIds([])
     },
   })
+
+  useEffect(() => {
+    setSelectedTeamIds((prev) =>
+      prev.filter(
+        (id) => !isTeamBlockedFromQuickAdd(getRegistrationStatusForTeam(registrations, id))
+      )
+    )
+  }, [registrations])
+
+  const addableSelectedIds = useMemo(
+    () =>
+      selectedTeamIds.filter(
+        (id) => !isTeamBlockedFromQuickAdd(getRegistrationStatusForTeam(registrations, id))
+      ),
+    [selectedTeamIds, registrations]
+  )
 
   const canAddTeams = tournament?.status === 'REGISTRATION'
 
@@ -248,17 +270,23 @@ export default function TournamentRegistrationsPage() {
                 <div className='space-y-2'>
                   {teams?.teams.map((team) => {
                     const checked = selectedTeamIds.includes(team.id)
+                    const regStatus = getRegistrationStatusForTeam(registrations, team.id)
+                    const blocked = !canAddTeams || isTeamBlockedFromQuickAdd(regStatus)
+                    const statusBadge = quickAddStatusBadge(regStatus)
                     return (
                       <div
                         key={team.id}
-                        className='flex items-center justify-between gap-3 p-3 border rounded-lg'
+                        className={cn(
+                          'flex items-center justify-between gap-3 p-3 border rounded-lg',
+                          canAddTeams && isTeamBlockedFromQuickAdd(regStatus) && 'bg-muted/40'
+                        )}
                       >
                         <div className='flex items-center gap-3 min-w-0'>
                           <input
                             type='checkbox'
-                            className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                            className='h-4 w-4 rounded border-border text-primary focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
                             checked={checked}
-                            disabled={!canAddTeams}
+                            disabled={blocked}
                             onChange={() => {
                               setSelectedTeamIds((prev) =>
                                 prev.includes(team.id)
@@ -271,8 +299,15 @@ export default function TournamentRegistrationsPage() {
                             <AvatarImage src={team.logo || undefined} />
                             <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <div className='min-w-0'>
-                            <p className='font-medium truncate'>{team.name}</p>
+                          <div className='min-w-0 flex-1'>
+                            <div className='flex flex-wrap items-center gap-2 min-w-0'>
+                              <p className='font-medium truncate'>{team.name}</p>
+                              {statusBadge && (
+                                <Badge variant={statusBadge.variant} className='shrink-0 font-normal'>
+                                  {statusBadge.label}
+                                </Badge>
+                              )}
+                            </div>
                             {team.tag && (
                               <p className='text-xs text-muted-foreground truncate'>[{team.tag}]</p>
                             )}
@@ -286,7 +321,7 @@ export default function TournamentRegistrationsPage() {
                               teamId: team.id,
                             })
                           }
-                          disabled={addTeamMutation.isPending || !canAddTeams}
+                          disabled={addTeamMutation.isPending || blocked}
                         >
                           {addTeamMutation.isPending ? 'Adding...' : 'Add'}
                         </Button>
@@ -295,20 +330,20 @@ export default function TournamentRegistrationsPage() {
                   })}
                 </div>
 
-                {selectedTeamIds.length > 0 && (
+                {addableSelectedIds.length > 0 && (
                   <div className='flex justify-end pt-2'>
                     <Button
                       onClick={() =>
                         addTeamsMutation.mutate({
                           tournamentId,
-                          teamIds: selectedTeamIds,
+                          teamIds: addableSelectedIds,
                         })
                       }
                       disabled={addTeamsMutation.isPending || !canAddTeams}
                     >
                       {addTeamsMutation.isPending
                         ? 'Adding...'
-                        : `Add selected (${selectedTeamIds.length})`}
+                        : `Add selected (${addableSelectedIds.length})`}
                     </Button>
                   </div>
                 )}

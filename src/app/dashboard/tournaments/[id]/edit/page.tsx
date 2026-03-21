@@ -32,7 +32,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { cn } from '@/lib/utils'
+import {
+  getRegistrationStatusForTeam,
+  isTeamBlockedFromQuickAdd,
+  quickAddStatusBadge,
+} from '@/lib/tournament-team-search'
 
 export default function TournamentManagePage() {
   const { data: session, status } = useSession()
@@ -906,6 +912,7 @@ function RegistrationsTab({
   onApprove: (registrationId: string) => Promise<void>
   onReject: (registrationId: string) => Promise<void>
 }) {
+  const utils = trpc.useUtils()
   const [teamSearch, setTeamSearch] = useState('')
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
   const [debouncedTeamSearch, setDebouncedTeamSearch] = useState(teamSearch)
@@ -914,6 +921,14 @@ function RegistrationsTab({
     const t = setTimeout(() => setDebouncedTeamSearch(teamSearch), 350)
     return () => clearTimeout(t)
   }, [teamSearch])
+
+  useEffect(() => {
+    setSelectedTeamIds((prev) =>
+      prev.filter(
+        (id) => !isTeamBlockedFromQuickAdd(getRegistrationStatusForTeam(registrations, id))
+      )
+    )
+  }, [registrations])
 
   const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
     {
@@ -930,6 +945,7 @@ function RegistrationsTab({
     onSuccess: async () => {
       setTeamSearch('')
       setSelectedTeamIds([])
+      await utils.tournament.getRegistrations.invalidate({ tournamentId })
     },
   })
 
@@ -937,8 +953,17 @@ function RegistrationsTab({
     onSuccess: async () => {
       setTeamSearch('')
       setSelectedTeamIds([])
+      await utils.tournament.getRegistrations.invalidate({ tournamentId })
     },
   })
+
+  const addableSelectedIds = useMemo(
+    () =>
+      selectedTeamIds.filter(
+        (id) => !isTeamBlockedFromQuickAdd(getRegistrationStatusForTeam(registrations, id))
+      ),
+    [selectedTeamIds, registrations]
+  )
 
   return (
     <div className='space-y-4'>
@@ -977,17 +1002,24 @@ function RegistrationsTab({
             <div className='space-y-2'>
               {teams?.teams.map((team) => {
                 const checked = selectedTeamIds.includes(team.id)
+                const regStatus = getRegistrationStatusForTeam(registrations, team.id)
+                const blocked = isTeamBlockedFromQuickAdd(regStatus)
+                const statusBadge = quickAddStatusBadge(regStatus)
 
                 return (
                   <div
                     key={team.id}
-                    className='flex items-center justify-between gap-3 p-3 border rounded-lg'
+                    className={cn(
+                      'flex items-center justify-between gap-3 p-3 border rounded-lg',
+                      blocked && 'bg-muted/40'
+                    )}
                   >
                     <div className='flex items-center gap-3 min-w-0'>
                       <input
                         type='checkbox'
-                        className='h-4 w-4 rounded border-border text-primary focus:ring-ring'
+                        className='h-4 w-4 rounded border-border text-primary focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
                         checked={checked}
+                        disabled={blocked}
                         onChange={() => {
                           setSelectedTeamIds((prev) =>
                             prev.includes(team.id)
@@ -1000,8 +1032,15 @@ function RegistrationsTab({
                         <AvatarImage src={team.logo || undefined} />
                         <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div className='min-w-0'>
-                        <p className='font-medium truncate'>{team.name}</p>
+                      <div className='min-w-0 flex-1'>
+                        <div className='flex flex-wrap items-center gap-2 min-w-0'>
+                          <p className='font-medium truncate'>{team.name}</p>
+                          {statusBadge && (
+                            <Badge variant={statusBadge.variant} className='shrink-0 font-normal'>
+                              {statusBadge.label}
+                            </Badge>
+                          )}
+                        </div>
                         {team.tag && (
                           <p className='text-xs text-muted-foreground truncate'>[{team.tag}]</p>
                         )}
@@ -1016,7 +1055,7 @@ function RegistrationsTab({
                           teamId: team.id,
                         })
                       }
-                      disabled={addTeamMutation.isPending}
+                      disabled={addTeamMutation.isPending || blocked}
                     >
                       {addTeamMutation.isPending ? 'Adding...' : 'Add'}
                     </Button>
@@ -1024,20 +1063,20 @@ function RegistrationsTab({
                 )
               })}
 
-              {selectedTeamIds.length > 0 && (
+              {addableSelectedIds.length > 0 && (
                 <div className='flex justify-end pt-2'>
                   <Button
                     onClick={() =>
                       addTeamsMutation.mutate({
                         tournamentId,
-                        teamIds: selectedTeamIds,
+                        teamIds: addableSelectedIds,
                       })
                     }
                     disabled={addTeamsMutation.isPending}
                   >
                     {addTeamsMutation.isPending
                       ? 'Adding...'
-                      : `Add selected (${selectedTeamIds.length})`}
+                      : `Add selected (${addableSelectedIds.length})`}
                   </Button>
                 </div>
               )}
