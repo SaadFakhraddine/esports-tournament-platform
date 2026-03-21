@@ -94,6 +94,16 @@ export default function TournamentManagePage() {
   const [scheduleAt, setScheduleAt] = useState<Date | null>(null)
   const [scheduleHadTime, setScheduleHadTime] = useState(false)
 
+  const updateMatchStatusMutation = trpc.match.updateStatus.useMutation({
+    onSuccess: async () => {
+      await utils.tournament.getById.invalidate({ id: tournamentId })
+      setScheduleOpen(false)
+      setScheduleMatchId(null)
+      setScheduleAt(null)
+      setScheduleHadTime(false)
+    },
+  })
+
   const submitReportedResult = async () => {
     if (!reportMatchId) return
 
@@ -200,6 +210,30 @@ export default function TournamentManagePage() {
       })
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : 'Failed to clear schedule')
+    }
+  }
+
+  const startMatch = async (matchId: string) => {
+    if (!confirm('Start this match now?')) return
+    try {
+      await updateMatchStatusMutation.mutateAsync({
+        matchId,
+        status: 'IN_PROGRESS',
+      })
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to start match')
+    }
+  }
+
+  const cancelMatch = async (matchId: string) => {
+    if (!confirm('Cancel this match?')) return
+    try {
+      await updateMatchStatusMutation.mutateAsync({
+        matchId,
+        status: 'CANCELLED',
+      })
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to cancel match')
     }
   }
 
@@ -804,8 +838,7 @@ export default function TournamentManagePage() {
                                       </Badge>
 
                                       {/* Actions */}
-                                      {match.status !== 'COMPLETED' &&
-                                        match.status !== 'CANCELLED' && (
+                                      {(match.status === 'SCHEDULED' || match.status === 'IN_PROGRESS') && (
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <Button variant='ghost' size='sm'>
@@ -813,31 +846,48 @@ export default function TournamentManagePage() {
                                             </Button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align='end'>
-                                            {!match.scheduledAt && (
-                                              <DropdownMenuItem
-                                                onClick={() => openScheduleDialog(match)}
-                                              >
-                                                <Calendar className='h-4 w-4 mr-2' />
-                                                Schedule match
-                                              </DropdownMenuItem>
+                                            {match.status === 'SCHEDULED' && (
+                                              <>
+                                                {!match.scheduledAt && (
+                                                  <DropdownMenuItem
+                                                    onClick={() => openScheduleDialog(match)}
+                                                  >
+                                                    <Calendar className='h-4 w-4 mr-2' />
+                                                    Schedule match
+                                                  </DropdownMenuItem>
+                                                )}
+                                                {match.scheduledAt && (
+                                                  <DropdownMenuItem
+                                                    onClick={() => openScheduleDialog(match)}
+                                                  >
+                                                    <Clock className='h-4 w-4 mr-2' />
+                                                    Edit schedule
+                                                  </DropdownMenuItem>
+                                                )}
+                                                {match.scheduledAt && (
+                                                  <DropdownMenuItem
+                                                    onClick={() => clearMatchScheduleFromRow(match.id)}
+                                                  >
+                                                    <XCircle className='h-4 w-4 mr-2' />
+                                                    Clear schedule
+                                                  </DropdownMenuItem>
+                                                )}
+
+                                                {match.homeTeamId && match.awayTeamId && (
+                                                  <DropdownMenuItem onClick={() => startMatch(match.id)}>
+                                                    <Play className='h-4 w-4 mr-2' />
+                                                    Start match
+                                                  </DropdownMenuItem>
+                                                )}
+
+                                                <DropdownMenuItem onClick={() => cancelMatch(match.id)}>
+                                                  <XCircle className='h-4 w-4 mr-2' />
+                                                  Cancel match
+                                                </DropdownMenuItem>
+                                              </>
                                             )}
-                                            {match.scheduledAt && (
-                                              <DropdownMenuItem
-                                                onClick={() => openScheduleDialog(match)}
-                                              >
-                                                <Clock className='h-4 w-4 mr-2' />
-                                                Edit schedule
-                                              </DropdownMenuItem>
-                                            )}
-                                            {match.scheduledAt && (
-                                              <DropdownMenuItem
-                                                onClick={() => clearMatchScheduleFromRow(match.id)}
-                                              >
-                                                <XCircle className='h-4 w-4 mr-2' />
-                                                Clear schedule
-                                              </DropdownMenuItem>
-                                            )}
-                                            {match.homeTeamId && match.awayTeamId && (
+
+                                            {match.status === 'IN_PROGRESS' && match.homeTeamId && match.awayTeamId && (
                                               <DropdownMenuItem
                                                 onClick={() => {
                                                   setReportMatchId(match.id)
@@ -848,6 +898,13 @@ export default function TournamentManagePage() {
                                               >
                                                 <Trophy className='h-4 w-4 mr-2' />
                                                 Report Result
+                                              </DropdownMenuItem>
+                                            )}
+
+                                            {match.status === 'IN_PROGRESS' && (
+                                              <DropdownMenuItem onClick={() => cancelMatch(match.id)}>
+                                                <XCircle className='h-4 w-4 mr-2' />
+                                                Cancel match
                                               </DropdownMenuItem>
                                             )}
                                           </DropdownMenuContent>

@@ -373,10 +373,10 @@ export const matchRouter = createTRPCRouter({
         })
       }
 
-      if (match.status === MatchStatus.COMPLETED || match.status === MatchStatus.CANCELLED) {
+      if (match.status !== MatchStatus.SCHEDULED) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Cannot change schedule for a finished or cancelled match',
+          message: 'Only matches in SCHEDULED state can be scheduled',
         })
       }
 
