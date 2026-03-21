@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   Mail,
+  BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -50,6 +51,12 @@ const navigation = [
     href: '/dashboard/invitations',
     icon: Mail,
     roles: ['ADMIN', 'ORGANIZER', 'PLAYER'],
+  },
+  {
+    name: 'Stats',
+    href: '/dashboard/stats',
+    icon: BarChart3,
+    roles: ['ADMIN', 'ORGANIZER', 'PLAYER', 'SPECTATOR'],
   },
   {
     name: 'Profile',

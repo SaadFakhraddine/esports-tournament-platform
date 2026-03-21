@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, Trophy, Users, Calendar, TrendingUp, Bell, Activity } from 'lucide-react'
+import { Plus, Trophy, Users, Calendar, TrendingUp, Bell, Activity, BarChart3 } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
 
 export default function DashboardPage() {
@@ -128,6 +128,15 @@ export default function DashboardPage() {
               />
             </>
           )}
+        </div>
+
+        <div className='flex justify-end -mt-2'>
+          <Button variant='outline' size='sm' asChild>
+            <Link href='/dashboard/stats'>
+              <BarChart3 className='h-4 w-4 mr-2' />
+              Full player stats
+            </Link>
+          </Button>
         </div>
 
         {/* Main Content Grid */}

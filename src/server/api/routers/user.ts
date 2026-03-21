@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import bcrypt from 'bcryptjs'
 import { TRPCError } from '@trpc/server'
+import { MatchStatus, TournamentStatus } from '@prisma/client'
 
 export const userRouter = createTRPCRouter({
   register: publicProcedure
@@ -190,6 +191,288 @@ export const userRouter = createTRPCRouter({
       winRate,
       totalMatches,
       wonMatches,
+    }
+  }),
+
+  /**
+   * Full player-facing stats: aggregates, per-team breakdown, recent completed matches.
+   */
+  getPlayerStats: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const memberships = await ctx.db.teamMember.findMany({
+      where: { userId },
+      select: { teamId: true },
+    })
+    const teamIds = memberships.map((m) => m.teamId)
+
+    if (teamIds.length === 0) {
+      return {
+        summary: {
+          teamsCount: 0,
+          activeTournamentsCount: 0,
+          upcomingMatchesCount: 0,
+          completedMatches: 0,
+          wins: 0,
+          losses: 0,
+          winRate: 0,
+          tournamentsCompleted: 0,
+        },
+        byTeam: [] as Array<{
+          teamId: string
+          name: string
+          logo: string | null
+          played: number
+          wins: number
+          losses: number
+          winRate: number
+        }>,
+        byGame: [] as Array<{
+          gameId: string
+          name: string
+          slug: string
+          icon: string | null
+          played: number
+          wins: number
+          losses: number
+          winRate: number
+        }>,
+        recentMatches: [] as Array<{
+          id: string
+          tournamentId: string
+          tournamentName: string
+          gameName: string
+          gameSlug: string
+          gameIcon: string | null
+          completedAt: Date | null
+          homeTeam: { id: string; name: string }
+          awayTeam: { id: string; name: string }
+          homeScore: number | null
+          awayScore: number | null
+          winnerTeamId: string | null
+          yourTeamId: string
+          yourTeamName: string
+          result: 'win' | 'loss' | 'unknown'
+        }>,
+      }
+    }
+
+    function yourTeamIdForMatch(
+      homeTeamId: string | null,
+      awayTeamId: string | null,
+    ): string | null {
+      if (homeTeamId && teamIds.includes(homeTeamId)) return homeTeamId
+      if (awayTeamId && teamIds.includes(awayTeamId)) return awayTeamId
+      return null
+    }
+
+    const participatedMatchWhere = {
+      status: MatchStatus.COMPLETED,
+      OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
+    }
+
+    const [teamsCount, activeTournamentsCount, upcomingMatchesCount, completedMatches, wins] =
+      await Promise.all([
+        ctx.db.teamMember.count({ where: { userId } }),
+        ctx.db.tournamentRegistration.count({
+          where: {
+            teamId: { in: teamIds },
+            status: 'APPROVED',
+            tournament: {
+              status: {
+                in: [
+                  TournamentStatus.REGISTRATION,
+                  TournamentStatus.SEEDING,
+                  TournamentStatus.IN_PROGRESS,
+                ],
+              },
+            },
+          },
+        }),
+        ctx.db.match.count({
+          where: {
+            OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
+            status: MatchStatus.SCHEDULED,
+          },
+        }),
+        ctx.db.match.count({ where: participatedMatchWhere }),
+        ctx.db.match.count({
+          where: {
+            ...participatedMatchWhere,
+            winnerTeamId: { in: teamIds },
+          },
+        }),
+      ])
+
+    const losses = completedMatches - wins
+    const winRate = completedMatches > 0 ? Math.round((wins / completedMatches) * 100) : 0
+
+    const tournamentsCompleted = await ctx.db.tournamentRegistration.findMany({
+      where: {
+        teamId: { in: teamIds },
+        status: 'APPROVED',
+        tournament: { status: TournamentStatus.COMPLETED },
+      },
+      select: { tournamentId: true },
+      distinct: ['tournamentId'],
+    })
+
+    const teamsMeta = await ctx.db.team.findMany({
+      where: { id: { in: teamIds } },
+      select: { id: true, name: true, logo: true },
+    })
+    const teamNameById = new Map(teamsMeta.map((t) => [t.id, t.name]))
+
+    const byTeam = await Promise.all(
+      teamIds.map(async (teamId) => {
+        const played = await ctx.db.match.count({
+          where: {
+            status: MatchStatus.COMPLETED,
+            OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
+          },
+        })
+        const teamWins = await ctx.db.match.count({
+          where: {
+            status: MatchStatus.COMPLETED,
+            winnerTeamId: teamId,
+          },
+        })
+        const meta = teamsMeta.find((t) => t.id === teamId)
+        return {
+          teamId,
+          name: meta?.name ?? 'Team',
+          logo: meta?.logo ?? null,
+          played,
+          wins: teamWins,
+          losses: played - teamWins,
+          winRate: played > 0 ? Math.round((teamWins / played) * 100) : 0,
+        }
+      }),
+    )
+
+    byTeam.sort((a, b) => b.played - a.played)
+
+    const allCompleted = await ctx.db.match.findMany({
+      where: participatedMatchWhere,
+      select: {
+        id: true,
+        homeScore: true,
+        awayScore: true,
+        winnerTeamId: true,
+        homeTeamId: true,
+        awayTeamId: true,
+        completedAt: true,
+        tournament: {
+          select: {
+            id: true,
+            name: true,
+            game: { select: { id: true, name: true, slug: true, icon: true } },
+          },
+        },
+        homeTeam: { select: { id: true, name: true } },
+        awayTeam: { select: { id: true, name: true } },
+      },
+    })
+
+    type GameAgg = {
+      gameId: string
+      name: string
+      slug: string
+      icon: string | null
+      played: number
+      wins: number
+    }
+    const gameMap = new Map<string, GameAgg>()
+
+    for (const m of allCompleted) {
+      const g = m.tournament.game
+      if (!gameMap.has(g.id)) {
+        gameMap.set(g.id, {
+          gameId: g.id,
+          name: g.name,
+          slug: g.slug,
+          icon: g.icon,
+          played: 0,
+          wins: 0,
+        })
+      }
+      const row = gameMap.get(g.id)!
+      row.played++
+      const yt = yourTeamIdForMatch(m.homeTeamId, m.awayTeamId)
+      if (yt && m.winnerTeamId && m.winnerTeamId === yt) {
+        row.wins++
+      }
+    }
+
+    const byGame = Array.from(gameMap.values())
+      .map((r) => ({
+        gameId: r.gameId,
+        name: r.name,
+        slug: r.slug,
+        icon: r.icon,
+        played: r.played,
+        wins: r.wins,
+        losses: r.played - r.wins,
+        winRate: r.played > 0 ? Math.round((r.wins / r.played) * 100) : 0,
+      }))
+      .sort((a, b) => b.played - a.played)
+
+    const sortedByDate = [...allCompleted].sort((a, b) => {
+      const ta = a.completedAt?.getTime() ?? 0
+      const tb = b.completedAt?.getTime() ?? 0
+      return tb - ta
+    })
+
+    const recentMatches = sortedByDate.slice(0, 20).map((m) => {
+      const homeId = m.homeTeamId
+      const awayId = m.awayTeamId
+      let yourTeamId: string
+      if (homeId && teamIds.includes(homeId)) {
+        yourTeamId = homeId
+      } else if (awayId && teamIds.includes(awayId)) {
+        yourTeamId = awayId
+      } else {
+        yourTeamId = teamIds[0]
+      }
+      const yourTeamName = teamNameById.get(yourTeamId) ?? 'Your team'
+      let result: 'win' | 'loss' | 'unknown' = 'unknown'
+      if (m.winnerTeamId) {
+        result = m.winnerTeamId === yourTeamId ? 'win' : 'loss'
+      }
+      const game = m.tournament.game
+      return {
+        id: m.id,
+        tournamentId: m.tournament.id,
+        tournamentName: m.tournament.name,
+        gameName: game.name,
+        gameSlug: game.slug,
+        gameIcon: game.icon,
+        completedAt: m.completedAt,
+        homeTeam: m.homeTeam ?? { id: '', name: 'TBD' },
+        awayTeam: m.awayTeam ?? { id: '', name: 'TBD' },
+        homeScore: m.homeScore,
+        awayScore: m.awayScore,
+        winnerTeamId: m.winnerTeamId,
+        yourTeamId,
+        yourTeamName,
+        result,
+      }
+    })
+
+    return {
+      summary: {
+        teamsCount,
+        activeTournamentsCount,
+        upcomingMatchesCount,
+        completedMatches,
+        wins,
+        losses,
+        winRate,
+        tournamentsCompleted: tournamentsCompleted.length,
+      },
+      byTeam,
+      byGame,
+      recentMatches,
     }
   }),
 
