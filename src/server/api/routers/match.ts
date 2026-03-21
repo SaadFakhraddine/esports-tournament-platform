@@ -342,6 +342,50 @@ export const matchRouter = createTRPCRouter({
       return updated
     }),
 
+  /** Set or clear `scheduledAt` (organizer / admin). Does not change match result. */
+  setSchedule: protectedProcedure
+    .input(
+      z.object({
+        matchId: z.string(),
+        scheduledAt: z.union([z.date(), z.null()]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const match = await ctx.db.match.findUnique({
+        where: { id: input.matchId },
+        include: { tournament: true },
+      })
+
+      if (!match) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Match not found',
+        })
+      }
+
+      const isOrganizer = match.tournament.organizerId === ctx.session.user.id
+      const isAdmin = ctx.session.user.role === 'ADMIN'
+
+      if (!isOrganizer && !isAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to schedule this match',
+        })
+      }
+
+      if (match.status === MatchStatus.COMPLETED || match.status === MatchStatus.CANCELLED) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot change schedule for a finished or cancelled match',
+        })
+      }
+
+      return ctx.db.match.update({
+        where: { id: input.matchId },
+        data: { scheduledAt: input.scheduledAt },
+      })
+    }),
+
   updateStatus: organizerProcedure
     .input(
       z.object({

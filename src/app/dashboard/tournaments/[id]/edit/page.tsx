@@ -39,6 +39,14 @@ import {
   isTeamBlockedFromQuickAdd,
   quickAddStatusBadge,
 } from '@/lib/tournament-team-search'
+import { DateTimePicker } from '@/components/ui/date-time-picker'
+import { Label } from '@/components/ui/label'
+
+/** Next quarter-hour from `reference` (for a sensible default pick time). */
+function defaultMatchScheduleTime(reference: Date) {
+  const quarterMs = 15 * 60 * 1000
+  return new Date(Math.ceil(reference.getTime() / quarterMs) * quarterMs)
+}
 
 export default function TournamentManagePage() {
   const { data: session, status } = useSession()
@@ -66,10 +74,25 @@ export default function TournamentManagePage() {
 
   const utils = trpc.useUtils()
 
+  const setScheduleMutation = trpc.match.setSchedule.useMutation({
+    onSuccess: async () => {
+      await utils.tournament.getById.invalidate({ id: tournamentId })
+      setScheduleOpen(false)
+      setScheduleMatchId(null)
+      setScheduleAt(null)
+      setScheduleHadTime(false)
+    },
+  })
+
   const [reportOpen, setReportOpen] = useState(false)
   const [reportMatchId, setReportMatchId] = useState<string | null>(null)
   const [reportHomeScore, setReportHomeScore] = useState('0')
   const [reportAwayScore, setReportAwayScore] = useState('0')
+
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [scheduleMatchId, setScheduleMatchId] = useState<string | null>(null)
+  const [scheduleAt, setScheduleAt] = useState<Date | null>(null)
+  const [scheduleHadTime, setScheduleHadTime] = useState(false)
 
   const submitReportedResult = async () => {
     if (!reportMatchId) return
@@ -136,6 +159,49 @@ export default function TournamentManagePage() {
     tournament.status !== 'IN_PROGRESS' &&
     tournament.status !== 'COMPLETED' &&
     tournament.status !== 'CANCELLED'
+
+  const openScheduleDialog = (match: {
+    id: string
+    scheduledAt: Date | string | null | undefined
+  }) => {
+    const start = new Date(tournament.startDate)
+    const now = new Date()
+    const base = now.getTime() < start.getTime() ? start : now
+    setScheduleMatchId(match.id)
+    setScheduleHadTime(!!match.scheduledAt)
+    setScheduleAt(
+      match.scheduledAt ? new Date(match.scheduledAt) : defaultMatchScheduleTime(base)
+    )
+    setScheduleOpen(true)
+  }
+
+  const saveMatchSchedule = async () => {
+    if (!scheduleMatchId) return
+    if (!scheduleAt) {
+      alert('Choose a date and time for the match.')
+      return
+    }
+    try {
+      await setScheduleMutation.mutateAsync({
+        matchId: scheduleMatchId,
+        scheduledAt: scheduleAt,
+      })
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to save schedule')
+    }
+  }
+
+  const clearMatchScheduleFromRow = async (matchId: string) => {
+    if (!confirm('Remove the scheduled time for this match?')) return
+    try {
+      await setScheduleMutation.mutateAsync({
+        matchId,
+        scheduledAt: null,
+      })
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Failed to clear schedule')
+    }
+  }
 
   return (
     <DashboardLayout userRole={session.user.role}>
@@ -738,7 +804,8 @@ export default function TournamentManagePage() {
                                       </Badge>
 
                                       {/* Actions */}
-                                      {match.status !== 'COMPLETED' && (
+                                      {match.status !== 'COMPLETED' &&
+                                        match.status !== 'CANCELLED' && (
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <Button variant='ghost' size='sm'>
@@ -748,13 +815,26 @@ export default function TournamentManagePage() {
                                           <DropdownMenuContent align='end'>
                                             {!match.scheduledAt && (
                                               <DropdownMenuItem
-                                                onClick={() => {
-                                                  // TODO: Open schedule modal
-                                                  console.log('Schedule match:', match.id)
-                                                }}
+                                                onClick={() => openScheduleDialog(match)}
                                               >
                                                 <Calendar className='h-4 w-4 mr-2' />
-                                                Schedule Match
+                                                Schedule match
+                                              </DropdownMenuItem>
+                                            )}
+                                            {match.scheduledAt && (
+                                              <DropdownMenuItem
+                                                onClick={() => openScheduleDialog(match)}
+                                              >
+                                                <Clock className='h-4 w-4 mr-2' />
+                                                Edit schedule
+                                              </DropdownMenuItem>
+                                            )}
+                                            {match.scheduledAt && (
+                                              <DropdownMenuItem
+                                                onClick={() => clearMatchScheduleFromRow(match.id)}
+                                              >
+                                                <XCircle className='h-4 w-4 mr-2' />
+                                                Clear schedule
                                               </DropdownMenuItem>
                                             )}
                                             {match.homeTeamId && match.awayTeamId && (
@@ -768,17 +848,6 @@ export default function TournamentManagePage() {
                                               >
                                                 <Trophy className='h-4 w-4 mr-2' />
                                                 Report Result
-                                              </DropdownMenuItem>
-                                            )}
-                                            {match.scheduledAt && match.status === 'SCHEDULED' && (
-                                              <DropdownMenuItem
-                                                onClick={() => {
-                                                  // TODO: Edit schedule
-                                                  console.log('Edit schedule:', match.id)
-                                                }}
-                                              >
-                                                <Clock className='h-4 w-4 mr-2' />
-                                                Edit Schedule
                                               </DropdownMenuItem>
                                             )}
                                           </DropdownMenuContent>
@@ -847,6 +916,76 @@ export default function TournamentManagePage() {
               <Button onClick={submitReportedResult} disabled={submitResultMutation.isPending || !reportMatchId}>
                 {submitResultMutation.isPending ? 'Submitting...' : 'Submit'}
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={scheduleOpen}
+          onOpenChange={(open) => {
+            setScheduleOpen(open)
+            if (!open) {
+              setScheduleMatchId(null)
+              setScheduleAt(null)
+              setScheduleHadTime(false)
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{scheduleHadTime ? 'Edit match time' : 'Schedule match'}</DialogTitle>
+            </DialogHeader>
+
+            <div className='space-y-2'>
+              <Label>Date &amp; time</Label>
+              <DateTimePicker
+                selected={scheduleAt}
+                onChange={setScheduleAt}
+                placeholderText='Pick date and time'
+              />
+            </div>
+
+            <DialogFooter className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-between sm:gap-0'>
+              <div className='flex flex-wrap gap-2 sm:mr-auto'>
+                {scheduleHadTime && (
+                  <Button
+                    type='button'
+                    variant='outline'
+                    disabled={setScheduleMutation.isPending}
+                    onClick={async () => {
+                      if (!scheduleMatchId) return
+                      if (!confirm('Remove the scheduled time for this match?')) return
+                      try {
+                        await setScheduleMutation.mutateAsync({
+                          matchId: scheduleMatchId,
+                          scheduledAt: null,
+                        })
+                      } catch (error: unknown) {
+                        alert(error instanceof Error ? error.message : 'Failed to clear schedule')
+                      }
+                    }}
+                  >
+                    Clear time
+                  </Button>
+                )}
+              </div>
+              <div className='flex flex-wrap justify-end gap-2'>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => setScheduleOpen(false)}
+                  disabled={setScheduleMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type='button'
+                  onClick={saveMatchSchedule}
+                  disabled={setScheduleMutation.isPending || !scheduleAt}
+                >
+                  {setScheduleMutation.isPending ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
