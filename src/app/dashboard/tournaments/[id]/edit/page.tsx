@@ -1184,7 +1184,9 @@ function RegistrationsTab({
 
           {!canAddTeams ? (
             <p className='text-sm text-muted-foreground'>
-              Tournament registration is closed.
+              Team intake is only available while the tournament is in <strong>registration</strong>. After
+              registration closes, seeding, or play begins, new teams can&apos;t be added—create a new
+              tournament if you need a different lineup.
             </p>
           ) : showTeamsSkeleton ? (
             <div className='space-y-3'>

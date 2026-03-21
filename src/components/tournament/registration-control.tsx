@@ -55,21 +55,32 @@ export function RegistrationControl({
   })
 
   const isRegistrationOpen = tournament.status === 'REGISTRATION'
-  const canChangeRegistration = tournament.status !== 'COMPLETED' && tournament.status !== 'CANCELLED'
+  const canCloseRegistration = tournament.status === 'REGISTRATION'
+  const canOpenRegistration = tournament.status === 'DRAFT'
+  const registrationLocked =
+    tournament.status === 'SEEDING' ||
+    tournament.status === 'IN_PROGRESS' ||
+    tournament.status === 'COMPLETED' ||
+    tournament.status === 'CANCELLED'
 
   const handleCloseRegistration = () => {
-    // When closing, move to SEEDING unless already past that
-    const newStatus = tournament.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'SEEDING'
     updateStatusMutation.mutate({
       id: tournament.id,
-      status: newStatus as 'IN_PROGRESS' | 'SEEDING',
+      status: 'SEEDING',
+      registrationEnd: new Date(),
     })
   }
 
   const handleOpenRegistration = () => {
+    const now = new Date()
     updateStatusMutation.mutate({
       id: tournament.id,
       status: 'REGISTRATION',
+      registrationStart: now,
+      registrationEnd:
+        tournament.registrationEnd && new Date(tournament.registrationEnd).getTime() > now.getTime()
+          ? new Date(tournament.registrationEnd)
+          : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
     })
   }
 
@@ -141,7 +152,9 @@ export function RegistrationControl({
               </>
             ) : (
               <>
-                Registration is currently closed. You can reopen it at any time regardless of tournament status.
+                {registrationLocked
+                  ? 'Registration is closed and cannot be reopened after the tournament has left the registration phase.'
+                  : 'Registration is closed. You can open it from draft to start accepting teams.'}
               </>
             )}
           </AlertDescription>
@@ -156,11 +169,11 @@ export function RegistrationControl({
 
         {/* Control Buttons */}
         <div className='space-y-2'>
-          {!canChangeRegistration ? (
+          {registrationLocked ? (
             <Alert>
               <Info className='h-4 w-4' />
               <AlertDescription className='text-sm'>
-                Registration control is not available for {tournament.status.toLowerCase()} tournaments.
+                Registration cannot be reopened for this tournament. Create a new tournament to add teams.
               </AlertDescription>
             </Alert>
           ) : isRegistrationOpen ? (
@@ -169,7 +182,7 @@ export function RegistrationControl({
                 <Button
                   variant='destructive'
                   className='w-full'
-                  disabled={updateStatusMutation.isPending}
+                  disabled={updateStatusMutation.isPending || !canCloseRegistration}
                 >
                   {updateStatusMutation.isPending ? (
                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
@@ -183,9 +196,9 @@ export function RegistrationControl({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Close Registration?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will immediately close registration for this tournament.
-                    Teams will no longer be able to register. You can reopen it
-                    later at any time.
+                    This will close registration and move the tournament to seeding. Teams will no longer be
+                    able to register, and registration cannot be reopened later—create a new tournament if you
+                    need a different lineup.
                     <br />
                     <br />
                     Current teams: {currentRegistrationsCount} / {maxTeams}
@@ -214,7 +227,7 @@ export function RegistrationControl({
                 <Button
                   variant='default'
                   className='w-full gradient-purple'
-                  disabled={updateStatusMutation.isPending}
+                  disabled={updateStatusMutation.isPending || !canOpenRegistration}
                 >
                   {updateStatusMutation.isPending ? (
                     <Loader2 className='h-4 w-4 mr-2 animate-spin' />
@@ -228,27 +241,7 @@ export function RegistrationControl({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Open Registration?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will open registration and allow teams to register for
-                    this tournament.
-                    {tournament.status === 'IN_PROGRESS' && (
-                      <>
-                        {' '}
-                        <br />
-                        <br />
-                        <strong>Warning:</strong> The tournament is currently in
-                        progress. Opening registration may affect the bracket and
-                        ongoing matches.
-                      </>
-                    )}
-                    {tournament.status === 'SEEDING' && (
-                      <>
-                        {' '}
-                        <br />
-                        <br />
-                        Any seeding you&apos;ve done will remain, but you may need to
-                        adjust it after new teams join.
-                      </>
-                    )}
+                    This will open registration and allow teams to register for this tournament.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -273,9 +266,9 @@ export function RegistrationControl({
         {/* Helper Text */}
         <div className='text-xs text-muted-foreground space-y-1'>
           <p>
-            <strong>Tip:</strong> You have full control over registration at any time.
-            Open it to accept new teams, or close it when you have enough teams.
-            This works regardless of registration dates or tournament status.
+            <strong>Tip:</strong> Open registration from <strong>draft</strong>, then close it when you&apos;re
+            ready to seed. Registration can&apos;t be reopened after seeding or play starts—create a new
+            tournament if you need a different lineup.
           </p>
         </div>
       </CardContent>

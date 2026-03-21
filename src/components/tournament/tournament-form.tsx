@@ -53,6 +53,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
   }, [tournament?.status])
 
   const effectiveStatus = statusOverride ?? tournament?.status
+  const isRegistrationPhaseOpen = effectiveStatus === 'REGISTRATION'
 
   // Fetch all games
   const { data: games, isLoading: gamesLoading } = trpc.game.getAll.useQuery()
@@ -109,8 +110,7 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
     if (!tournament?.id) return
 
     setIsTogglingRegistration(true)
-    const currentStatus = tournament.status || 'DRAFT'
-    const isCurrentlyOpen = currentStatus === 'REGISTRATION'
+    const isCurrentlyOpen = isRegistrationPhaseOpen
     const now = new Date()
     const desiredRegistrationEnd = (() => {
       const current = formData.registrationEnd ?? now
@@ -360,7 +360,13 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                     variant={effectiveStatus === 'REGISTRATION' ? 'destructive' : 'default'}
                     className={effectiveStatus === 'REGISTRATION' ? '' : 'gradient-purple'}
                     onClick={handleToggleRegistration}
-                    disabled={isTogglingRegistration || tournament.status === 'COMPLETED' || tournament.status === 'CANCELLED'}
+                    disabled={
+                      isTogglingRegistration ||
+                      tournament.status === 'COMPLETED' ||
+                      tournament.status === 'CANCELLED' ||
+                      // "Open registration" only from DRAFT; "Close" only while REGISTRATION
+                      (!isRegistrationPhaseOpen && tournament.status !== 'DRAFT')
+                    }
                   >
                     {isTogglingRegistration ? (
                       <Loader2 className='h-4 w-4 mr-2 animate-spin' />
@@ -416,14 +422,24 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
                 </AlertDescription>
               </Alert>
             )}
-            {mode === 'edit' &&
-              effectiveStatus !== 'REGISTRATION' &&
-              effectiveStatus !== 'COMPLETED' &&
-              effectiveStatus !== 'CANCELLED' && (
+            {mode === 'edit' && tournament?.status === 'DRAFT' && (
               <Alert className='mt-2'>
                 <Info className='h-4 w-4' />
                 <AlertDescription className='text-sm'>
-                  Registration is currently closed. Click &quot;Open&quot; to start the registration window now.
+                  Tournament is in draft. Click &quot;Open&quot; to open registration and allow teams to sign up.
+                </AlertDescription>
+              </Alert>
+            )}
+            {mode === 'edit' &&
+              (tournament?.status === 'SEEDING' ||
+                tournament?.status === 'IN_PROGRESS' ||
+                tournament?.status === 'COMPLETED' ||
+                tournament?.status === 'CANCELLED') && (
+              <Alert className='mt-2'>
+                <Info className='h-4 w-4' />
+                <AlertDescription className='text-sm'>
+                  Registration cannot be reopened after the tournament has left the registration phase. To add
+                  teams, create a new tournament.
                 </AlertDescription>
               </Alert>
             )}

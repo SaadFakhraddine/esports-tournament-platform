@@ -243,6 +243,19 @@ export const tournamentRouter = createTRPCRouter({
       })
     }
 
+    // Hard gate: cannot move (back) to REGISTRATION after leaving that phase.
+    if (
+      data.status === TournamentStatus.REGISTRATION &&
+      tournament.status !== TournamentStatus.DRAFT &&
+      tournament.status !== TournamentStatus.REGISTRATION
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message:
+          'Registration cannot be reopened after the tournament has left the registration phase. Create a new tournament to add teams.',
+      })
+    }
+
     const updated = await ctx.db.tournament.update({
       where: { id },
       data,
@@ -699,6 +712,17 @@ export const tournamentRouter = createTRPCRouter({
         })
       }
 
+      if (
+        registration.tournament.status !== TournamentStatus.REGISTRATION &&
+        registration.tournament.status !== TournamentStatus.SEEDING
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Cannot approve registrations after the tournament has started. Create a new tournament if you need a different lineup.',
+        })
+      }
+
       const updated = await ctx.db.tournamentRegistration.update({
         where: { id: input.registrationId },
         data: {
@@ -734,6 +758,17 @@ export const tournamentRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to reject this registration',
+        })
+      }
+
+      if (
+        registration.tournament.status !== TournamentStatus.REGISTRATION &&
+        registration.tournament.status !== TournamentStatus.SEEDING
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Cannot change registrations after the tournament has started. Create a new tournament if you need a different lineup.',
         })
       }
 

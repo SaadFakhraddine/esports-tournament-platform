@@ -254,8 +254,12 @@ export default function TournamentRegistrationsPage() {
             </div>
 
             {!canAddTeams ? (
-              <Alert variant='destructive'>
-                <AlertDescription>This tournament is not open for adding teams.</AlertDescription>
+              <Alert>
+                <AlertDescription>
+                  Team intake is only available while the tournament is in <strong>registration</strong>.
+                  After registration closes, seeding, or play begins, new teams can&apos;t be added—create a
+                  new tournament if you need a different lineup.
+                </AlertDescription>
               </Alert>
             ) : teamsLoading ? (
               <div className='space-y-3'>
