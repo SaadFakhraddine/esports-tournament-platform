@@ -48,20 +48,34 @@ NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 \`\`\`
 
-4. Initialize the database:
+4. Initialize the database (schema + Prisma client):
 
 \`\`\`bash
-npx prisma migrate dev --name init
+npx prisma db push
 npx prisma generate
 \`\`\`
 
-5. Run the development server:
+5. **Optional — fresh database + demo data** (wipes all data in `DATABASE_URL`, then seeds games, admin, players, teams, sample tournaments):
+
+\`\`\`bash
+npm run db:reset
+\`\`\`
+
+   Default seeded admin: `admin@example.com` / `password123`. Override with env vars: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_NAME`.
+
+   To seed an already-empty database without `db push`:
+
+\`\`\`bash
+npm run db:seed
+\`\`\`
+
+6. Run the development server:
 
 \`\`\`bash
 npm run dev
 \`\`\`
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Project Structure
 

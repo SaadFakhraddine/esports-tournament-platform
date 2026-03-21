@@ -1,10 +1,28 @@
-import { PrismaClient, UserRole, TournamentFormat, TournamentStatus, MatchStatus, RegistrationStatus, TeamRole, NotificationType } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+/**
+ * Demo / local seed. After a fresh DB reset, run: `npm run db:seed` (or `npm run db:reset`).
+ *
+ * Optional env:
+ *   SEED_ADMIN_EMAIL     (default: admin@example.com)
+ *   SEED_ADMIN_PASSWORD  (default: password123)
+ *   SEED_ADMIN_USERNAME  (default: admin)
+ *   SEED_ADMIN_NAME      (default: Admin)
+ */
+import {
+  PrismaClient,
+  UserRole,
+  TournamentFormat,
+  TournamentStatus,
+  MatchStatus,
+  RegistrationStatus,
+  TeamRole,
+  NotificationType,
+} from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Starting database seeding...\n');
+  console.log('🌱 Starting database seeding...\n')
 
   // Create games
   console.log('Creating games...');
@@ -37,21 +55,27 @@ async function main() {
   }
   console.log(`✅ Created ${games.length} games`);
 
-  // Look up the admin account
-  console.log('Looking for admin account...');
-  const admin = await prisma.user.findUnique({
-    where: {
-      email: 'saadfakhraddine@gmail.com'
-    }
-  });
-
-  if (!admin) {
-    console.log('❌ Admin account "saad" not found.');
-    return;
-  }
-
-  console.log('✅ Found admin:', admin.email, '-', admin.name, '-', admin.role);
-  console.log();
+  // Admin (required for seeded tournaments / organizer)
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com'
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? 'password123'
+  console.log('Creating admin user...')
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10)
+  const admin = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      role: UserRole.ADMIN,
+    },
+    create: {
+      email: adminEmail,
+      username: process.env.SEED_ADMIN_USERNAME ?? 'admin',
+      name: process.env.SEED_ADMIN_NAME ?? 'Admin',
+      password: adminPasswordHash,
+      role: UserRole.ADMIN,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+    },
+  })
+  console.log('✅ Admin:', admin.email, `(${admin.role})`)
+  console.log()
 
   // Create players
   console.log('Creating players...');
