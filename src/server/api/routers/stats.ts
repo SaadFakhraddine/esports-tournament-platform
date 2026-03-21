@@ -1,5 +1,5 @@
 import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
-import { TournamentStatus, MatchStatus } from '@prisma/client'
+import { TournamentStatus } from '@prisma/client'
 
 export const statsRouter = createTRPCRouter({
   getPlatformStats: publicProcedure.query(async ({ ctx }) => {
@@ -26,180 +26,154 @@ export const statsRouter = createTRPCRouter({
   }),
 
   getLeaderboards: publicProcedure.query(async ({ ctx }) => {
-    // Top 5 Teams by Win Rate
-    const teams = await ctx.db.team.findMany({
-      select: {
-        id: true,
-        name: true,
-        tag: true,
-        logo: true,
-        homeMatches: {
-          where: { status: MatchStatus.COMPLETED },
-          select: { id: true, winnerTeamId: true },
-        },
-        awayMatches: {
-          where: { status: MatchStatus.COMPLETED },
-          select: { id: true, winnerTeamId: true },
-        },
-      },
-    })
+    const [topTeamRows, topPlayerRows, recentChampionRows] = await Promise.all([
+      // Top teams by win rate — single aggregation over home/away participation (no N+1, no full table scan of matches into Node)
+      ctx.db.$queryRaw<
+        Array<{
+          id: string
+          name: string
+          tag: string | null
+          logo: string | null
+          wins: number
+          losses: number
+        }>
+      >`
+        WITH participation AS (
+          SELECT "homeTeamId" AS team_id, "winnerTeamId"
+          FROM "Match"
+          WHERE status = 'COMPLETED' AND "homeTeamId" IS NOT NULL
+          UNION ALL
+          SELECT "awayTeamId", "winnerTeamId"
+          FROM "Match"
+          WHERE status = 'COMPLETED' AND "awayTeamId" IS NOT NULL
+        )
+        SELECT
+          t.id,
+          t.name,
+          t.tag,
+          t.logo,
+          SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1 ELSE 0 END)::int AS wins,
+          (COUNT(*)::int - SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1 ELSE 0 END)::int) AS losses
+        FROM participation p
+        INNER JOIN "Team" t ON t.id = p.team_id
+        GROUP BY t.id, t.name, t.tag, t.logo
+        HAVING COUNT(*) > 0
+        ORDER BY
+          (SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1.0) / COUNT(*)::float) DESC,
+          SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1 ELSE 0 END) DESC
+        LIMIT 5
+      `,
 
-    const teamsWithStats = teams
-      .map((team) => {
-        const allMatches = [...team.homeMatches, ...team.awayMatches]
-        const wins = allMatches.filter((m) => m.winnerTeamId === team.id).length
-        const losses = allMatches.length - wins
-        const winRate = allMatches.length > 0 ? (wins / allMatches.length) * 100 : 0
+      // Tournament championships: owners of teams that won a terminal bracket match (nextMatchId IS NULL)
+      ctx.db.$queryRaw<
+        Array<{
+          id: string
+          name: string | null
+          username: string | null
+          avatar: string | null
+          winCount: number
+        }>
+      >`
+        SELECT
+          u.id,
+          u.name,
+          u.username,
+          u.avatar,
+          COUNT(DISTINCT tr.id)::int AS "winCount"
+        FROM "Match" m
+        INNER JOIN "Team" t ON t.id = m."winnerTeamId"
+        INNER JOIN "User" u ON u.id = t."ownerId"
+        INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
+        WHERE m.status = 'COMPLETED'
+          AND tr.status = 'COMPLETED'
+          AND m."nextMatchId" IS NULL
+          AND m."winnerTeamId" IS NOT NULL
+        GROUP BY u.id, u.name, u.username, u.avatar
+        ORDER BY "winCount" DESC
+        LIMIT 5
+      `,
 
-        return {
-          id: team.id,
-          name: team.name,
-          tag: team.tag,
-          logo: team.logo,
-          wins,
-          losses,
-          winRate: Math.round(winRate),
-          totalMatches: allMatches.length,
-        }
-      })
-      .filter((team) => team.totalMatches > 0) // Only teams with matches
-      .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins)
-      .slice(0, 5)
+      // Last 5 completed tournaments with a resolved grand-final-style winner
+      ctx.db.$queryRaw<
+        Array<{
+          tournamentId: string
+          tournamentName: string
+          completedAt: Date
+          gameName: string
+          gameIcon: string | null
+          winnerTeam_id: string
+          winnerTeam_name: string
+          winnerTeam_logo: string | null
+        }>
+      >`
+        WITH champs AS (
+          SELECT DISTINCT ON (m."tournamentId")
+            m."tournamentId",
+            m."winnerTeamId"
+          FROM "Match" m
+          INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
+          WHERE tr.status = 'COMPLETED'
+            AND m.status = 'COMPLETED'
+            AND m."winnerTeamId" IS NOT NULL
+            AND m."nextMatchId" IS NULL
+          ORDER BY m."tournamentId", m."completedAt" DESC NULLS LAST
+        )
+        SELECT
+          tr.id AS "tournamentId",
+          tr.name AS "tournamentName",
+          tr."endDate" AS "completedAt",
+          g.name AS "gameName",
+          g.icon AS "gameIcon",
+          wt.id AS "winnerTeam_id",
+          wt.name AS "winnerTeam_name",
+          wt.logo AS "winnerTeam_logo"
+        FROM "Tournament" tr
+        INNER JOIN champs c ON c."tournamentId" = tr.id
+        INNER JOIN "Team" wt ON wt.id = c."winnerTeamId"
+        INNER JOIN "Game" g ON g.id = tr."gameId"
+        WHERE tr."endDate" IS NOT NULL
+        ORDER BY tr."endDate" DESC
+        LIMIT 5
+      `,
+    ])
 
-    // Top 5 Players by Tournament Wins (team owners who won tournaments)
-    const tournamentWins = await ctx.db.tournament.findMany({
-      where: { status: TournamentStatus.COMPLETED },
-      select: {
-        id: true,
-        name: true,
-        brackets: {
-          select: {
-            matches: {
-              where: { status: MatchStatus.COMPLETED },
-              select: { winnerTeamId: true },
-            },
-          },
-        },
-      },
-    })
-
-    // Get teams that won tournaments (teams that won the final match)
-    const winnerTeamIds = new Set<string>()
-    tournamentWins.forEach((tournament) => {
-      tournament.brackets.forEach((bracket) => {
-        // Find the last/final match
-        const finalMatch = bracket.matches[bracket.matches.length - 1]
-        if (finalMatch?.winnerTeamId) {
-          winnerTeamIds.add(finalMatch.winnerTeamId)
-        }
-      })
-    })
-
-    const winnerTeams = await ctx.db.team.findMany({
-      where: { id: { in: Array.from(winnerTeamIds) } },
-      select: {
-        id: true,
-        name: true,
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-          },
-        },
-      },
-    })
-
-    // Count wins per player (team owner)
-    const playerWins = new Map<string, { player: { id: string; name: string | null; username: string | null; avatar: string | null }; winCount: number }>()
-    winnerTeams.forEach((team) => {
-      const playerId = team.owner.id
-      if (!playerWins.has(playerId)) {
-        playerWins.set(playerId, {
-          player: team.owner,
-          winCount: 0,
-        })
+    const topTeams = topTeamRows.map((row) => {
+      const total = row.wins + row.losses
+      const winRate = total > 0 ? Math.round((row.wins / total) * 100) : 0
+      return {
+        id: row.id,
+        name: row.name,
+        tag: row.tag,
+        logo: row.logo,
+        wins: row.wins,
+        losses: row.losses,
+        winRate,
+        totalMatches: total,
       }
-      const current = playerWins.get(playerId)!
-      current.winCount++
     })
 
-    const topPlayers = Array.from(playerWins.values())
-      .sort((a, b) => b.winCount - a.winCount)
-      .slice(0, 5)
-      .map((item) => ({
-        id: item.player.id,
-        // Ensure the frontend always receives a displayable string
-        name: item.player.name ?? item.player.username ?? 'Unknown',
-        avatar: item.player.avatar,
-        winCount: item.winCount,
-      }))
+    const topPlayers = topPlayerRows.map((row) => ({
+      id: row.id,
+      name: row.name ?? row.username ?? 'Unknown',
+      avatar: row.avatar,
+      winCount: row.winCount,
+    }))
 
-    // Recent Champions (last 5 completed tournaments with winners)
-    const recentCompletedTournaments = await ctx.db.tournament.findMany({
-      where: { status: TournamentStatus.COMPLETED, endDate: { not: null } },
-      orderBy: { endDate: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        name: true,
-        endDate: true,
-        game: { select: { name: true, icon: true } },
-        brackets: {
-          select: {
-            matches: {
-              where: {
-                status: MatchStatus.COMPLETED,
-                winnerTeamId: { not: null },
-                homeTeamId: { not: null },
-                awayTeamId: { not: null },
-              },
-              orderBy: { completedAt: 'desc' },
-              take: 1,
-              select: {
-                winnerTeamId: true,
-                homeTeam: { select: { id: true, name: true, logo: true } },
-                awayTeam: { select: { id: true, name: true, logo: true } },
-              },
-            },
-          },
-        },
+    const recentChampions = recentChampionRows.map((row) => ({
+      tournamentId: row.tournamentId,
+      tournamentName: row.tournamentName,
+      gameName: row.gameName,
+      gameIcon: row.gameIcon,
+      winnerTeam: {
+        id: row.winnerTeam_id,
+        name: row.winnerTeam_name,
+        logo: row.winnerTeam_logo,
       },
-    })
-
-    const recentChampions = recentCompletedTournaments.flatMap((tournament) => {
-      // Find the winner from the final match (guaranteed by winnerTeamId filter above)
-      for (const bracket of tournament.brackets) {
-        const finalMatch = bracket.matches[0]
-        if (finalMatch?.winnerTeamId) {
-          const homeTeam = finalMatch.homeTeam
-          const awayTeam = finalMatch.awayTeam
-          if (!homeTeam || !awayTeam) continue
-
-          const winnerTeam =
-            homeTeam.id === finalMatch.winnerTeamId ? homeTeam : awayTeam
-
-          if (!winnerTeam) continue
-
-          return [
-            {
-              tournamentId: tournament.id,
-              tournamentName: tournament.name,
-              gameName: tournament.game.name,
-              gameIcon: tournament.game.icon,
-              winnerTeam,
-              completedAt: tournament.endDate!, // filtered to non-null above
-            },
-          ]
-        }
-      }
-
-      return []
-    })
+      completedAt: row.completedAt,
+    }))
 
     return {
-      topTeams: teamsWithStats,
+      topTeams,
       topPlayers,
       recentChampions,
     }
@@ -220,31 +194,35 @@ export const statsRouter = createTRPCRouter({
         },
       }),
 
-      // Recent tournament completions
-      ctx.db.tournament.findMany({
-        where: { status: TournamentStatus.COMPLETED },
-        orderBy: { updatedAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          name: true,
-          updatedAt: true,
-          brackets: {
-            select: {
-              matches: {
-                where: { status: MatchStatus.COMPLETED },
-                orderBy: { completedAt: 'desc' },
-                take: 1,
-                select: {
-                  winnerTeamId: true,
-                  homeTeam: { select: { id: true, name: true } },
-                  awayTeam: { select: { id: true, name: true } },
-                },
-              },
-            },
-          },
-        },
-      }),
+      // Recent tournament completions (winner from terminal match; avoids loading all brackets)
+      ctx.db.$queryRaw<
+        Array<{
+          id: string
+          name: string
+          updatedAt: Date
+          winnerName: string | null
+        }>
+      >`
+        WITH champs AS (
+          SELECT DISTINCT ON (m."tournamentId")
+            m."tournamentId",
+            wt.name AS "winnerName"
+          FROM "Match" m
+          INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
+          INNER JOIN "Team" wt ON wt.id = m."winnerTeamId"
+          WHERE tr.status = 'COMPLETED'
+            AND m.status = 'COMPLETED'
+            AND m."winnerTeamId" IS NOT NULL
+            AND m."nextMatchId" IS NULL
+          ORDER BY m."tournamentId", m."completedAt" DESC NULLS LAST
+        )
+        SELECT tr.id, tr.name, tr."updatedAt", c."winnerName"
+        FROM "Tournament" tr
+        INNER JOIN champs c ON c."tournamentId" = tr.id
+        WHERE tr.status = 'COMPLETED'
+        ORDER BY tr."updatedAt" DESC
+        LIMIT 5
+      `,
 
       // New tournaments (registration open)
       ctx.db.tournament.findMany({
@@ -280,22 +258,7 @@ export const statsRouter = createTRPCRouter({
     })
 
     recentCompletions.forEach((tournament) => {
-      let winnerName = 'Unknown'
-      for (const bracket of tournament.brackets) {
-        const finalMatch = bracket.matches[0]
-        if (finalMatch?.winnerTeamId) {
-          const homeTeam = finalMatch.homeTeam
-          const awayTeam = finalMatch.awayTeam
-          if (!homeTeam || !awayTeam) {
-            break
-          }
-
-          winnerName =
-            homeTeam.id === finalMatch.winnerTeamId ? homeTeam.name : awayTeam.name
-          break
-        }
-      }
-
+      const winnerName = tournament.winnerName ?? 'Unknown'
       activities.push({
         id: `comp-${tournament.id}`,
         type: 'completion',
