@@ -24,6 +24,7 @@ export default function PlayerStatsPage() {
   const { data: session, status } = useSession({ required: true })
   const { data: stats, isLoading } = trpc.user.getPlayerStats.useQuery(undefined, {
     enabled: !!session,
+    staleTime: 60_000,
   })
 
   if (status === 'loading' || !session) {

@@ -257,12 +257,14 @@ export const userRouter = createTRPCRouter({
       }
     }
 
+    const teamIdSet = new Set(teamIds)
+
     function yourTeamIdForMatch(
       homeTeamId: string | null,
       awayTeamId: string | null,
     ): string | null {
-      if (homeTeamId && teamIds.includes(homeTeamId)) return homeTeamId
-      if (awayTeamId && teamIds.includes(awayTeamId)) return awayTeamId
+      if (homeTeamId && teamIdSet.has(homeTeamId)) return homeTeamId
+      if (awayTeamId && teamIdSet.has(awayTeamId)) return awayTeamId
       return null
     }
 
@@ -271,108 +273,81 @@ export const userRouter = createTRPCRouter({
       OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
     }
 
-    const [teamsCount, activeTournamentsCount, upcomingMatchesCount, completedMatches, wins] =
-      await Promise.all([
-        ctx.db.teamMember.count({ where: { userId } }),
-        ctx.db.tournamentRegistration.count({
-          where: {
-            teamId: { in: teamIds },
-            status: 'APPROVED',
-            tournament: {
-              status: {
-                in: [
-                  TournamentStatus.REGISTRATION,
-                  TournamentStatus.SEEDING,
-                  TournamentStatus.IN_PROGRESS,
-                ],
-              },
+    const completedMatchSelect = {
+      id: true,
+      homeScore: true,
+      awayScore: true,
+      winnerTeamId: true,
+      homeTeamId: true,
+      awayTeamId: true,
+      completedAt: true,
+      tournament: {
+        select: {
+          id: true,
+          name: true,
+          game: { select: { id: true, name: true, slug: true, icon: true } },
+        },
+      },
+      homeTeam: { select: { id: true, name: true } },
+      awayTeam: { select: { id: true, name: true } },
+    } as const
+
+    const [
+      activeTournamentsCount,
+      upcomingMatchesCount,
+      tournamentsCompleted,
+      teamsMeta,
+      allCompleted,
+    ] = await Promise.all([
+      ctx.db.tournamentRegistration.count({
+        where: {
+          teamId: { in: teamIds },
+          status: 'APPROVED',
+          tournament: {
+            status: {
+              in: [
+                TournamentStatus.REGISTRATION,
+                TournamentStatus.SEEDING,
+                TournamentStatus.IN_PROGRESS,
+              ],
             },
           },
-        }),
-        ctx.db.match.count({
-          where: {
-            OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
-            status: MatchStatus.SCHEDULED,
-          },
-        }),
-        ctx.db.match.count({ where: participatedMatchWhere }),
-        ctx.db.match.count({
-          where: {
-            ...participatedMatchWhere,
-            winnerTeamId: { in: teamIds },
-          },
-        }),
-      ])
+        },
+      }),
+      ctx.db.match.count({
+        where: {
+          OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
+          status: MatchStatus.SCHEDULED,
+        },
+      }),
+      ctx.db.tournamentRegistration.findMany({
+        where: {
+          teamId: { in: teamIds },
+          status: 'APPROVED',
+          tournament: { status: TournamentStatus.COMPLETED },
+        },
+        select: { tournamentId: true },
+        distinct: ['tournamentId'],
+      }),
+      ctx.db.team.findMany({
+        where: { id: { in: teamIds } },
+        select: { id: true, name: true, logo: true },
+      }),
+      ctx.db.match.findMany({
+        where: participatedMatchWhere,
+        select: completedMatchSelect,
+      }),
+    ])
 
+    const teamsCount = teamIds.length
+    const completedMatches = allCompleted.length
+    const wins = allCompleted.filter(
+      (m) => m.winnerTeamId != null && teamIdSet.has(m.winnerTeamId),
+    ).length
     const losses = completedMatches - wins
     const winRate = completedMatches > 0 ? Math.round((wins / completedMatches) * 100) : 0
 
-    const tournamentsCompleted = await ctx.db.tournamentRegistration.findMany({
-      where: {
-        teamId: { in: teamIds },
-        status: 'APPROVED',
-        tournament: { status: TournamentStatus.COMPLETED },
-      },
-      select: { tournamentId: true },
-      distinct: ['tournamentId'],
-    })
-
-    const teamsMeta = await ctx.db.team.findMany({
-      where: { id: { in: teamIds } },
-      select: { id: true, name: true, logo: true },
-    })
     const teamNameById = new Map(teamsMeta.map((t) => [t.id, t.name]))
-
-    const byTeam = await Promise.all(
-      teamIds.map(async (teamId) => {
-        const played = await ctx.db.match.count({
-          where: {
-            status: MatchStatus.COMPLETED,
-            OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }],
-          },
-        })
-        const teamWins = await ctx.db.match.count({
-          where: {
-            status: MatchStatus.COMPLETED,
-            winnerTeamId: teamId,
-          },
-        })
-        const meta = teamsMeta.find((t) => t.id === teamId)
-        return {
-          teamId,
-          name: meta?.name ?? 'Team',
-          logo: meta?.logo ?? null,
-          played,
-          wins: teamWins,
-          losses: played - teamWins,
-          winRate: played > 0 ? Math.round((teamWins / played) * 100) : 0,
-        }
-      }),
-    )
-
-    byTeam.sort((a, b) => b.played - a.played)
-
-    const allCompleted = await ctx.db.match.findMany({
-      where: participatedMatchWhere,
-      select: {
-        id: true,
-        homeScore: true,
-        awayScore: true,
-        winnerTeamId: true,
-        homeTeamId: true,
-        awayTeamId: true,
-        completedAt: true,
-        tournament: {
-          select: {
-            id: true,
-            name: true,
-            game: { select: { id: true, name: true, slug: true, icon: true } },
-          },
-        },
-        homeTeam: { select: { id: true, name: true } },
-        awayTeam: { select: { id: true, name: true } },
-      },
-    })
 
     type GameAgg = {
       gameId: string
@@ -383,6 +358,10 @@ export const userRouter = createTRPCRouter({
       wins: number
     }
     const gameMap = new Map<string, GameAgg>()
+    const perTeamPlayedWins = new Map<string, { played: number; wins: number }>()
+    for (const id of teamIds) {
+      perTeamPlayedWins.set(id, { played: 0, wins: 0 })
+    }
 
     for (const m of allCompleted) {
       const g = m.tournament.game
@@ -396,13 +375,39 @@ export const userRouter = createTRPCRouter({
           wins: 0,
         })
       }
-      const row = gameMap.get(g.id)!
-      row.played++
+      const gameRow = gameMap.get(g.id)!
+      gameRow.played++
       const yt = yourTeamIdForMatch(m.homeTeamId, m.awayTeamId)
       if (yt && m.winnerTeamId && m.winnerTeamId === yt) {
-        row.wins++
+        gameRow.wins++
+      }
+
+      const inMatch: string[] = []
+      if (m.homeTeamId && teamIdSet.has(m.homeTeamId)) inMatch.push(m.homeTeamId)
+      if (m.awayTeamId && teamIdSet.has(m.awayTeamId)) inMatch.push(m.awayTeamId)
+      for (const tid of inMatch) {
+        const row = perTeamPlayedWins.get(tid)!
+        row.played++
+        if (m.winnerTeamId === tid) row.wins++
       }
     }
+
+    const metaById = new Map(teamsMeta.map((t) => [t.id, t]))
+    const byTeam = teamIds.map((teamId) => {
+      const meta = metaById.get(teamId)
+      const { played, wins: teamWins } = perTeamPlayedWins.get(teamId) ?? { played: 0, wins: 0 }
+      return {
+        teamId,
+        name: meta?.name ?? 'Team',
+        logo: meta?.logo ?? null,
+        played,
+        wins: teamWins,
+        losses: played - teamWins,
+        winRate: played > 0 ? Math.round((teamWins / played) * 100) : 0,
+      }
+    })
+
+    byTeam.sort((a, b) => b.played - a.played)
 
     const byGame = Array.from(gameMap.values())
       .map((r) => ({
@@ -427,9 +432,9 @@ export const userRouter = createTRPCRouter({
       const homeId = m.homeTeamId
       const awayId = m.awayTeamId
       let yourTeamId: string
-      if (homeId && teamIds.includes(homeId)) {
+      if (homeId && teamIdSet.has(homeId)) {
         yourTeamId = homeId
-      } else if (awayId && teamIds.includes(awayId)) {
+      } else if (awayId && teamIdSet.has(awayId)) {
         yourTeamId = awayId
       } else {
         yourTeamId = teamIds[0]
