@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -255,17 +256,14 @@ export default function LandingPage() {
               
               <div className='relative group'>
                 <div className='absolute -inset-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-3xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity' />
-                <div className='relative aspect-square rounded-2xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden'>
-                  <div className='text-center p-8'>
-                    <Trophy className='h-24 w-24 text-cyan-400 mx-auto mb-4 opacity-50' />
-                    <div className='relative w-full h-48 rounded-xl overflow-hidden bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center'>
-                      <div className='absolute inset-0 bg-grid-white/5' />
-                      <div className='relative z-10 text-center'>
-                        <div className='text-4xl font-black text-white/50 mb-2'>DASHBOARD</div>
-                        <div className='text-sm text-gray-500'>Tournament Management Preview</div>
-                      </div>
-                    </div>
-                  </div>
+                <div className='relative aspect-[16/10] max-h-[min(420px,55vh)] w-full rounded-2xl border-2 border-cyan-500/30 bg-black/40 backdrop-blur-xl overflow-hidden shadow-2xl shadow-cyan-500/10'>
+                  <Image
+                    src='/images/dashboard-preview.png'
+                    alt='Tournament management dashboard — brackets, registrations, and match controls'
+                    fill
+                    className='object-cover object-left-top'
+                    sizes='(max-width: 768px) 100vw, min(560px, 50vw)'
+                  />
                 </div>
               </div>
             </div>
