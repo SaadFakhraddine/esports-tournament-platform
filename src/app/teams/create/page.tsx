@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { trpc } from '@/lib/trpc/client'
 import { Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -20,13 +27,14 @@ export default function CreateTeamPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const createTeamMutation = trpc.team.create.useMutation()
+  const { data: games, isLoading: gamesLoading } = trpc.game.getAll.useQuery()
 
   const [formData, setFormData] = useState({
     name: '',
     tag: '',
     logo: '',
     description: '',
-    game: '',
+    gameId: '',
   })
 
   if (status === 'loading') {
@@ -41,13 +49,23 @@ export default function CreateTeamPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    if (!formData.gameId.trim()) {
+      toast({
+        title: 'Game required',
+        description: 'Select which game this team competes in.',
+        variant: 'destructive',
+      })
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const team = await createTeamMutation.mutateAsync({
         name: formData.name,
         tag: formData.tag || undefined,
         logo: formData.logo || undefined,
         description: formData.description || undefined,
-        game: formData.game,
+        game: formData.gameId,
       })
 
       toast({
@@ -131,18 +149,36 @@ export default function CreateTeamPage() {
                 <Label htmlFor='game'>
                   Game <span className='text-destructive'>*</span>
                 </Label>
-                <Input
-                  id='game'
-                  placeholder='e.g., Valorant, League of Legends, CS:GO'
-                  value={formData.game}
-                  onChange={(e) =>
-                    setFormData({ ...formData, game: e.target.value })
+                <Select
+                  value={formData.gameId || undefined}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, gameId: value })
                   }
-                  required
-                  minLength={2}
-                />
+                  disabled={gamesLoading || !games?.length}
+                >
+                  <SelectTrigger id='game'>
+                    <SelectValue
+                      placeholder={
+                        gamesLoading
+                          ? 'Loading games...'
+                          : games?.length
+                            ? 'Select a game'
+                            : 'No games available'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {games?.map((game) => (
+                      <SelectItem key={game.id} value={game.id}>
+                        {game.icon && <span className='mr-2'>{game.icon}</span>}
+                        {game.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className='text-xs text-muted-foreground'>
-                  Which game will your team compete in?
+                  Choose from games enabled on the platform. Don&apos;t see your
+                  game? Contact an admin to add it.
                 </p>
               </div>
 
@@ -185,7 +221,12 @@ export default function CreateTeamPage() {
               <div className='flex gap-4'>
                 <Button
                   type='submit'
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    gamesLoading ||
+                    !games?.length ||
+                    !formData.gameId.trim()
+                  }
                   className='flex-1'
                 >
                   {isSubmitting ? (

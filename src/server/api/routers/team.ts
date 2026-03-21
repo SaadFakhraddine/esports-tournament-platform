@@ -12,8 +12,8 @@ export const teamRouter = createTRPCRouter({
         tag: z.string().min(2).max(10).optional(),
         logo: z.string().url().optional(),
         description: z.string().optional(),
-        // Accept either Game.id (preferred) or Game.slug/name for backwards compatibility.
-        game: z.string().min(2),
+        // Must be a `Game.id` from the platform catalog (e.g. team create UI select).
+        game: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -28,33 +28,25 @@ export const teamRouter = createTRPCRouter({
         })
       }
 
-      const { game: gameInput, ...teamData } = input
-      const normalizedGameInput = gameInput.trim()
+      const { game: gameId, ...teamData } = input
+      const trimmedGameId = gameId.trim()
 
-      // Normalize "game" input into a real Game.id.
-      // Older UI versions stored the raw user input into `team.gameId`.
       const gameRecord = await ctx.db.game.findFirst({
-        where: {
-          OR: [
-            { id: normalizedGameInput },
-            { slug: normalizedGameInput },
-            { name: { equals: normalizedGameInput, mode: 'insensitive' } },
-          ],
-        },
+        where: { id: trimmedGameId, active: true },
         select: { id: true },
       })
 
       if (!gameRecord) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Game not found',
+          message: 'Invalid or inactive game',
         })
       }
 
       const team = await ctx.db.team.create({
         data: {
           ...teamData,
-          gameId: gameRecord.id,
+          gameId: trimmedGameId,
           ownerId: ctx.session.user.id,
           members: {
             create: {
@@ -79,47 +71,12 @@ export const teamRouter = createTRPCRouter({
     )
   .query(async ({ ctx, input }) => {
       const { game, search, limit, cursor } = input
-      const normalizedGameFilter = game?.trim()
-
-      // Normalize the `game` filter into possible legacy values.
-      // We support cases where `team.gameId` might contain Game.id, slug, or name.
-      let gameCondition: Prisma.TeamWhereInput | undefined
-      if (normalizedGameFilter) {
-        const gameRecord = await ctx.db.game.findFirst({
-          where: {
-            OR: [
-              { id: normalizedGameFilter },
-              { slug: normalizedGameFilter },
-              { name: { equals: normalizedGameFilter, mode: 'insensitive' } },
-            ],
-          },
-          select: { id: true, slug: true, name: true },
-        })
-
-        if (gameRecord) {
-          gameCondition = {
-            OR: [
-              { gameId: { equals: gameRecord.id } },
-              { gameId: { equals: gameRecord.slug, mode: 'insensitive' } },
-              { gameId: { equals: gameRecord.name, mode: 'insensitive' } },
-              // Legacy data might have whitespace or casing differences; contains helps recover it.
-              { gameId: { contains: gameRecord.slug, mode: 'insensitive' } },
-              { gameId: { contains: gameRecord.name, mode: 'insensitive' } },
-            ],
-          }
-        } else {
-          // If we can't resolve the game, fall back to matching whatever is stored in team.gameId.
-          gameCondition = {
-            OR: [
-              { gameId: { equals: normalizedGameFilter, mode: 'insensitive' } },
-              { gameId: { contains: normalizedGameFilter, mode: 'insensitive' } },
-            ],
-          }
-        }
-      }
 
       const andConditions: Prisma.TeamWhereInput[] = []
-      if (gameCondition) andConditions.push(gameCondition)
+      const gameId = game?.trim()
+      if (gameId) {
+        andConditions.push({ gameId })
+      }
       if (search) {
         andConditions.push({
           OR: [
