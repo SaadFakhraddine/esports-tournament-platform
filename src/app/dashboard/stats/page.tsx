@@ -15,7 +15,6 @@ import {
   Users,
   Calendar,
   Target,
-  ArrowLeft,
   Medal,
   Gamepad2,
 } from 'lucide-react'
@@ -47,22 +46,14 @@ export default function PlayerStatsPage() {
   return (
     <DashboardLayout userRole={session.user.role}>
       <div className='space-y-8'>
-        <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
-          <div>
-            <Button variant='ghost' size='sm' className='mb-2 -ml-2' asChild>
-              <Link href='/dashboard'>
-                <ArrowLeft className='h-4 w-4 mr-2' />
-                Back to dashboard
-              </Link>
-            </Button>
-            <h1 className='text-3xl font-bold tracking-tight flex items-center gap-2'>
-              <Medal className='h-8 w-8 text-primary' />
-              Player stats
-            </h1>
-            <p className='text-muted-foreground mt-1'>
-              Match history and performance across teams you&apos;re on
-            </p>
-          </div>
+        <div>
+          <h1 className='text-3xl font-bold tracking-tight flex items-center gap-2'>
+            <Medal className='h-8 w-8 text-primary' />
+            Player stats
+          </h1>
+          <p className='text-muted-foreground mt-1'>
+            Match history and performance across teams you&apos;re on
+          </p>
         </div>
 
         {isLoading || !s ? (
