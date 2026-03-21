@@ -452,6 +452,14 @@ export const tournamentQueries = {
         include: {
           tournament: {
             include: {
+              game: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  icon: true,
+                },
+              },
               _count: {
                 select: {
                   registrations: {

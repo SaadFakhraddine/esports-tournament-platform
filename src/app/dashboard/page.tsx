@@ -163,7 +163,7 @@ export default function DashboardPage() {
                       key={tournament.id}
                       id={tournament.id}
                       name={tournament.name}
-                      game={tournament.game.name}
+                      game={tournament.game?.name ?? 'Unknown game'}
                       status={tournament.status}
                       participants={`${tournament._count?.registrations || 0}/${tournament.maxTeams}`}
                     />
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                         key={team.id}
                         id={team.id}
                         name={team.name}
-                        game={team.game.name}
+                        game={team.game?.name ?? 'Unknown game'}
                         role={team.userRole}
                         members={team._count?.members || 0}
                       />
