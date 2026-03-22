@@ -60,7 +60,7 @@ export const statsRouter = createTRPCRouter({
         GROUP BY t.id, t.name, t.tag, t.logo
         HAVING COUNT(*) > 0
         ORDER BY
-          (SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1.0) / COUNT(*)::float) DESC,
+          (SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1.0 ELSE 0 END) / COUNT(*)::float) DESC,
           SUM(CASE WHEN p."winnerTeamId" = p.team_id THEN 1 ELSE 0 END) DESC
         LIMIT 5
       `,
