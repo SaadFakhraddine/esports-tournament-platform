@@ -276,12 +276,14 @@ export default function LandingPage() {
             <div className='grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto'>
               <div className='relative group order-2 md:order-1'>
                 <div className='absolute -inset-4 bg-gradient-to-r from-pink-500 to-purple-500 rounded-3xl blur-3xl opacity-20 group-hover:opacity-30 transition-opacity' />
-                <div className='relative aspect-square rounded-2xl border-2 border-pink-500/30 bg-gradient-to-br from-pink-500/10 to-purple-500/10 backdrop-blur-xl flex items-center justify-center overflow-hidden'>
-                  <div className='text-center p-8'>
-                    <Swords className='h-24 w-24 text-pink-400 mx-auto mb-4 opacity-50' />
-                    <p className='text-gray-600 text-sm'>[ Player Stats Dashboard ]</p>
-                    {/* TODO Replace with image/gif of the game */}
-                  </div>
+                <div className='relative aspect-[16/10] max-h-[min(420px,55vh)] w-full rounded-2xl border-2 border-pink-500/30 bg-black/40 backdrop-blur-xl overflow-hidden shadow-2xl shadow-pink-500/10'>
+                  <Image
+                    src='/images/dashboard-stats.png'
+                    alt='Player stats dashboard — win rate, matches by team and by game, recent matches'
+                    fill
+                    className='object-cover object-left-top'
+                    sizes='(max-width: 768px) 100vw, min(560px, 50vw)'
+                  />
                 </div>
               </div>
 
