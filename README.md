@@ -1,159 +1,126 @@
 # Esports Tournament Platform
 
-A full-stack esports tournament management platform built with Next.js 15, TypeScript, tRPC, Prisma, and PostgreSQL.
+Full-stack tournament management app for competitive teams and organizers: registrations, brackets, matches, dashboards, and player stats. Built as a **portfolio / learning project** — Next.js 15, TypeScript, tRPC, Prisma, PostgreSQL, NextAuth.
 
-## Features
+<!-- Screenshots: see [docs/SCREENSHOTS.md](./docs/SCREENSHOTS.md) — drop PNGs in docs/images/ -->
+<!-- ![App screenshot](./docs/images/01-landing.png) -->
 
-- **Tournament Management**: Create and manage tournaments with multiple formats (Single Elimination, Double Elimination, Round Robin, Swiss)
-- **Team Management**: Create teams, manage rosters, and handle team registrations
-- **Authentication**: Email/password and OAuth (Google, Discord) authentication with NextAuth.js
-- **Bracket System**: Automated bracket generation with match progression
-- **Real-time Updates**: Live match updates and notifications (optional with Pusher)
-- **Role-based Access**: Admin, Organizer, Player, and Spectator roles
+**Live demo:** _add your Vercel URL here_  
+**Author:** _your name / link_
 
-## Tech Stack
+**Portfolio screenshots:** checklist and README snippets → [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md) (save images under `docs/images/`).
 
-- **Frontend**: Next.js 15 (App Router), React 19, TailwindCSS, shadcn/ui
-- **Backend**: tRPC, Prisma ORM, PostgreSQL
-- **Authentication**: NextAuth.js v5
-- **Validation**: Zod
-- **State Management**: TanStack Query (React Query)
-- **Animations**: Framer Motion
-- **Real-time** (optional): Pusher
+## Highlights
 
-## Getting Started
+- **Tournament management** — Multiple formats: Single/Double Elimination, Round Robin, Swiss
+- **Teams & rosters** — Create teams, members, invitations, game-specific squads
+- **Organizer dashboard** — Create/edit tournaments, registrations, bracket workflow
+- **Player experience** — Browse/join tournaments, **per-team & per-game stats**, recent match history
+- **Auth** — Email/password + OAuth (Google, Discord) via NextAuth.js v5
+- **Type-safe API** — tRPC + Zod end-to-end
+- **Optional real-time** — Pusher for live-style updates (if configured)
+
+## Tech stack
+
+| Layer        | Stack |
+| ------------ | ----- |
+| UI           | Next.js 15 (App Router), React 19, Tailwind CSS, shadcn/ui, Framer Motion |
+| API & data   | tRPC, TanStack Query, Prisma, PostgreSQL |
+| Auth         | NextAuth.js v5 |
+| Validation   | Zod |
+
+## Getting started
 
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL database
+- PostgreSQL
 - npm or pnpm
 
-### Installation
+### Setup
 
-1. Clone the repository
-2. Install dependencies:
+1. **Clone** the repo and install dependencies:
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
-3. Set up your environment variables:
+2. **Environment** — copy `.env.example` to `.env` and set at least:
 
-Copy \`.env.example\` to \`.env\` and fill in your values:
-
-\`\`\`env
+```env
 DATABASE_URL="postgresql://user:password@localhost:5432/esports_tournament"
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
-\`\`\`
+```
 
-4. Initialize the database (schema + Prisma client):
+3. **Database** — apply schema and generate the client:
 
-\`\`\`bash
+```bash
 npx prisma db push
 npx prisma generate
-\`\`\`
+```
 
-5. **Optional — fresh database + demo data** (wipes all data in `DATABASE_URL`, then seeds games, admin, players, teams, sample tournaments):
+4. **Optional — demo data** (⚠️ **wipes** the database at `DATABASE_URL`):
 
-\`\`\`bash
+```bash
 npm run db:reset
-\`\`\`
+```
 
-   Default seeded admin: `admin@example.com` / `password123`. Override with env vars: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_NAME`.
+Default seeded admin: `admin@example.com` / `password123`. Override with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_NAME`.
 
-   To seed an already-empty database without `db push`:
+To seed without resetting:
 
-\`\`\`bash
+```bash
 npm run db:seed
-\`\`\`
+```
 
-6. Run the development server:
+5. **Run dev server:**
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Project Structure
+## Project structure
 
-\`\`\`
+```
 src/
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth routes (login, register)
-│   ├── (dashboard)/       # Protected dashboard routes
-│   ├── api/               # API routes (tRPC, NextAuth)
-│   ├── layout.tsx
-│   └── page.tsx           # Landing page
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components
-│   ├── tournament/       # Tournament components
-│   ├── team/             # Team components
-│   └── shared/           # Shared components
-├── server/               # Backend logic
-│   ├── api/routers/      # tRPC routers
-│   ├── db/               # Prisma client
-│   └── auth/             # NextAuth config
-├── lib/                  # Utilities
-│   ├── validators/       # Zod schemas
-│   ├── bracket/          # Bracket generation algorithms
-│   └── utils.ts          # Utility functions
-└── types/                # TypeScript type definitions
-\`\`\`
+├── app/                 # Next.js App Router (routes, layouts)
+├── components/          # UI (shadcn, tournament, team, layout, …)
+├── server/
+│   ├── api/routers/     # tRPC routers
+│   ├── db/              # Prisma client
+│   └── auth/            # NextAuth
+├── lib/                 # Utils, validators, bracket logic
+└── types/
+```
 
-## Database Schema
+## Schema (overview)
 
-The platform uses a comprehensive schema with the following main models:
+Core models: **User** (roles: Admin, Organizer, Player, Spectator), **Team** / **TeamMember**, **Tournament** / **TournamentRegistration**, **Bracket**, **Match**, **Game**, **Notification**.
 
-- **User**: User accounts with role-based access
-- **Team**: Team information and ownership
-- **TeamMember**: Team roster management
-- **Tournament**: Tournament details and configuration
-- **TournamentRegistration**: Team registrations with approval workflow
-- **Bracket**: Tournament bracket organization
-- **Match**: Individual match data with progression logic
-- **Notification**: User notifications
+## Scripts
 
-## Development
+| Command              | Description        |
+| -------------------- | ------------------ |
+| `npm run dev`        | Development server |
+| `npm run build`      | Production build   |
+| `npm run lint`       | ESLint             |
+| `npx prisma studio`  | DB GUI             |
+| `npx prisma migrate dev` | Migrations (when using migrate workflow) |
 
-### Running Migrations
+## Deployment (e.g. Vercel)
 
-\`\`\`bash
-npx prisma migrate dev
-\`\`\`
+1. Push to GitHub and import the repo in Vercel (or similar).
+2. Set **all** variables from `.env.example` in the host’s dashboard (never commit `.env`).
+3. Point `DATABASE_URL` to a hosted Postgres (Neon, Supabase, Railway, Vercel Postgres, etc.).
+4. Run migrations / `db push` as appropriate for your workflow.
 
-### Prisma Studio
+## Security notes for public repos
 
-View and edit your database:
-
-\`\`\`bash
-npx prisma studio
-\`\`\`
-
-### Linting
-
-\`\`\`bash
-npm run lint
-\`\`\`
-
-## Deployment
-
-### Vercel Deployment
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Set up environment variables in the Vercel dashboard
-4. Deploy
-
-### Database
-
-Recommended PostgreSQL hosting options:
-- Vercel Postgres
-- Supabase
-- Railway
-- Neon
+- Do **not** commit `.env`, real `DATABASE_URL`, or OAuth secrets.
+- Keep `.next/`, `node_modules/` gitignored.
 
 ## License
 
@@ -161,4 +128,4 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Issues and PRs are welcome for this open portfolio project.
