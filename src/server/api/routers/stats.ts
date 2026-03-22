@@ -42,11 +42,11 @@ export const statsRouter = createTRPCRouter({
         WITH participation AS (
           SELECT "homeTeamId" AS team_id, "winnerTeamId"
           FROM "Match"
-          WHERE status = 'COMPLETED' AND "homeTeamId" IS NOT NULL
+          WHERE status = 'COMPLETED'::"MatchStatus" AND "homeTeamId" IS NOT NULL
           UNION ALL
           SELECT "awayTeamId", "winnerTeamId"
           FROM "Match"
-          WHERE status = 'COMPLETED' AND "awayTeamId" IS NOT NULL
+          WHERE status = 'COMPLETED'::"MatchStatus" AND "awayTeamId" IS NOT NULL
         )
         SELECT
           t.id,
@@ -65,7 +65,7 @@ export const statsRouter = createTRPCRouter({
         LIMIT 5
       `,
 
-      // Tournament championships: owners of teams that won a terminal bracket match (nextMatchId IS NULL)
+      // Top players: team owners by completed match wins (works with in-progress tournaments + seed data)
       ctx.db.$queryRaw<
         Array<{
           id: string
@@ -80,23 +80,21 @@ export const statsRouter = createTRPCRouter({
           u.name,
           u.username,
           u.avatar,
-          COUNT(DISTINCT tr.id)::int AS "winCount"
+          COUNT(*)::int AS "winCount"
         FROM "Match" m
         INNER JOIN "Team" t ON t.id = m."winnerTeamId"
         INNER JOIN "User" u ON u.id = t."ownerId"
-        INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
-        WHERE m.status = 'COMPLETED'
-          AND tr.status = 'COMPLETED'
-          AND m."nextMatchId" IS NULL
+        WHERE m.status = 'COMPLETED'::"MatchStatus"
           AND m."winnerTeamId" IS NOT NULL
         GROUP BY u.id, u.name, u.username, u.avatar
         ORDER BY "winCount" DESC
         LIMIT 5
       `,
 
-      // Last 5 completed tournaments with a resolved grand-final-style winner
+      // Recent results: latest completed matches with a winner (not only fully "COMPLETED" tournaments)
       ctx.db.$queryRaw<
         Array<{
+          matchId: string
           tournamentId: string
           tournamentName: string
           completedAt: Date
@@ -107,47 +105,39 @@ export const statsRouter = createTRPCRouter({
           winnerTeam_logo: string | null
         }>
       >`
-        WITH champs AS (
-          SELECT DISTINCT ON (m."tournamentId")
-            m."tournamentId",
-            m."winnerTeamId"
-          FROM "Match" m
-          INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
-          WHERE tr.status = 'COMPLETED'
-            AND m.status = 'COMPLETED'
-            AND m."winnerTeamId" IS NOT NULL
-            AND m."nextMatchId" IS NULL
-          ORDER BY m."tournamentId", m."completedAt" DESC NULLS LAST
-        )
         SELECT
+          m.id AS "matchId",
           tr.id AS "tournamentId",
           tr.name AS "tournamentName",
-          tr."endDate" AS "completedAt",
+          COALESCE(m."completedAt", m."updatedAt") AS "completedAt",
           g.name AS "gameName",
           g.icon AS "gameIcon",
           wt.id AS "winnerTeam_id",
           wt.name AS "winnerTeam_name",
           wt.logo AS "winnerTeam_logo"
-        FROM "Tournament" tr
-        INNER JOIN champs c ON c."tournamentId" = tr.id
-        INNER JOIN "Team" wt ON wt.id = c."winnerTeamId"
+        FROM "Match" m
+        INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
+        INNER JOIN "Team" wt ON wt.id = m."winnerTeamId"
         INNER JOIN "Game" g ON g.id = tr."gameId"
-        WHERE tr."endDate" IS NOT NULL
-        ORDER BY tr."endDate" DESC
+        WHERE m.status = 'COMPLETED'::"MatchStatus"
+          AND m."winnerTeamId" IS NOT NULL
+        ORDER BY m."completedAt" DESC NULLS LAST, m."updatedAt" DESC
         LIMIT 5
       `,
     ])
 
     const topTeams = topTeamRows.map((row) => {
-      const total = row.wins + row.losses
-      const winRate = total > 0 ? Math.round((row.wins / total) * 100) : 0
+      const wins = Number(row.wins)
+      const losses = Number(row.losses)
+      const total = wins + losses
+      const winRate = total > 0 ? Math.round((wins / total) * 100) : 0
       return {
         id: row.id,
         name: row.name,
         tag: row.tag,
         logo: row.logo,
-        wins: row.wins,
-        losses: row.losses,
+        wins,
+        losses,
         winRate,
         totalMatches: total,
       }
@@ -157,10 +147,11 @@ export const statsRouter = createTRPCRouter({
       id: row.id,
       name: row.name ?? row.username ?? 'Unknown',
       avatar: row.avatar,
-      winCount: row.winCount,
+      winCount: Number(row.winCount),
     }))
 
     const recentChampions = recentChampionRows.map((row) => ({
+      matchId: row.matchId,
       tournamentId: row.tournamentId,
       tournamentName: row.tournamentName,
       gameName: row.gameName,
@@ -220,8 +211,8 @@ export const statsRouter = createTRPCRouter({
           FROM "Match" m
           INNER JOIN "Tournament" tr ON tr.id = m."tournamentId"
           INNER JOIN "Team" wt ON wt.id = m."winnerTeamId"
-          WHERE tr.status = 'COMPLETED'
-            AND m.status = 'COMPLETED'
+          WHERE tr.status = 'COMPLETED'::"TournamentStatus"
+            AND m.status = 'COMPLETED'::"MatchStatus"
             AND m."winnerTeamId" IS NOT NULL
             AND m."nextMatchId" IS NULL
           ORDER BY m."tournamentId", m."completedAt" DESC NULLS LAST
@@ -229,7 +220,7 @@ export const statsRouter = createTRPCRouter({
         SELECT tr.id, tr.name, tr."updatedAt", c."winnerName"
         FROM "Tournament" tr
         INNER JOIN champs c ON c."tournamentId" = tr.id
-        WHERE tr.status = 'COMPLETED'
+        WHERE tr.status = 'COMPLETED'::"TournamentStatus"
         ORDER BY tr."updatedAt" DESC
         LIMIT 5
       `,

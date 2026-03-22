@@ -29,7 +29,6 @@ import ValorantSVG from '@/assets/valorant.svg'
 import LeagueSVG from '@/assets/league-of-legends.svg'
 import FortniteSVG from '@/assets/fortnite.svg'
 import type { SVGProps } from 'react'
-import { useEffect, useRef, useState } from 'react'
 
 export default function LandingPage() {
   const { data: session } = useSession()
@@ -37,28 +36,9 @@ export default function LandingPage() {
   const { data: liveTournaments } = trpc.stats.getLiveTournaments.useQuery()
   const { data: upcomingTournaments } = trpc.stats.getUpcomingTournaments.useQuery()
 
-  const hallOfFameRef = useRef<HTMLElement>(null)
-  const [leaderboardsEnabled, setLeaderboardsEnabled] = useState(false)
-  useEffect(() => {
-    const el = hallOfFameRef.current
-    if (!el || leaderboardsEnabled) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setLeaderboardsEnabled(true)
-        }
-      },
-      { root: null, rootMargin: '280px 0px', threshold: 0.01 }
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [leaderboardsEnabled])
-
   const { data: leaderboards, isLoading: leaderboardsLoading } = trpc.stats.getLeaderboards.useQuery(undefined, {
-    enabled: leaderboardsEnabled,
     staleTime: 5 * 60_000,
   })
-  const hallLoading = !leaderboardsEnabled || leaderboardsLoading
 
   const isOrganizer = session?.user?.role === 'ORGANIZER' || session?.user?.role === 'ADMIN'
 
@@ -389,7 +369,7 @@ export default function LandingPage() {
         </section>
 
         {/* Leaderboards — fetch when section nears viewport */}
-        <section ref={hallOfFameRef} className='py-20'>
+        <section className='py-20'>
           <div className='container mx-auto px-4'>
             <div className='text-center mb-12'>
               <h2 className='text-5xl font-black mb-4'>
@@ -404,7 +384,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='TOP TEAMS'
                 icon={<Shield className='h-5 w-5' />}
-                loading={hallLoading}
+                loading={leaderboardsLoading}
                 items={leaderboards?.topTeams?.slice(0, 5) || []}
                 color='cyan'
                 renderItem={(team: TeamItem, idx: number) => (
@@ -427,7 +407,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='TOP PLAYERS'
                 icon={<Crown className='h-5 w-5' />}
-                loading={hallLoading}
+                loading={leaderboardsLoading}
                 items={leaderboards?.topPlayers?.slice(0, 5) || []}
                 color='purple'
                 renderItem={(player: PlayerItem, idx: number) => (
@@ -440,7 +420,7 @@ export default function LandingPage() {
                       <p className='font-bold truncate text-white group-hover:text-purple-400 transition-colors'>
                         {player.name}
                       </p>
-                      <p className='text-xs text-gray-500'>Wins</p>
+                      <p className='text-xs text-gray-500'>Match wins (teams owned)</p>
                     </div>
                     <div className='text-purple-400 font-black text-lg'>{player.winCount}</div>
                   </div>
@@ -450,7 +430,7 @@ export default function LandingPage() {
               <LeaderboardCard
                 title='RECENT WINNERS'
                 icon={<Award className='h-5 w-5' />}
-                loading={hallLoading}
+                loading={leaderboardsLoading}
                 items={leaderboards?.recentChampions?.slice(0, 5) || []}
                 color='pink'
                 renderItem={(champion: ChampionItem) => (
@@ -463,6 +443,7 @@ export default function LandingPage() {
                         </span>
                       </div>
                       <p className='text-sm text-gray-400 truncate'>{champion.tournamentName}</p>
+                      <p className='text-xs text-pink-400/80 mt-0.5'>{champion.gameName}</p>
                       <p className='text-xs text-gray-600 mt-1'>
                         {new Date(champion.completedAt).toLocaleDateString()}
                       </p>
@@ -683,6 +664,7 @@ function TournamentCardNeon({ tournament, isLive = false }: TournamentCardNeonPr
 }
 
 interface TeamItem {
+  id: string;
   name: string;
   wins: number;
   losses: number;
@@ -690,13 +672,16 @@ interface TeamItem {
 }
 
 interface PlayerItem {
+  id: string;
   name: string;
   winCount: number;
 }
 
 interface ChampionItem {
+  matchId: string;
   tournamentId: string;
   tournamentName: string;
+  gameName: string;
   winnerTeam: {
     name: string;
   };
@@ -759,7 +744,17 @@ function LeaderboardCard<T extends LeaderboardItem>({
               ))
             ) : items.length > 0 ? (
               items.map((item, idx) => (
-                <div key={idx}>{renderItem(item, idx)}</div>
+                <div
+                  key={
+                    'matchId' in item && item.matchId
+                      ? item.matchId
+                      : 'id' in item && item.id
+                        ? item.id
+                        : `${title}-${idx}`
+                  }
+                >
+                  {renderItem(item, idx)}
+                </div>
               ))
             ) : (
               <p className='text-center py-8 text-gray-600 text-sm'>No data yet</p>
