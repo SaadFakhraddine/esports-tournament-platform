@@ -443,42 +443,39 @@ export const tournamentQueries = {
 
       const teamIds = userTeamIds.map((tm) => tm.teamId)
 
-      const registrations = await ctx.db.tournamentRegistration.findMany({
+      if (teamIds.length === 0) {
+        return []
+      }
+
+      // Load tournaments directly so `game` is always included on each row (dashboard / profile expect tournament.game).
+      return ctx.db.tournament.findMany({
         where: {
-          teamId: { in: teamIds },
-          status: RegistrationStatus.APPROVED,
+          registrations: {
+            some: {
+              teamId: { in: teamIds },
+              status: RegistrationStatus.APPROVED,
+            },
+          },
         },
         take: input.limit,
+        orderBy: { startDate: 'desc' },
         include: {
-          tournament: {
-            include: {
-              game: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  icon: true,
-                },
-              },
-              _count: {
-                select: {
-                  registrations: {
-                    where: { status: RegistrationStatus.APPROVED },
-                  },
-                },
+          game: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              icon: true,
+            },
+          },
+          _count: {
+            select: {
+              registrations: {
+                where: { status: RegistrationStatus.APPROVED },
               },
             },
           },
         },
-        orderBy: { tournament: { startDate: 'desc' } },
       })
-
-      const uniqueTournaments = new Map()
-      registrations.forEach((r) => {
-        if (!uniqueTournaments.has(r.tournament.id)) {
-          uniqueTournaments.set(r.tournament.id, r.tournament)
-        }
-      })
-      return Array.from(uniqueTournaments.values())
     }),
 }
