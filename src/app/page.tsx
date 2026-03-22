@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { trpc } from '@/lib/trpc/client'
+import { SiteFooter } from '@/components/layout/site-footer'
 import {
   Trophy,
   Zap,
@@ -513,21 +514,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className='border-t border-cyan-500/20 backdrop-blur-xl bg-black/50 py-8'>
-          <div className='container mx-auto px-4'>
-            <div className='flex flex-col md:flex-row justify-between items-center gap-4'>
-              <div className='flex items-center gap-2'>
-                <Gamepad2 className='h-6 w-6 text-cyan-400' />
-                <span className='text-lg font-black'>
-                  <span className='text-cyan-400'>ESPORTS</span>
-                  <span className='text-pink-400'>ARENA</span>
-                </span>
-              </div>
-              <p className='text-gray-500 text-sm'>© 2026 ESPORTSARENA. ALL RIGHTS RESERVED.</p>
-            </div>
-          </div>
-        </footer>
+        <SiteFooter variant='dark' />
       </div>
     </div>
   )
