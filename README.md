@@ -125,7 +125,3 @@ Core models: **User** (roles: Admin, Organizer, Player, Spectator), **Team** / *
 ## License
 
 MIT
-
-## Contributing
-
-Issues and PRs are welcome for this open portfolio project.
