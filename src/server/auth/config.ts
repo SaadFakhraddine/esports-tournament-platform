@@ -166,19 +166,28 @@ export const authConfig: NextAuthConfig = {
         // Fetch user data from database to get role and username
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { role: true, username: true, email: true },
+          select: { role: true, username: true, email: true, name: true, avatar: true },
         })
 
         if (dbUser) {
           token.role = dbUser.role
           token.username = dbUser.username
           token.email = dbUser.email
+          if (dbUser.name) token.name = dbUser.name
+          if (dbUser.avatar) token.picture = dbUser.avatar
         }
       }
 
-      // Handle session update
-      if (trigger === 'update' && session) {
-        token = { ...token, ...session }
+      // Handle session update (e.g. profile name/username from client `update()`)
+      if (trigger === 'update' && session && typeof session === 'object') {
+        const s = session as {
+          user?: Partial<{ name?: string | null; username?: string | null; image?: string | null }>
+        }
+        if (s.user?.name !== undefined) token.name = s.user.name
+        if (s.user && 'username' in s.user) {
+          token.username = (s.user.username ?? null) as typeof token.username
+        }
+        if (s.user?.image !== undefined) token.picture = s.user.image
       }
 
       return token
@@ -188,6 +197,8 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string
         session.user.role = token.role as UserRole
         session.user.username = token.username as string | null
+        if (token.name) session.user.name = token.name as string
+        if (token.picture) session.user.image = token.picture as string
       }
       return session
     },

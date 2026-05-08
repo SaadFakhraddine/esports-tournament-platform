@@ -19,14 +19,18 @@ import {
   Camera,
   Save
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
 import Link from 'next/link'
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession()
+  const { data: session, status, update: updateSession } = useSession()
+  const utils = trpc.useUtils()
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState<'account' | 'teams' | 'tournaments'>('account')
+  const [displayName, setDisplayName] = useState('')
+  const [username, setUsername] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
 
   // Fetch real data
   const { data: profile } = trpc.user.getProfile.useQuery(undefined, { enabled: !!session })
@@ -40,6 +44,29 @@ export default function ProfilePage() {
     },
     { enabled: !!session && activeTab === 'tournaments' }
   )
+
+  useEffect(() => {
+    if (!profile || isEditing) return
+    setDisplayName(profile.name ?? '')
+    setUsername(profile.username ?? '')
+  }, [profile, isEditing])
+
+  const updateProfileMutation = trpc.user.updateProfile.useMutation({
+    onSuccess: async (updated) => {
+      setFormError(null)
+      setIsEditing(false)
+      await utils.user.getProfile.invalidate()
+      await updateSession?.({
+        user: {
+          name: updated.name ?? undefined,
+          username: updated.username ?? undefined,
+        },
+      })
+    },
+    onError: (err) => {
+      setFormError(err.message)
+    },
+  })
 
   if (status === 'loading') {
     return <div>Loading...</div>
@@ -58,10 +85,38 @@ export default function ProfilePage() {
   const teamsList = myTeams ?? []
   const tournamentsList = tournaments ?? []
 
-  const handleSaveProfile = async () => {
-    // TODO: Implement profile update logic
+  const handleCancelEdit = () => {
+    if (profile) {
+      setDisplayName(profile.name ?? '')
+      setUsername(profile.username ?? '')
+    }
+    setFormError(null)
     setIsEditing(false)
   }
+
+  const handleSaveProfile = () => {
+    setFormError(null)
+    const nameTrim = displayName.trim()
+    const userTrim = username.trim()
+
+    if (nameTrim.length < 2) {
+      setFormError('Display name must be at least 2 characters.')
+      return
+    }
+    if (userTrim.length > 0 && userTrim.length < 3) {
+      setFormError('Username must be at least 3 characters, or leave it empty.')
+      return
+    }
+
+    const input: { name: string; username?: string } = { name: nameTrim }
+    if (userTrim.length >= 3) input.username = userTrim
+
+    updateProfileMutation.mutate(input)
+  }
+
+  const avatarSrc = profile?.avatar ?? session.user.image ?? undefined
+  const sidebarName = profile?.name ?? session.user.name ?? 'User'
+  const sidebarUsername = profile?.username ?? session.user.username
 
   return (
     <DashboardLayout userRole={session.user.role}>
@@ -83,12 +138,9 @@ export default function ProfilePage() {
                 <div className='flex flex-col items-center text-center space-y-4'>
                   <div className='relative'>
                     <Avatar className='h-24 w-24'>
-                      <AvatarImage
-                        src={session.user.image || undefined}
-                        alt={session.user.name || 'User'}
-                      />
+                      <AvatarImage src={avatarSrc} alt={sidebarName} />
                       <AvatarFallback className='text-2xl bg-gradient-purple text-white'>
-                        {session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
+                        {sidebarName.charAt(0) || session.user.email?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <Button
@@ -100,9 +152,9 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                   <div>
-                    <h2 className='text-xl font-bold'>{session.user.name || 'User'}</h2>
+                    <h2 className='text-xl font-bold'>{sidebarName}</h2>
                     <p className='text-sm text-muted-foreground'>
-                      @{session.user.username || 'username'}
+                      @{sidebarUsername || 'username'}
                     </p>
                     <Badge className='mt-2' variant='secondary'>
                       {session.user.role}
@@ -185,21 +237,30 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className='space-y-4'>
+                    {formError && (
+                      <p className='text-sm text-destructive' role='alert'>
+                        {formError}
+                      </p>
+                    )}
                     <div className='grid gap-4'>
                       <div className='space-y-2'>
                         <Label htmlFor='name'>Display Name</Label>
                         <Input
                           id='name'
-                          defaultValue={session.user.name || ''}
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
                           disabled={!isEditing}
+                          autoComplete='name'
                         />
                       </div>
                       <div className='space-y-2'>
                         <Label htmlFor='username'>Username</Label>
                         <Input
                           id='username'
-                          defaultValue={session.user.username || ''}
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
                           disabled={!isEditing}
+                          autoComplete='username'
                         />
                       </div>
                       <div className='space-y-2'>
@@ -232,19 +293,26 @@ export default function ProfilePage() {
                           <Button
                             className='gap-2'
                             onClick={handleSaveProfile}
+                            disabled={updateProfileMutation.isPending}
                           >
                             <Save className='h-4 w-4' />
-                            Save Changes
+                            {updateProfileMutation.isPending ? 'Saving…' : 'Save Changes'}
                           </Button>
                           <Button
                             variant='outline'
-                            onClick={() => setIsEditing(false)}
+                            onClick={handleCancelEdit}
+                            disabled={updateProfileMutation.isPending}
                           >
                             Cancel
                           </Button>
                         </>
                       ) : (
-                        <Button onClick={() => setIsEditing(true)}>
+                        <Button
+                          onClick={() => {
+                            setFormError(null)
+                            setIsEditing(true)
+                          }}
+                        >
                           Edit Profile
                         </Button>
                       )}
