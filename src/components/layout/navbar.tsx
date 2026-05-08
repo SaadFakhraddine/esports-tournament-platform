@@ -87,7 +87,7 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href='/dashboardprofile'>Profile</Link>
+                  <Link href='/dashboard/profile'>Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href='/dashboard/tournaments'>My Tournaments</Link>
