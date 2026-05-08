@@ -27,7 +27,7 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { format } from 'date-fns'
 import { RegisterTeamDialog } from '@/components/tournament/register-team-dialog'
-import { BracketView } from '@/components/bracket/bracket-view'
+import { BracketTree } from '@/components/bracket/bracket-tree'
 
 export default function TournamentDetailPage() {
   const params = useParams()
@@ -251,11 +251,22 @@ export default function TournamentDetailPage() {
               ) : bracketTreeLoading ? (
                 <Skeleton className='h-72 w-full' />
               ) : (
-                <BracketView
-                  format={tournament.format}
-                  matches={[]}
-                  bracketTree={bracketTree?.brackets ?? []}
-                  isLoading={bracketTreeLoading}
+                <BracketTree
+                  matches={(bracketTree?.brackets ?? []).flatMap((bracket) =>
+                    (bracket.matches ?? []).map((m, idx) => ({
+                      id: m.id,
+                      round: bracket.round,
+                      matchNumber: idx + 1,
+                      scheduledAt: (m as { scheduledAt?: Date | null }).scheduledAt ?? null,
+                      status: (m as { status: string }).status,
+                      homeTeam: m.homeTeam ?? null,
+                      awayTeam: m.awayTeam ?? null,
+                      homeScore: (m as { homeScore: number | null }).homeScore,
+                      awayScore: (m as { awayScore: number | null }).awayScore,
+                      winner: (m as { winner?: typeof m.homeTeam | null }).winner ?? null,
+                      winnerTeamId: (m as { winnerTeamId?: string | null }).winnerTeamId ?? null,
+                    })),
+                  )}
                 />
               )}
             </TabsContent>
@@ -305,7 +316,7 @@ export default function TournamentDetailPage() {
             <CardContent>
               {tournament.status === 'REGISTRATION' ? (
                 session ? (
-                  <RegisterTeamDialog tournamentId={tournament.id} maxTeams={tournament.maxTeams} />
+                  <RegisterTeamDialog tournamentId={tournament.id} tournamentName={tournament.name} isAdmin={isAdmin} />
                 ) : (
                   <Button className='w-full gradient-purple' onClick={handleRegisterClick}>
                     Sign in to register
