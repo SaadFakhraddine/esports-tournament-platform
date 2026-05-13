@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Users, Search, Plus } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Users, Search, Plus, AlertCircle, RefreshCw } from 'lucide-react'
 
 export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -20,12 +21,13 @@ export default function TeamsPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const { data, isLoading } = trpc.team.getAll.useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = trpc.team.getAll.useQuery({
     limit: 20,
     search: debouncedSearch || undefined,
   })
 
   const teams = data?.teams ?? []
+  const hasSearch = Boolean(debouncedSearch)
 
   return (
     <div className='space-y-6'>
@@ -34,6 +36,9 @@ export default function TeamsPage() {
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Teams</h1>
           <p className='text-muted-foreground mt-2'>Browse teams and join competitive rosters</p>
+          {isFetching && !isLoading && !isError && (
+            <p className='text-xs text-muted-foreground mt-1'>Updating…</p>
+          )}
         </div>
         <Link href='/teams/create'>
           <Button className='gap-2'>
@@ -55,6 +60,20 @@ export default function TeamsPage() {
         />
       </div>
 
+      {isError && (
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertTitle>{"Couldn't load teams"}</AlertTitle>
+          <AlertDescription className='mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+            <span className='text-sm'>Check your connection and try again.</span>
+            <Button type='button' variant='outline' size='sm' className='shrink-0 border-destructive/40' onClick={() => void refetch()}>
+              <RefreshCw className='mr-2 h-4 w-4' />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Loading State */}
       {isLoading && (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
@@ -74,25 +93,37 @@ export default function TeamsPage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && teams.length === 0 && (
+      {!isLoading && !isError && teams.length === 0 && (
         <Card>
           <CardContent className='py-12 text-center'>
             <Users className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
             <p className='text-lg font-medium mb-2'>No teams found</p>
             <p className='text-sm text-muted-foreground mb-4'>
-              {searchQuery ? 'Try adjusting your search' : 'Be the first to create a team'}
+              {hasSearch
+                ? 'Nothing matches that search. Try different keywords or clear the filter.'
+                : 'Be the first to create a team, or check back later.'}
             </p>
-            {!searchQuery && (
-              <Link href='/teams/create'>
-                <Button>Create Team</Button>
-              </Link>
-            )}
+            <div className='flex flex-col gap-2 sm:flex-row sm:justify-center'>
+              {hasSearch && (
+                <Button type='button' variant='outline' onClick={() => setSearchQuery('')}>
+                  Clear search
+                </Button>
+              )}
+              {!hasSearch && (
+                <Link href='/teams/create'>
+                  <Button>Create team</Button>
+                </Link>
+              )}
+              <Button type='button' variant='ghost' asChild>
+                <Link href='/'>Back to home</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Teams Grid */}
-      {!isLoading && teams.length > 0 && (
+      {!isLoading && !isError && teams.length > 0 && (
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
           {teams.map((team) => (
             <Card key={team.id} className='hover:shadow-lg transition-all hover:border-primary/50'>

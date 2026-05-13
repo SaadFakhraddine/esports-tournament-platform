@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { validateRedirectUrl } from '@/lib/security/redirect-validation'
 
 function LoginForm() {
@@ -16,8 +19,12 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get and validate return URL from query params
-  const returnUrl = validateRedirectUrl(searchParams?.get('returnUrl'))
+  const returnUrlParam = searchParams?.get('returnUrl')
+  const returnUrl = validateRedirectUrl(returnUrlParam)
+  const registerHref =
+    returnUrlParam != null && returnUrlParam !== ''
+      ? `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+      : '/register'
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -82,16 +89,29 @@ function LoginForm() {
               />
             </div>
 
-            {error && <p className='text-sm text-destructive'>{error}</p>}
+            {error && (
+              <Alert variant='destructive'>
+                <AlertCircle className='h-4 w-4' />
+                <AlertTitle>Sign in failed</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <Button type='submit' className='w-full' disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Signing in…
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
 
           <div className='mt-4 text-center text-sm'>
             Don&apos;t have an account?{' '}
-            <Link href='/register' className='text-primary hover:underline'>
+            <Link href={registerHref} className='text-primary hover:underline'>
               Sign up
             </Link>
           </div>
@@ -129,11 +149,23 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 via-purple-800 to-gray-900'>
-        <div className='text-white'>Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 via-purple-800 to-gray-900 px-4'>
+          <Card className='w-full max-w-md border-white/10 bg-background/95'>
+            <CardHeader className='space-y-2'>
+              <Skeleton className='h-8 w-48 mx-auto' />
+              <Skeleton className='h-4 w-full' />
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              <Skeleton className='h-10 w-full' />
+              <Skeleton className='h-10 w-full' />
+              <Skeleton className='h-10 w-full' />
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   )

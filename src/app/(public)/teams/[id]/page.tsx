@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, Trophy, Calendar, UserPlus, Shield, Edit, Trash2 } from 'lucide-react'
+import { Users, Trophy, Calendar, UserPlus, Shield, Edit, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function TeamDetailPage() {
   const { data: session } = useSession()
@@ -33,12 +34,19 @@ export default function TeamDetailPage() {
   const teamId = params.id as string
   const [activeTab, setActiveTab] = useState<'members' | 'tournaments'>('members')
 
-  const { data: team, isLoading } = trpc.team.getOverviewById.useQuery({ id: teamId }, { enabled: !!teamId })
-  const { data: members, isLoading: membersLoading } = trpc.team.getMembers.useQuery(
-    { teamId },
-    { enabled: !!teamId && activeTab === 'members' },
-  )
-  const { data: registrations, isLoading: registrationsLoading } = trpc.team.getRegistrationsByTeamId.useQuery(
+  const { data: team, isLoading, error, refetch } = trpc.team.getOverviewById.useQuery({ id: teamId }, { enabled: !!teamId })
+  const {
+    data: members,
+    isLoading: membersLoading,
+    isError: membersError,
+    refetch: refetchMembers,
+  } = trpc.team.getMembers.useQuery({ teamId }, { enabled: !!teamId && activeTab === 'members' })
+  const {
+    data: registrations,
+    isLoading: registrationsLoading,
+    isError: registrationsError,
+    refetch: refetchRegistrations,
+  } = trpc.team.getRegistrationsByTeamId.useQuery(
     { teamId },
     { enabled: !!teamId && activeTab === 'tournaments' },
   )
@@ -81,18 +89,41 @@ export default function TeamDetailPage() {
   }
 
   if (isLoading) {
+    return <TeamDetailPageSkeleton />
+  }
+
+  if (error) {
     return (
-      <div className='space-y-6'>
-        <Skeleton className='h-32 w-full' />
-        <Skeleton className='h-64 w-full' />
+      <div className='flex flex-col items-center justify-center min-h-[50vh] gap-6 px-4'>
+        <Alert variant='destructive' className='max-w-md w-full'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertTitle>{"Couldn't load team"}</AlertTitle>
+          <AlertDescription className='mt-2 space-y-3'>
+            <p>Something went wrong while loading this page.</p>
+            <div className='flex flex-wrap gap-2'>
+              <Button type='button' variant='outline' size='sm' onClick={() => void refetch()}>
+                <RefreshCw className='mr-2 h-4 w-4' />
+                Try again
+              </Button>
+              <Button type='button' variant='secondary' size='sm' asChild>
+                <Link href='/teams'>Browse teams</Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     )
   }
 
   if (!team) {
     return (
-      <div className='text-center py-12'>
+      <div className='flex flex-col items-center justify-center min-h-[50vh] gap-4 px-4 text-center'>
+        <Users className='h-12 w-12 text-muted-foreground' />
         <p className='text-lg font-medium'>Team not found</p>
+        <p className='text-sm text-muted-foreground max-w-md'>This team may have been removed or the link is wrong.</p>
+        <Button asChild variant='outline'>
+          <Link href='/teams'>Back to teams</Link>
+        </Button>
       </div>
     )
   }
@@ -227,8 +258,26 @@ export default function TeamDetailPage() {
                     <Skeleton key={i} className='h-12 w-full' />
                   ))}
                 </div>
+              ) : membersError ? (
+                <Alert variant='destructive'>
+                  <AlertCircle className='h-4 w-4' />
+                  <AlertTitle>{"Couldn't load members"}</AlertTitle>
+                  <AlertDescription className='mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <span className='text-sm'>Try again in a moment.</span>
+                    <Button type='button' variant='outline' size='sm' onClick={() => void refetchMembers()}>
+                      <RefreshCw className='mr-2 h-4 w-4' />
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               ) : (members ?? []).length === 0 ? (
-                <p className='text-sm text-muted-foreground'>No members found.</p>
+                <div className='flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed bg-muted/30'>
+                  <UserPlus className='h-10 w-10 text-muted-foreground mb-3' />
+                  <p className='font-medium'>No members yet</p>
+                  <p className='text-sm text-muted-foreground mt-1 max-w-sm'>
+                    {isOwner ? 'Invite players from Add Member, or wait for join requests.' : 'The roster is empty for now.'}
+                  </p>
+                </div>
               ) : (
                 <div className='space-y-3'>
                   {(members ?? []).map((member) => (
@@ -287,8 +336,26 @@ export default function TeamDetailPage() {
                     <Skeleton key={i} className='h-16 w-full' />
                   ))}
                 </div>
+              ) : registrationsError ? (
+                <Alert variant='destructive'>
+                  <AlertCircle className='h-4 w-4' />
+                  <AlertTitle>{"Couldn't load tournaments"}</AlertTitle>
+                  <AlertDescription className='mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <span className='text-sm'>Try again in a moment.</span>
+                    <Button type='button' variant='outline' size='sm' onClick={() => void refetchRegistrations()}>
+                      <RefreshCw className='mr-2 h-4 w-4' />
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               ) : (registrations ?? []).length === 0 ? (
-                <p className='text-sm text-muted-foreground'>No tournaments found.</p>
+                <div className='flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed bg-muted/30'>
+                  <Trophy className='h-10 w-10 text-muted-foreground mb-3' />
+                  <p className='font-medium'>No tournaments yet</p>
+                  <p className='text-sm text-muted-foreground mt-1 max-w-sm'>
+                    When this team registers for events, they will show up here.
+                  </p>
+                </div>
               ) : (
                 <div className='space-y-3'>
                   {(registrations ?? []).map((reg) => (
@@ -313,6 +380,32 @@ export default function TeamDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+function TeamDetailPageSkeleton() {
+  return (
+    <div className='space-y-6'>
+      <Card>
+        <CardContent className='pt-6'>
+          <div className='flex flex-col md:flex-row gap-6'>
+            <Skeleton className='h-24 w-24 rounded-full shrink-0' />
+            <div className='flex-1 space-y-3'>
+              <Skeleton className='h-9 w-2/3 max-w-md' />
+              <Skeleton className='h-5 w-40' />
+              <Skeleton className='h-20 w-full max-w-xl' />
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4'>
+                <Skeleton className='h-14' />
+                <Skeleton className='h-14' />
+                <Skeleton className='h-14' />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Skeleton className='h-10 w-64' />
+      <Skeleton className='h-48 w-full' />
     </div>
   )
 }
