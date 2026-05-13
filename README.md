@@ -8,7 +8,7 @@ Full-stack tournament management app for competitive teams and organizers: regis
 
 ## Screenshots
 
-Captured from the [live demo](https://esports-tournament-platform-2z4z.vercel.app/) (viewport 1400×900). For more angles or dashboard views after seeding data, see [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
+From the [live demo](https://esports-tournament-platform-2z4z.vercel.app/). Regenerate or swap images: [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
 
 | Landing | Browse tournaments |
 | --- | --- |
@@ -99,22 +99,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Tests
 
-- **Unit:** `npm test` (Vitest, `src/**/*.test.ts`). Use `npm run test:watch` during development.
-- **E2E:** `npm run test:e2e` (Playwright; set `E2E_EMAIL` / `E2E_PASSWORD` if your app requires seeded users — see `.env.example`).
+- **Unit:** `npm test` · **Watch:** `npm run test:watch` · **E2E:** `npm run test:e2e` (set `E2E_*` in `.env` when needed)
 
-## Project structure
+## Architecture
 
-```
-src/
-├── app/                 # Next.js App Router (routes, layouts)
-├── components/          # UI (shadcn, tournament, team, layout, …)
-├── server/
-│   ├── api/routers/     # tRPC routers
-│   ├── db/              # Prisma client
-│   └── auth/            # NextAuth
-├── lib/                 # Utils, validators, bracket logic
-└── types/
-```
+- **Routes:** `app/(public)` — landing, browse `/tournaments` & `/teams`. `app/(dashboard)` — signed-in organizer/player UI (layouts enforce session boundaries).
+- **API:** `server/api/routers/*` — tRPC procedures; clients use **`/api/trpc`** + TanStack Query with Zod inputs.
+- **Data & auth:** Prisma + PostgreSQL (`server/db`); NextAuth v5 (`server/auth`).
+- **Logic:** Brackets, validators, security helpers in `lib/` (e.g. redirect allowlist covered by Vitest).
 
 ## Schema (overview)
 
