@@ -2,13 +2,25 @@
 
 Full-stack tournament management app for competitive teams and organizers: registrations, brackets, matches, dashboards, and player stats. Built as a **portfolio / learning project** — Next.js 15, TypeScript, tRPC, Prisma, PostgreSQL, NextAuth.
 
-<!-- Screenshots: see [docs/SCREENSHOTS.md](./docs/SCREENSHOTS.md) — drop PNGs in docs/images/ -->
-<!-- ![App screenshot](./docs/images/01-landing.png) -->
+**Live demo:** [esports-tournament-platform-2z4z.vercel.app](https://esports-tournament-platform-2z4z.vercel.app/)  
+**Repository:** [github.com/SaadFakhraddine/esports-tournament-platform](https://github.com/SaadFakhraddine/esports-tournament-platform)  
+**Author:** [Saad Fakhraddine](https://github.com/SaadFakhraddine)
 
-**Live demo:** _add your Vercel URL here_  
-**Author:** _your name / link_
+## Screenshots
 
-**Portfolio screenshots:** checklist and README snippets → [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md) (save images under `docs/images/`).
+Captured from the [live demo](https://esports-tournament-platform-2z4z.vercel.app/) (viewport 1400×900). For more angles or dashboard views after seeding data, see [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
+
+| Landing | Browse tournaments |
+| --- | --- |
+| ![Landing](./docs/images/01-landing.png) | ![Tournaments](./docs/images/02-tournaments.png) |
+
+| Teams | Sign in |
+| --- | --- |
+| ![Teams](./docs/images/03-teams.png) | ![Login](./docs/images/04-login.png) |
+
+| Create account |
+| --- |
+| ![Register](./docs/images/05-register.png) |
 
 ## Highlights
 
@@ -18,7 +30,6 @@ Full-stack tournament management app for competitive teams and organizers: regis
 - **Player experience** — Browse/join tournaments, **per-team & per-game stats**, recent match history
 - **Auth** — Email/password + OAuth (Google, Discord) via NextAuth.js v5
 - **Type-safe API** — tRPC + Zod end-to-end
-- **Optional real-time** — Pusher for live-style updates (if configured)
 
 ## Tech stack
 
@@ -53,6 +64,8 @@ NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
+See `.env.example` for optional OAuth, Resend, `NEXT_PUBLIC_APP_URL`, seed overrides, Playwright, and future Pusher-related variables.
+
 3. **Database** — apply schema and generate the client:
 
 ```bash
@@ -66,7 +79,7 @@ npx prisma generate
 npm run db:reset
 ```
 
-Default seeded admin: `admin@example.com` / `password123`. Override with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_NAME`.
+Default seeded admin: `admin@example.com` / `password123`. Override with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_NAME` (see `.env.example`).
 
 To seed without resetting:
 
@@ -102,18 +115,25 @@ Core models: **User** (roles: Admin, Organizer, Player, Spectator), **Team** / *
 
 ## Scripts
 
-| Command              | Description        |
-| -------------------- | ------------------ |
-| `npm run dev`        | Development server |
-| `npm run build`      | Production build   |
-| `npm run lint`       | ESLint             |
-| `npx prisma studio`  | DB GUI             |
-| `npx prisma migrate dev` | Migrations (when using migrate workflow) |
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server (after `build`) |
+| `npm run lint` | ESLint |
+| `npm run db:push` | `prisma db push` — sync schema to DB |
+| `npm run db:seed` | Run seed script |
+| `npm run db:reset` | Force-reset DB then seed (destructive) |
+| `npm run test:e2e` | Playwright end-to-end tests |
+| `npm run test:e2e:ui` | Playwright with UI |
+| `npm run test:e2e:report` | Open last Playwright HTML report |
+| `npx prisma studio` | Prisma DB GUI |
+| `npx prisma migrate dev` | Create/apply migrations (when using migrate workflow) |
 
 ## Deployment (e.g. Vercel)
 
 1. Push to GitHub and import the repo in Vercel (or similar).
-2. Set **all** variables from `.env.example` in the host’s dashboard (never commit `.env`).
+2. Set **all** variables from `.env.example` in the host’s dashboard (never commit `.env`). Use your production URL for `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL`.
 3. Point `DATABASE_URL` to a hosted Postgres (Neon, Supabase, Railway, Vercel Postgres, etc.).
 4. Run migrations / `db push` as appropriate for your workflow.
 

@@ -1,54 +1,36 @@
 # Screenshot checklist (portfolio README)
 
-Use **3–5** images max so the README stays scannable. PNG or WebP, ~1200–1600px wide is enough.
+The README currently embeds **five** captures from production (see `docs/images/`). Regenerate anytime after deploy with Playwright (from repo root):
 
-Save files in `docs/images/` (create the folder) and link from `README.md`, for example:
-
-```md
-![Landing](./docs/images/01-landing.png)
+```bash
+npx playwright screenshot "https://esports-tournament-platform-2z4z.vercel.app/" docs/images/01-landing.png --viewport-size=1400,900 --wait-for-timeout=4000
+npx playwright screenshot "https://esports-tournament-platform-2z4z.vercel.app/tournaments" docs/images/02-tournaments.png --full-page --viewport-size=1400,900 --wait-for-timeout=4000
+npx playwright screenshot "https://esports-tournament-platform-2z4z.vercel.app/teams" docs/images/03-teams.png --full-page --viewport-size=1400,900 --wait-for-timeout=4000
+npx playwright screenshot "https://esports-tournament-platform-2z4z.vercel.app/login" docs/images/04-login.png --viewport-size=1400,900 --wait-for-timeout=3000
+npx playwright screenshot "https://esports-tournament-platform-2z4z.vercel.app/register" docs/images/05-register.png --viewport-size=1400,900 --wait-for-timeout=3000
 ```
 
-## Recommended captures
+| File | Route | Notes |
+| --- | --- | --- |
+| `01-landing.png` | `/` | Hero / first impression |
+| `02-tournaments.png` | `/tournaments` | Public browse |
+| `03-teams.png` | `/teams` | Team discovery |
+| `04-login.png` | `/login` | Auth UI |
+| `05-register.png` | `/register` | Sign-up |
 
-| # | Page / view | Why |
-|---|-------------|-----|
-| 1 | **Landing** (`/`) | First impression, branding, hero |
-| 2 | **Public tournaments** (`/tournaments`) | Core discovery / browse experience |
-| 3 | **Tournament detail** (`/tournaments/[id]`) | Registration, format, dates, bracket teaser |
-| 4 | **Organizer: My tournaments** (`/dashboard/tournaments`) | Log in as seeded admin/organizer — shows “I built dashboards” |
-| 5 | **Player stats** (`/dashboard/stats`) | Per-team + per-game stats — differentiator |
+## Swaps when you have seeded or prod data
 
-## Optional extras (swap one in if it shows your work better)
+Replace any file above, or add new names and update `README.md`, if you want to highlight:
 
-- **Bracket / manage tournament** — organizer match or bracket view
-- **Team page** (`/teams/[id]`) — roster + game
-- **Create tournament** flow — form + validation story in interviews
+| Page / view | Why |
+| --- | --- |
+| `/tournaments/[id]` | Bracket / registration detail |
+| `/dashboard/tournaments` | Organizer hub (requires login) |
+| `/dashboard/stats` | Per-team & per-game stats |
 
 ## Tips
 
-- Use **seeded data** (`npm run db:reset`) so names and scores look real.
+- Use **seeded data** locally (`npm run db:reset`) before capturing dashboard shots.
 - **Crop** browser chrome or use a clean window; hide bookmarks bar.
-- Prefer **light mode** or **one theme** consistently across shots.
-- If you deploy, you can use **production URLs** in captions (“Live demo”).
-
-## README snippet (paste under the title)
-
-After you add images, uncomment and adjust in `README.md`:
-
-```md
-## Screenshots
-
-| Landing | Tournaments |
-|--------|---------------|
-| ![Landing](./docs/images/01-landing.png) | ![Tournaments](./docs/images/02-tournaments.png) |
-
-| Tournament detail | Player stats |
-|-------------------|---------------|
-| ![Detail](./docs/images/03-tournament-detail.png) | ![Stats](./docs/images/05-player-stats.png) |
-```
-
-Or a simple vertical stack:
-
-```md
-![Dashboard](./docs/images/04-dashboard-tournaments.png)
-```
+- Prefer **one theme** consistently across shots.
+- Full-page screenshots grow file size quickly; use viewport-only for hero pages if the PNG is too large for git.
