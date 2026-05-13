@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Calendar,
   Users,
@@ -23,6 +23,7 @@ import {
   FileText,
   Info,
   UserPlus,
+  RefreshCw,
 } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
 import { format } from 'date-fns'
@@ -36,12 +37,17 @@ export default function TournamentDetailPage() {
   const tournamentId = params.id as string
   const [activeTab, setActiveTab] = useState<'overview' | 'teams' | 'bracket'>('overview')
 
-  const { data: tournament, isLoading, error } = trpc.tournament.getPublicOverviewById.useQuery(
+  const { data: tournament, isLoading, error, refetch } = trpc.tournament.getPublicOverviewById.useQuery(
     { id: tournamentId },
     { enabled: !!tournamentId },
   )
 
-  const { data: bracketTree, isLoading: bracketTreeLoading } = trpc.tournament.getPublicBracketTree.useQuery(
+  const {
+    data: bracketTree,
+    isLoading: bracketTreeLoading,
+    isError: bracketTreeError,
+    refetch: refetchBracket,
+  } = trpc.tournament.getPublicBracketTree.useQuery(
     { tournamentId },
     {
       enabled: !!tournamentId && activeTab === 'bracket' && (tournament?.bracketsCount ?? 0) > 0,
@@ -54,10 +60,28 @@ export default function TournamentDetailPage() {
 
   if (error || !tournament) {
     return (
-      <div className='flex items-center justify-center min-h-[60vh]'>
-        <Alert variant='destructive' className='max-w-md'>
+      <div className='flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4'>
+        <Alert variant='destructive' className='max-w-md w-full'>
           <AlertCircle className='h-4 w-4' />
-          <AlertDescription>{error?.message || 'Tournament not found'}</AlertDescription>
+          <AlertTitle>{error ? "Couldn't load tournament" : 'Tournament not found'}</AlertTitle>
+          <AlertDescription className='mt-2 space-y-3'>
+            <p>
+              {error
+                ? 'Something went wrong while loading this page. You can retry or head back to the list.'
+                : 'This tournament may have been removed or the link is incorrect.'}
+            </p>
+            <div className='flex flex-wrap gap-2'>
+              {error && (
+                <Button type='button' variant='outline' size='sm' onClick={() => void refetch()}>
+                  <RefreshCw className='mr-2 h-4 w-4' />
+                  Try again
+                </Button>
+              )}
+              <Button type='button' variant='secondary' size='sm' asChild>
+                <Link href='/tournaments'>Browse tournaments</Link>
+              </Button>
+            </div>
+          </AlertDescription>
         </Alert>
       </div>
     )
@@ -234,7 +258,15 @@ export default function TournamentDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className='text-sm text-muted-foreground'>No teams registered yet</p>
+                    <div className='flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed bg-muted/30'>
+                      <Users className='h-10 w-10 text-muted-foreground mb-3' />
+                      <p className='font-medium text-foreground'>No teams yet</p>
+                      <p className='text-sm text-muted-foreground mt-1 max-w-sm'>
+                        {tournament.status === 'REGISTRATION'
+                          ? `Up to ${tournament.maxTeams} teams can register.`
+                          : 'Teams will appear here once they join this tournament.'}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -248,8 +280,23 @@ export default function TournamentDetailPage() {
                     <p className='text-muted-foreground'>Bracket not available yet.</p>
                   </CardContent>
                 </Card>
+              ) : bracketTreeError ? (
+                <Alert variant='destructive'>
+                  <AlertCircle className='h-4 w-4' />
+                  <AlertTitle>{"Couldn't load bracket"}</AlertTitle>
+                  <AlertDescription className='mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                    <span>Please try again in a moment.</span>
+                    <Button type='button' variant='outline' size='sm' onClick={() => void refetchBracket()}>
+                      <RefreshCw className='mr-2 h-4 w-4' />
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               ) : bracketTreeLoading ? (
-                <Skeleton className='h-72 w-full' />
+                <div className='space-y-3'>
+                  <Skeleton className='h-8 w-48' />
+                  <Skeleton className='h-72 w-full' />
+                </div>
               ) : (
                 <BracketTree
                   matches={(bracketTree?.brackets ?? []).flatMap((bracket) =>
