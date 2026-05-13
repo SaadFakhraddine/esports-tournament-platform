@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import { TeamRole, InvitationStatus } from '@prisma/client'
-import { resend, FROM_EMAIL } from '@/lib/email/resend'
+import { getResend, FROM_EMAIL } from '@/lib/email/resend'
 import { TeamInvitationEmail, teamInvitationEmailText } from '@/lib/email/templates/team-invitation'
 
 export const invitationRouter = createTRPCRouter({
@@ -102,31 +102,36 @@ export const invitationRouter = createTRPCRouter({
         },
       })
 
-      // Send email notification
+      // Send email notification (skipped when RESEND_API_KEY is not configured)
       try {
-        const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/invitations`
+        const resend = getResend()
+        if (!resend) {
+          console.warn('RESEND_API_KEY is not set; invitation saved without email')
+        } else {
+          const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/invitations`
 
-        await resend.emails.send({
-          from: FROM_EMAIL,
-          to: input.email,
-          subject: `You've been invited to join ${invitation.team.name}!`,
-          react: TeamInvitationEmail({
-            teamName: invitation.team.name,
-            teamGame: invitation.team.game.name,
-            role: invitation.role,
-            inviterName: invitation.inviter.name || invitation.inviter.username || 'Someone',
-            invitationUrl,
-            expiresAt: invitation.expiresAt,
-          }) as React.ReactElement,
-          text: teamInvitationEmailText({
-            teamName: invitation.team.name,
-            teamGame: invitation.team.game.name,
-            role: invitation.role,
-            inviterName: invitation.inviter.name || invitation.inviter.username || 'Someone',
-            invitationUrl,
-            expiresAt: invitation.expiresAt,
-          }),
-        })
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: input.email,
+            subject: `You've been invited to join ${invitation.team.name}!`,
+            react: TeamInvitationEmail({
+              teamName: invitation.team.name,
+              teamGame: invitation.team.game.name,
+              role: invitation.role,
+              inviterName: invitation.inviter.name || invitation.inviter.username || 'Someone',
+              invitationUrl,
+              expiresAt: invitation.expiresAt,
+            }) as React.ReactElement,
+            text: teamInvitationEmailText({
+              teamName: invitation.team.name,
+              teamGame: invitation.team.game.name,
+              role: invitation.role,
+              inviterName: invitation.inviter.name || invitation.inviter.username || 'Someone',
+              invitationUrl,
+              expiresAt: invitation.expiresAt,
+            }),
+          })
+        }
       } catch (emailError) {
         console.error('Failed to send invitation email:', emailError)
         // Don't throw error - invitation was created successfully
