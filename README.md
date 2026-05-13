@@ -30,6 +30,7 @@ Captured from the [live demo](https://esports-tournament-platform-2z4z.vercel.ap
 - **Player experience** — Browse/join tournaments, **per-team & per-game stats**, recent match history
 - **Auth** — Email/password + OAuth (Google, Discord) via NextAuth.js v5
 - **Type-safe API** — tRPC + Zod end-to-end
+- **Testing** — **Vitest** for unit tests (e.g. security helpers); **Playwright** for end-to-end flows
 
 ## Tech stack
 
@@ -39,6 +40,7 @@ Captured from the [live demo](https://esports-tournament-platform-2z4z.vercel.ap
 | API & data   | tRPC, TanStack Query, Prisma, PostgreSQL |
 | Auth         | NextAuth.js v5 |
 | Validation   | Zod |
+| Testing      | Vitest (unit), Playwright (e2e) |
 
 ## Getting started
 
@@ -95,6 +97,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Tests
+
+- **Unit:** `npm test` (Vitest, `src/**/*.test.ts`). Use `npm run test:watch` during development.
+- **E2E:** `npm run test:e2e` (Playwright; set `E2E_EMAIL` / `E2E_PASSWORD` if your app requires seeded users — see `.env.example`).
+
 ## Project structure
 
 ```
@@ -121,6 +128,9 @@ Core models: **User** (roles: Admin, Organizer, Player, Spectator), **Team** / *
 | `npm run build` | Production build |
 | `npm run start` | Start production server (after `build`) |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
+| `npm test` | Vitest unit tests (CI-friendly) |
+| `npm run test:watch` | Vitest watch mode |
 | `npm run db:push` | `prisma db push` — sync schema to DB |
 | `npm run db:seed` | Run seed script |
 | `npm run db:reset` | Force-reset DB then seed (destructive) |

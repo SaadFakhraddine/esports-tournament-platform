@@ -2,6 +2,8 @@
  * Tests for redirect URL validation security
  */
 
+import { describe, expect, test } from 'vitest'
+
 import { validateRedirectUrl, isPathAllowed, getAllowedPrefixes } from './redirect-validation'
 
 describe('validateRedirectUrl - Security Tests', () => {
@@ -22,8 +24,8 @@ describe('validateRedirectUrl - Security Tests', () => {
       expect(validateRedirectUrl('/teams/456')).toBe('/teams/456')
     })
 
-    test('should allow safe profile path', () => {
-      expect(validateRedirectUrl('/profile')).toBe('/profile')
+    test('should allow safe dashboard profile path', () => {
+      expect(validateRedirectUrl('/dashboard/profile')).toBe('/dashboard/profile')
     })
 
     test('should allow safe settings path', () => {
