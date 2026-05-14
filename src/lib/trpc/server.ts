@@ -1,7 +1,11 @@
 import 'server-only'
 
 import { appRouter } from '@/server/api/root'
-import { createTRPCContext } from '@/server/api/trpc'
+import { createPublicTRPCContext, createTRPCContext } from '@/server/api/trpc'
+
+export function createPublicServerCaller() {
+  return appRouter.createCaller(createPublicTRPCContext())
+}
 
 export async function createServerCaller() {
   const ctx = await createTRPCContext()

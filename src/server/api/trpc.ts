@@ -4,6 +4,12 @@ import { ZodError } from 'zod'
 import { db } from '@/server/db/client'
 import { auth } from '@/server/auth'
 
+export const createPublicTRPCContext = () => ({
+  db,
+  session: null,
+  headers: undefined,
+})
+
 export const createTRPCContext = async (opts?: { headers?: Headers }) => {
   let session = null
 

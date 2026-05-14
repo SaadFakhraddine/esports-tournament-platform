@@ -1,6 +1,6 @@
 'use client'
 
-import type { Session } from 'next-auth'
+import { useSession } from 'next-auth/react'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from '@/server/api/root'
 import { SiteFooter } from '@/components/layout/site-footer'
@@ -17,7 +17,6 @@ import { LandingFinalCta } from '@/components/landing/landing-final-cta'
 type LandingStats = inferRouterOutputs<AppRouter>['stats']
 
 export interface LandingPageClientProps {
-  session: Session | null
   platformStats: LandingStats['getPlatformStats']
   liveTournaments: LandingStats['getLiveTournaments']
   upcomingTournaments: LandingStats['getUpcomingTournaments']
@@ -25,12 +24,12 @@ export interface LandingPageClientProps {
 }
 
 export function LandingPageClient({
-  session,
   platformStats,
   liveTournaments,
   upcomingTournaments,
   leaderboards,
 }: LandingPageClientProps) {
+  const { data: session } = useSession()
   const isOrganizer = session?.user?.role === 'ORGANIZER' || session?.user?.role === 'ADMIN'
 
   return (
@@ -41,8 +40,8 @@ export function LandingPageClient({
       </div>
 
       <div className='relative z-10'>
-        <LandingNav session={session} />
-        <LandingHero session={session} isOrganizer={isOrganizer} platformStats={platformStats} />
+        <LandingNav session={session ?? null} />
+        <LandingHero session={session ?? null} isOrganizer={isOrganizer} platformStats={platformStats} />
         <LandingSupportedGames />
         <LandingForOrganizers />
         <LandingForPlayers />

@@ -1,10 +1,10 @@
-import { appRouter } from '@/server/api/root'
-import { createTRPCContext } from '@/server/api/trpc'
+import { createPublicServerCaller } from '@/lib/trpc/server'
 import { LandingPageClient } from '@/components/landing/landing-page-client'
 
+export const revalidate = 60
+
 export default async function HomePage() {
-  const ctx = await createTRPCContext()
-  const caller = appRouter.createCaller(ctx)
+  const caller = createPublicServerCaller()
 
   const [platformStats, liveTournaments, upcomingTournaments, leaderboards] = await Promise.all([
     caller.stats.getPlatformStats(),
@@ -15,7 +15,6 @@ export default async function HomePage() {
 
   return (
     <LandingPageClient
-      session={ctx.session}
       platformStats={platformStats}
       liveTournaments={liveTournaments}
       upcomingTournaments={upcomingTournaments}

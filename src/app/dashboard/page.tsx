@@ -6,6 +6,8 @@ import { DashboardHome, type DashboardActivityItem } from '@/components/dashboar
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from '@/server/api/root'
 
+export const dynamic = 'force-dynamic'
+
 type PersonalActivity = inferRouterOutputs<AppRouter>['user']['getRecentActivity']
 type PlatformActivity = inferRouterOutputs<AppRouter>['stats']['getRecentActivity']
 
