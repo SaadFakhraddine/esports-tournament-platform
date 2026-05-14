@@ -1,5 +1,6 @@
 /**
  * Demo / local seed. After a fresh DB reset, run: `npm run db:seed` (or `npm run db:reset`).
+ * Production portfolio demo: see `docs/DEMO.md`.
  *
  * Optional env:
  *   SEED_ADMIN_EMAIL     (default: admin@example.com)
