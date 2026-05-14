@@ -6,6 +6,12 @@ Full-stack tournament management app for competitive teams and organizers: regis
 **Repository:** [github.com/SaadFakhraddine/esports-tournament-platform](https://github.com/SaadFakhraddine/esports-tournament-platform)  
 **Author:** [Saad Fakhraddine](https://github.com/SaadFakhraddine)
 
+## Try the demo
+
+1. Open the [live demo](https://esports-tournament-platform-giq9.vercel.app/login).
+2. Sign in with **`admin@example.com`** / **`password123`** (seeded organizer account — see [`docs/DEMO.md`](./docs/DEMO.md)).
+3. On the dashboard, open **Tournaments** or browse **Valorant Champions Series 2026** under `/tournaments` to view bracket and match state.
+
 ## Screenshots
 
 From the [live demo](https://esports-tournament-platform-giq9.vercel.app/). Regenerate or swap images: [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
