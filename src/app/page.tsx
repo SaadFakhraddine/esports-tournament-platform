@@ -1,17 +1,10 @@
-import { createPublicServerCaller } from '@/lib/trpc/server'
 import { LandingPageClient } from '@/components/landing/landing-page-client'
+import { getLandingPageData } from '@/lib/landing/landing-page-data'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const caller = createPublicServerCaller()
-
-  const [platformStats, liveTournaments, upcomingTournaments, leaderboards] = await Promise.all([
-    caller.stats.getPlatformStats(),
-    caller.stats.getLiveTournaments(),
-    caller.stats.getUpcomingTournaments(),
-    caller.stats.getLeaderboards(),
-  ])
+  const { platformStats, liveTournaments, upcomingTournaments, leaderboards } = await getLandingPageData()
 
   return (
     <LandingPageClient
