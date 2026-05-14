@@ -12,7 +12,7 @@ export default auth((req) => {
   // Redirect to login if accessing protected route while not logged in
   if (isProtectedRoute && !isLoggedIn) {
     const loginUrl = new URL('/login', nextUrl.origin)
-    loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
+    loginUrl.searchParams.set('returnUrl', `${nextUrl.pathname}${nextUrl.search}`)
     return NextResponse.redirect(loginUrl)
   }
 
