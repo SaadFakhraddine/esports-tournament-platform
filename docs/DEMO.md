@@ -6,7 +6,7 @@ The public portfolio demo at [`LIVE_DEMO_URL`](./demo-site.ts) should use the sa
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin / organizer | `admin@example.com` | `password123` |
+| Admin / organizer | `admin@example.com` | `password123` (after `npm run db:reset` on the demo database) |
 | Sample players | `player1@example.com` … `player10@example.com` | `password123` |
 
 Override admin credentials with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_USERNAME`, and `SEED_ADMIN_NAME` (see `.env.example`).
@@ -31,5 +31,5 @@ Override admin credentials with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED
 ## Verify quickly
 
 - Open `/` — platform stats and live/upcoming sections should not be empty.
-- Sign in as `admin@example.com` / `password123` — `/dashboard` loads with activity and organizer actions.
+- Sign in as `player1@example.com` / `password123` — `/dashboard` loads with activity and stats.
 - Open **Valorant Champions Series 2026** from `/tournaments` — bracket and match rows visible.

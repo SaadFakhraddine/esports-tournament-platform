@@ -1,8 +1,16 @@
 # Screenshot checklist (portfolio README)
 
-The README currently embeds **five** captures from production (see `docs/images/`). The canonical demo host is `docs/demo-site.ts` (`LIVE_DEMO_URL`).
+The README embeds captures from production (see `docs/images/`). The canonical demo host is `docs/demo-site.ts` (`LIVE_DEMO_URL`).
 
-Regenerate anytime after deploy with Playwright (from repo root):
+## Regenerate all portfolio shots
+
+```bash
+npm run screenshots:portfolio
+```
+
+Uses `player1@example.com` / `password123` by default for the dashboard capture. Override with `E2E_EMAIL` and `E2E_PASSWORD` if needed.
+
+## Public pages only (manual)
 
 ```bash
 npx playwright screenshot "https://esports-tournament-platform-giq9.vercel.app/" docs/images/01-landing.png --viewport-size=1400,900 --wait-for-timeout=4000
@@ -19,20 +27,12 @@ npx playwright screenshot "https://esports-tournament-platform-giq9.vercel.app/r
 | `03-teams.png` | `/teams` | Team discovery |
 | `04-login.png` | `/login` | Auth UI |
 | `05-register.png` | `/register` | Sign-up |
-
-## Swaps when you have seeded or prod data
-
-Replace any file above, or add new names and update `README.md`, if you want to highlight:
-
-| Page / view | Why |
-| --- | --- |
-| `/tournaments/[id]` | Bracket / registration detail |
-| `/dashboard/tournaments` | Organizer hub (requires login) |
-| `/dashboard/stats` | Per-team & per-game stats |
+| `06-dashboard.png` | `/dashboard` | Signed-in home |
+| `07-tournament-detail.png` | `/tournaments/[id]` | Bracket / registrations |
 
 ## Tips
 
-- Use **seeded data** locally (`npm run db:reset`) before capturing dashboard shots.
+- Seed the demo database first (`docs/DEMO.md`).
 - **Crop** browser chrome or use a clean window; hide bookmarks bar.
 - Prefer **one theme** consistently across shots.
 - Full-page screenshots grow file size quickly; use viewport-only for hero pages if the PNG is too large for git.
