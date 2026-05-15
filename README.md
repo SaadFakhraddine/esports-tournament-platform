@@ -113,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Architecture
 
-- **Routes:** `app/(public)` — landing, browse `/tournaments` & `/teams`. `app/dashboard` — signed-in hub; `app/dashboard/layout.tsx` wraps all `/dashboard/*` with the dashboard shell and auth. `app/(dashboard)` — team flows (`/teams/create`, `/teams/[id]/edit`, …) with the same shell.
+- **Routes:** `app/(public)` — landing, browse `/tournaments` & `/teams` (anonymous). Logged-in sidebar uses **`/dashboard/discover/tournaments`** and **`/dashboard/discover/teams`** for the same browse UI inside the dashboard shell. `app/dashboard` — other signed-in hub routes; `app/dashboard/layout.tsx` wraps all `/dashboard/*`. `app/(dashboard)` — team flows (`/teams/create`, …).
 - **API:** `server/api/routers/*` — tRPC procedures; clients use **`/api/trpc`** + TanStack Query with Zod inputs.
 - **Data & auth:** Prisma + PostgreSQL (`server/db`); NextAuth v5 (`server/auth`).
 - **Logic:** Brackets, validators, security helpers in `lib/` (e.g. redirect allowlist covered by Vitest).

@@ -3,10 +3,10 @@
 import { Suspense } from 'react'
 import { TournamentsBrowse, TournamentsBrowseSkeleton } from '@/components/browse/tournaments-browse'
 
-export default function TournamentsPage() {
+export default function DashboardDiscoverTournamentsPage() {
   return (
     <Suspense fallback={<TournamentsBrowseSkeleton />}>
-      <TournamentsBrowse listBasePath='/tournaments' homeHref='/' />
+      <TournamentsBrowse listBasePath='/dashboard/discover/tournaments' homeHref='/dashboard' />
     </Suspense>
   )
 }

@@ -30,13 +30,13 @@ const navigation = [
   },
   {
     name: 'Tournaments',
-    href: '/tournaments',
+    href: '/dashboard/discover/tournaments',
     icon: Trophy,
     roles: ['ADMIN', 'ORGANIZER', 'PLAYER', 'SPECTATOR'],
   },
   {
     name: 'Teams',
-    href: '/teams',
+    href: '/dashboard/discover/teams',
     icon: Users,
     roles: ['ADMIN', 'ORGANIZER', 'PLAYER', 'SPECTATOR'],
   },
