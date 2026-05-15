@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { appRouter } from '@/server/api/root'
 import { createTRPCContext } from '@/server/api/trpc'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { DashboardHome, type DashboardActivityItem } from '@/components/dashboard/dashboard-home'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from '@/server/api/root'
@@ -54,14 +53,12 @@ export default async function DashboardPage() {
   const recentActivity = mergeRecentActivity(personalActivity, platformActivity)
 
   return (
-    <DashboardLayout userRole={ctx.session.user.role}>
-      <DashboardHome
-        session={ctx.session}
-        stats={stats}
-        tournaments={tournaments}
-        teams={teams}
-        recentActivity={recentActivity}
-      />
-    </DashboardLayout>
+    <DashboardHome
+      session={ctx.session}
+      stats={stats}
+      tournaments={tournaments}
+      teams={teams}
+      recentActivity={recentActivity}
+    />
   )
 }

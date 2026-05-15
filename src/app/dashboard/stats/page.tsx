@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,24 +28,21 @@ export default function PlayerStatsPage() {
 
   if (status === 'loading' || !session) {
     return (
-      <DashboardLayout>
-        <div className='space-y-6'>
-          <Skeleton className='h-10 w-64' />
-          <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className='h-32' />
-            ))}
-          </div>
+      <div className='space-y-6'>
+        <Skeleton className='h-10 w-64' />
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className='h-32' />
+          ))}
         </div>
-      </DashboardLayout>
+      </div>
     )
   }
 
   const s = stats?.summary
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='space-y-8'>
+    <div className='space-y-8'>
         <div>
           <h1 className='text-3xl font-bold tracking-tight flex items-center gap-2'>
             <Medal className='h-8 w-8 text-primary' />
@@ -267,7 +263,6 @@ export default function PlayerStatsPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
   )
 }
 

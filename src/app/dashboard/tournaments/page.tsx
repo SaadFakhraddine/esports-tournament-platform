@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -56,8 +55,7 @@ export default function TournamentsManagementPage() {
   )
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='space-y-6'>
+    <div className='space-y-6'>
         {/* Header */}
         <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
           <div>
@@ -129,7 +127,6 @@ export default function TournamentsManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   )
 }
 

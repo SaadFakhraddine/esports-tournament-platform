@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TournamentForm } from '@/components/tournament/tournament-form'
 
 export default function CreateTournamentPage() {
@@ -21,8 +20,7 @@ export default function CreateTournamentPage() {
   }
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='max-w-3xl mx-auto space-y-6'>
+    <div className='max-w-3xl mx-auto space-y-6'>
         {/* Page header */}
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Create Tournament</h1>
@@ -34,6 +32,5 @@ export default function CreateTournamentPage() {
         {/* Tournament form */}
         <TournamentForm mode='create' />
       </div>
-    </DashboardLayout>
   )
 }

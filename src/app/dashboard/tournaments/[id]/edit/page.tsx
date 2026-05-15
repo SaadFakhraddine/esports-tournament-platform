@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react'
 import { redirect, useParams } from 'next/navigation'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -23,12 +22,10 @@ export default function TournamentManagePage() {
 
   if (status === 'loading' || vm.tournamentLoading) {
     return (
-      <DashboardLayout userRole={session?.user?.role}>
-        <div className='space-y-6'>
-          <Skeleton className='h-12 w-96' />
-          <Skeleton className='h-64' />
-        </div>
-      </DashboardLayout>
+      <div className='space-y-6'>
+        <Skeleton className='h-12 w-96' />
+        <Skeleton className='h-64' />
+      </div>
     )
   }
 
@@ -42,19 +39,16 @@ export default function TournamentManagePage() {
 
   if (!vm.tournament) {
     return (
-      <DashboardLayout userRole={session.user.role}>
-        <div className='text-center py-12'>
-          <p className='text-lg font-medium'>Tournament not found</p>
-        </div>
-      </DashboardLayout>
+      <div className='text-center py-12'>
+        <p className='text-lg font-medium'>Tournament not found</p>
+      </div>
     )
   }
 
   const tournament = vm.tournament
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='space-y-6'>
+    <div className='space-y-6'>
         <div>
           <div className='flex items-center gap-2 mb-2'>
             <h1 className='text-3xl font-bold tracking-tight'>{tournament.name}</h1>
@@ -188,6 +182,5 @@ export default function TournamentManagePage() {
           setScheduleMutation={vm.setScheduleMutation}
         />
       </div>
-    </DashboardLayout>
   )
 }

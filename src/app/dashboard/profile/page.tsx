@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -119,8 +118,7 @@ export default function ProfilePage() {
   const sidebarUsername = profile?.username ?? session.user.username
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='space-y-6'>
+    <div className='space-y-6'>
         {/* Header */}
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Profile</h1>
@@ -418,7 +416,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   )
 }
 

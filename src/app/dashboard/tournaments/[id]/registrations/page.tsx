@@ -10,7 +10,6 @@ import {
   isTeamBlockedFromQuickAdd,
   quickAddStatusBadge,
 } from '@/lib/tournament-team-search'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -150,25 +149,21 @@ export default function TournamentRegistrationsPage() {
 
   if (tournamentLoading || !tournament) {
     return (
-      <DashboardLayout userRole={session.user.role}>
-        <div className='space-y-6'>
-          <Skeleton className='h-12 w-96' />
-          <Skeleton className='h-64' />
-        </div>
-      </DashboardLayout>
+      <div className='space-y-6'>
+        <Skeleton className='h-12 w-96' />
+        <Skeleton className='h-64' />
+      </div>
     )
   }
 
   if (!isOrganizer && !isAdmin) {
     return (
-      <DashboardLayout userRole={session.user.role}>
-        <Alert variant='destructive'>
-          <AlertCircle className='h-4 w-4' />
-          <AlertDescription>
-            You don&apos;t have permission to manage registrations for this tournament.
-          </AlertDescription>
-        </Alert>
-      </DashboardLayout>
+      <Alert variant='destructive'>
+        <AlertCircle className='h-4 w-4' />
+        <AlertDescription>
+          You don&apos;t have permission to manage registrations for this tournament.
+        </AlertDescription>
+      </Alert>
     )
   }
 
@@ -177,7 +172,7 @@ export default function TournamentRegistrationsPage() {
   const rejectedRegistrations = registrations?.filter((r) => r.status === 'REJECTED') || []
 
   return (
-    <DashboardLayout userRole={session.user.role}>
+    <>
       <div className='space-y-6'>
         {/* Header */}
         <div className='flex items-center gap-4'>
@@ -465,7 +460,7 @@ export default function TournamentRegistrationsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DashboardLayout>
+    </>
   )
 }
 

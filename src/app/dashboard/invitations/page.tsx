@@ -2,7 +2,6 @@
 
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -78,8 +77,7 @@ export default function InvitationsPage() {
   }
 
   return (
-    <DashboardLayout userRole={session.user.role}>
-      <div className='space-y-6'>
+    <div className='space-y-6'>
         {/* Header */}
         <div>
           <h1 className='text-3xl font-bold tracking-tight'>Team Invitations</h1>
@@ -221,14 +219,12 @@ export default function InvitationsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   )
 }
 
 function DashboardSkeleton() {
   return (
-    <DashboardLayout>
-      <div className='space-y-6'>
+    <div className='space-y-6'>
         <Skeleton className='h-12 w-64' />
         <div className='space-y-4'>
           {[1, 2, 3].map((i) => (
@@ -236,6 +232,5 @@ function DashboardSkeleton() {
           ))}
         </div>
       </div>
-    </DashboardLayout>
   )
 }
