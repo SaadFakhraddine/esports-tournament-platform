@@ -96,7 +96,7 @@ export const authConfig: NextAuthConfig = {
       // This callback is used by middleware to check if user is authenticated
       return !!auth?.user
     },
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       // Allow credentials sign in
       if (account?.provider === 'credentials') {
         return true
@@ -105,10 +105,22 @@ export const authConfig: NextAuthConfig = {
       // Handle OAuth providers (Google, Discord)
       if (account?.provider === 'google' || account?.provider === 'discord') {
         if (!user.email) {
-          console.warn(
-            `[auth] OAuth sign-in rejected: missing email (${account.provider}). ` +
-              'Discord requires a verified email on the account and the email scope.',
-          )
+          const hint =
+            account.provider === 'discord'
+              ? 'Discord requires a verified email on the account (email scope).'
+              : 'This OAuth provider did not return an email; check scopes and consent screen.'
+          console.warn(`[auth] OAuth sign-in rejected: missing email (${account.provider}). ${hint}`)
+          return false
+        }
+
+        if (
+          account.provider === 'google' &&
+          profile &&
+          typeof profile === 'object' &&
+          'email_verified' in profile &&
+          (profile as { email_verified?: boolean }).email_verified !== true
+        ) {
+          console.warn('[auth] Google sign-in rejected: email_verified is false')
           return false
         }
 

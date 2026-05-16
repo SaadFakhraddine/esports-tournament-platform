@@ -113,7 +113,7 @@ function RegisterFormInner({ discordOAuthEnabled, googleOAuthEnabled }: Register
                   <Button
                     type='button'
                     variant='outline'
-                    className='w-full'
+                    className='w-full border-[#dadce0]/70 bg-white text-gray-800 hover:bg-gray-50 hover:text-gray-900 dark:border-[#dadce0]/40 dark:bg-white/95 dark:hover:bg-white'
                     onClick={() => {
                       setOauthLoading('google')
                       void signIn('google', { callbackUrl: returnUrl })

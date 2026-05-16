@@ -80,6 +80,8 @@ See `.env.example` for optional OAuth, Resend, `NEXT_PUBLIC_APP_URL`, seed overr
 
 **Discord sign-in (optional):** In the [Discord Developer Portal](https://discord.com/developers/applications), create an application → **OAuth2** → add redirect `{NEXTAUTH_URL}/api/auth/callback/discord` (for local dev use `http://localhost:3000/api/auth/callback/discord`). Copy the client ID and secret into `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`. Accounts need a **verified email** on Discord so the app can store a unique email.
 
+**Google sign-in (optional):** In [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials** → create an **OAuth 2.0 Client ID** (Web application). Under **Authorized redirect URIs**, add `{NEXTAUTH_URL}/api/auth/callback/google` (local: `http://localhost:3000/api/auth/callback/google`). Finish **OAuth consent screen** (External app in testing requires adding **Test users**). Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`. Only accounts with **verified email** from Google are accepted.
+
 3. **Database** — apply schema and generate the client:
 
 ```bash
