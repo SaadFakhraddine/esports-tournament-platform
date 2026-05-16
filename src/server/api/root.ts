@@ -6,6 +6,7 @@ import { userRouter } from '@/server/api/routers/user'
 import { invitationRouter } from '@/server/api/routers/invitation'
 import { gameRouter } from '@/server/api/routers/game'
 import { statsRouter } from '@/server/api/routers/stats'
+import { searchRouter } from '@/server/api/routers/search'
 
 export const appRouter = createTRPCRouter({
   tournament: tournamentRouter,
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   invitation: invitationRouter,
   game: gameRouter,
   stats: statsRouter,
+  search: searchRouter,
 })
 
 export type AppRouter = typeof appRouter

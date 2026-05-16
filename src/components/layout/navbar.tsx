@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Search } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { DashboardGlobalSearch } from '@/components/layout/dashboard-global-search'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
@@ -29,14 +29,7 @@ export function Navbar() {
       <div className='flex h-16 items-center gap-4 px-4 sm:px-6 lg:px-8'>
         {/* Search */}
         <div className='flex flex-1 items-center gap-4'>
-          <div className='relative w-full max-w-md'>
-            <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
-            <Input
-              type='search'
-              placeholder='Search tournaments, teams...'
-              className='pl-10 bg-background'
-            />
-          </div>
+          <DashboardGlobalSearch />
         </div>
 
         {/* Right section */}
