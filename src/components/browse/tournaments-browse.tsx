@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Search, Trophy, AlertCircle, RefreshCw } from 'lucide-react'
+import { browseListHref, searchFromUrl } from '@/lib/browse/search-url'
 
 export function TournamentsBrowseSkeleton() {
   return (
@@ -51,9 +52,24 @@ export function TournamentsBrowse({ listBasePath, homeHref = '/' }: TournamentsB
   }, [filterParam])
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 250)
+    setSearchQuery(searchFromUrl(searchParams))
+  }, [searchParams])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = searchQuery.trim()
+      setDebouncedSearch(trimmed)
+
+      const urlSearch = searchFromUrl(searchParams)
+      if (trimmed === urlSearch) return
+
+      const params = new URLSearchParams(searchParams?.toString() || '')
+      router.replace(browseListHref(listBasePath, { search: trimmed, preserveParams: params }), {
+        scroll: false,
+      })
+    }, 250)
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, searchParams, listBasePath, router])
 
   const { data, isLoading, isError, refetch, isFetching } = trpc.tournament.getAll.useQuery({
     limit: 30,
@@ -82,7 +98,8 @@ export function TournamentsBrowse({ listBasePath, homeHref = '/' }: TournamentsB
 
   const clearSearchAndTab = () => {
     setSearchQuery('')
-    handleTabChange('all')
+    setActiveTab('all')
+    router.replace(listBasePath, { scroll: false })
   }
 
   const filteredTournaments = data?.tournaments || []

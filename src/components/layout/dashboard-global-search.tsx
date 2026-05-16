@@ -7,6 +7,7 @@ import { Search, Trophy, Users, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc/client'
+import { browseListHref } from '@/lib/browse/search-url'
 
 const MIN_QUERY_LENGTH = 2
 
@@ -40,6 +41,13 @@ export function DashboardGlobalSearch() {
   const hasResults = tournaments.length > 0 || teams.length > 0
   const showPanel = open && query.trim().length > 0
   const showEmpty = canSearch && !isLoading && !isFetching && data !== undefined && !hasResults
+  const trimmedQuery = query.trim()
+  const tournamentsBrowseHref = browseListHref('/dashboard/discover/tournaments', {
+    search: canSearch ? trimmedQuery : '',
+  })
+  const teamsBrowseHref = browseListHref('/dashboard/discover/teams', {
+    search: canSearch ? trimmedQuery : '',
+  })
 
   useEffect(() => {
     const onPointerDown = (e: MouseEvent) => {
@@ -173,23 +181,25 @@ export function DashboardGlobalSearch() {
                   </ul>
                 </section>
               )}
+            </div>
+          )}
 
-              <div className='border-t border-border px-4 py-2 flex flex-wrap gap-x-4 gap-y-1 text-xs'>
-                <Link
-                  href='/dashboard/discover/tournaments'
-                  className='text-primary hover:underline'
-                  onClick={() => setOpen(false)}
-                >
-                  Browse all tournaments
-                </Link>
-                <Link
-                  href='/dashboard/discover/teams'
-                  className='text-primary hover:underline'
-                  onClick={() => setOpen(false)}
-                >
-                  Browse all teams
-                </Link>
-              </div>
+          {canSearch && data !== undefined && !isLoading && (hasResults || showEmpty) && (
+            <div className='border-t border-border px-4 py-2 flex flex-wrap gap-x-4 gap-y-1 text-xs'>
+              <Link
+                href={tournamentsBrowseHref}
+                className='text-primary hover:underline'
+                onClick={() => setOpen(false)}
+              >
+                See all tournament results
+              </Link>
+              <Link
+                href={teamsBrowseHref}
+                className='text-primary hover:underline'
+                onClick={() => setOpen(false)}
+              >
+                See all team results
+              </Link>
             </div>
           )}
         </div>

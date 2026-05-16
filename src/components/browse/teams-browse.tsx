@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,20 +12,37 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Users, Search, Plus, AlertCircle, RefreshCw } from 'lucide-react'
+import { browseListHref, searchFromUrl } from '@/lib/browse/search-url'
 
 export interface TeamsBrowseProps {
+  /** Base path for list + `?search=` sync */
+  listBasePath?: string
   /** Target for empty-state “Back to home” */
   homeHref?: string
 }
 
-export function TeamsBrowse({ homeHref = '/' }: TeamsBrowseProps) {
+export function TeamsBrowse({ listBasePath = '/teams', homeHref = '/' }: TeamsBrowseProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 250)
+    setSearchQuery(searchFromUrl(searchParams))
+  }, [searchParams])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = searchQuery.trim()
+      setDebouncedSearch(trimmed)
+
+      const urlSearch = searchFromUrl(searchParams)
+      if (trimmed === urlSearch) return
+
+      router.replace(browseListHref(listBasePath, { search: trimmed }), { scroll: false })
+    }, 250)
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, searchParams, listBasePath, router])
 
   const { data, isLoading, isError, refetch, isFetching } = trpc.team.getAll.useQuery({
     limit: 20,
@@ -112,7 +130,14 @@ export function TeamsBrowse({ homeHref = '/' }: TeamsBrowseProps) {
             </p>
             <div className='flex flex-col gap-2 sm:flex-row sm:justify-center'>
               {hasSearch && (
-                <Button type='button' variant='outline' onClick={() => setSearchQuery('')}>
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    setSearchQuery('')
+                    router.replace(listBasePath, { scroll: false })
+                  }}
+                >
                   Clear search
                 </Button>
               )}
