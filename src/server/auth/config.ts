@@ -5,28 +5,38 @@ import DiscordProvider from 'next-auth/providers/discord'
 import { db } from '@/server/db/client'
 import bcrypt from 'bcryptjs'
 import { UserRole } from '@prisma/client'
-import { isDiscordOAuthConfigured, isGoogleOAuthConfigured } from '@/server/auth/oauth-env'
+import {
+  getDiscordOAuthCredentials,
+  getGoogleOAuthCredentials,
+} from '@/server/auth/oauth-env'
 
+const googleCreds = getGoogleOAuthCredentials()
+const discordCreds = getDiscordOAuthCredentials()
+
+/** Auth.js reads `provider.clientId` for the authorize URL; built-in providers only nest creds under `options`. */
 const oauthProviders = [
-  ...(isGoogleOAuthConfigured()
+  ...(googleCreds
     ? [
-        GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID!,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        }),
+        {
+          ...GoogleProvider(googleCreds),
+          clientId: googleCreds.clientId,
+          clientSecret: googleCreds.clientSecret,
+        },
       ]
     : []),
-  ...(isDiscordOAuthConfigured()
+  ...(discordCreds
     ? [
-        DiscordProvider({
-          clientId: process.env.DISCORD_CLIENT_ID!,
-          clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-        }),
+        {
+          ...DiscordProvider(discordCreds),
+          clientId: discordCreds.clientId,
+          clientSecret: discordCreds.clientSecret,
+        },
       ]
     : []),
 ]
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   session: {
     strategy: 'jwt',
   },

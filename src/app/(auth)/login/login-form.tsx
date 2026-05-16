@@ -15,7 +15,7 @@ import { validateRedirectUrl } from '@/lib/security/redirect-validation'
 
 const oauthErrorMessages: Record<string, string> = {
   Configuration:
-    'OAuth is misconfigured on the server. Check Discord/Google env vars and callback URLs.',
+    'OAuth failed to start (often missing NEXTAUTH_SECRET, wrong callback URL, or invalid client ID). Restart the dev server after changing .env.',
   AccessDenied: 'Sign-in was cancelled or your account cannot be used with this app.',
   Verification: 'The sign-in link is no longer valid. Please try again.',
   OAuthAccountNotLinked:
