@@ -48,7 +48,7 @@ export function LandingPageClient({
         <LandingLiveUpcoming liveTournaments={liveTournaments} upcomingTournaments={upcomingTournaments} />
         <LandingHallOfFame leaderboardsLoading={false} leaderboards={leaderboards} />
         <LandingHowItWorks />
-        <LandingFinalCta />
+        <LandingFinalCta session={session ?? null} />
         <SiteFooter variant='dark' />
       </div>
     </div>

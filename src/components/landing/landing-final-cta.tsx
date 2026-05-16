@@ -1,10 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import type { Session } from 'next-auth'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
 
-export function LandingFinalCta() {
+export function LandingFinalCta({ session }: { session: Session | null }) {
+  const ctaHref = session ? '/dashboard' : '/register'
+  const ctaLabel = session ? 'GO TO DASHBOARD' : 'START NOW'
+
   return (
     <section className='py-32 relative'>
       <div className='absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-purple-500/20 to-pink-500/20' />
@@ -15,12 +19,12 @@ export function LandingFinalCta() {
           </span>
         </h2>
         <p className='text-2xl text-gray-400 mb-12 max-w-2xl mx-auto'>Join thousands of players in the arena</p>
-        <Link href='/register'>
+        <Link href={ctaHref}>
           <Button
             size='lg'
             className='bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 hover:from-cyan-400 hover:via-purple-400 hover:to-pink-400 text-white font-black text-xl px-16 py-8 shadow-2xl shadow-purple-500/50 hover:shadow-cyan-500/50 transition-all'
           >
-            START NOW
+            {ctaLabel}
             <ArrowRight className='ml-2 h-6 w-6' />
           </Button>
         </Link>
