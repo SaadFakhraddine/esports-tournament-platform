@@ -5,6 +5,26 @@ import DiscordProvider from 'next-auth/providers/discord'
 import { db } from '@/server/db/client'
 import bcrypt from 'bcryptjs'
 import { UserRole } from '@prisma/client'
+import { isDiscordOAuthConfigured, isGoogleOAuthConfigured } from '@/server/auth/oauth-env'
+
+const oauthProviders = [
+  ...(isGoogleOAuthConfigured()
+    ? [
+        GoogleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
+      ]
+    : []),
+  ...(isDiscordOAuthConfigured()
+    ? [
+        DiscordProvider({
+          clientId: process.env.DISCORD_CLIENT_ID!,
+          clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        }),
+      ]
+    : []),
+]
 
 export const authConfig: NextAuthConfig = {
   session: {
@@ -59,14 +79,7 @@ export const authConfig: NextAuthConfig = {
         }
       },
     }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID!,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-    }),
+    ...oauthProviders,
   ],
   callbacks: {
     authorized({ auth }) {
@@ -81,17 +94,25 @@ export const authConfig: NextAuthConfig = {
 
       // Handle OAuth providers (Google, Discord)
       if (account?.provider === 'google' || account?.provider === 'discord') {
+        if (!user.email) {
+          console.warn(
+            `[auth] OAuth sign-in rejected: missing email (${account.provider}). ` +
+              'Discord requires a verified email on the account and the email scope.',
+          )
+          return false
+        }
+
         try {
           // Check if user exists
           const existingUser = await db.user.findUnique({
-            where: { email: user.email! },
+            where: { email: user.email },
           })
 
           if (!existingUser) {
             // Create new user for OAuth
             const newUser = await db.user.create({
               data: {
-                email: user.email!,
+                email: user.email,
                 name: user.name,
                 avatar: user.image,
                 emailVerified: new Date(),

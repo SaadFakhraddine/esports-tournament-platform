@@ -78,6 +78,8 @@ NEXTAUTH_URL="http://localhost:3000"
 
 See `.env.example` for optional OAuth, Resend, `NEXT_PUBLIC_APP_URL`, seed overrides, Playwright, and future Pusher-related variables.
 
+**Discord sign-in (optional):** In the [Discord Developer Portal](https://discord.com/developers/applications), create an application → **OAuth2** → add redirect `{NEXTAUTH_URL}/api/auth/callback/discord` (for local dev use `http://localhost:3000/api/auth/callback/discord`). Copy the client ID and secret into `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`. Accounts need a **verified email** on Discord so the app can store a unique email.
+
 3. **Database** — apply schema and generate the client:
 
 ```bash
