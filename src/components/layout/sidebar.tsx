@@ -9,7 +9,7 @@ import {
   Calendar,
   User,
   Shield,
-  Home,
+  LayoutDashboard,
   Menu,
   X,
   Mail,
@@ -23,9 +23,10 @@ interface SidebarProps {
 
 const navigation = [
   {
-    name: 'Home',
-    href: '/',
-    icon: Home,
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    matchExact: true,
     roles: ['ADMIN', 'ORGANIZER', 'PLAYER', 'SPECTATOR'],
   },
   {
@@ -84,7 +85,7 @@ export function Sidebar({ userRole = 'PLAYER' }: SidebarProps) {
     <div className='flex h-full flex-col'>
       {/* Logo */}
       <div className='flex h-16 items-center border-b border-border px-6'>
-        <Link href='/' className='flex items-center space-x-2'>
+        <Link href='/' className='flex items-center space-x-2' aria-label='TourneyHub home'>
           <div className='h-8 w-8 rounded-lg bg-gradient-purple-cyan flex items-center justify-center'>
             <Trophy className='h-5 w-5 text-white' />
           </div>
@@ -97,7 +98,10 @@ export function Sidebar({ userRole = 'PLAYER' }: SidebarProps) {
       {/* Navigation */}
       <nav className='flex-1 space-y-1 px-3 py-4'>
         {filteredNavigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          const isActive =
+            'matchExact' in item && item.matchExact
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.name}
