@@ -47,3 +47,6 @@ SETUP_GUIDE.md
 PROJECT_STRUCTURE.txt
 
 .aider*
+
+# Claude Code / local AI tool settings (machine-specific)
+.claude/
