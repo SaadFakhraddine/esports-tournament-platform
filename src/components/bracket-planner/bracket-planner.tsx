@@ -61,7 +61,7 @@ export function BracketPlanner() {
     if (primary) {
       setSelectedFormat(primary)
     }
-  }, [teamCount, constraints.schedule, constraints.playStyle, recommendQuery.data?.primary.format])
+  }, [recommendQuery.data])
 
   const handleApply = () => {
     const params = new URLSearchParams({
