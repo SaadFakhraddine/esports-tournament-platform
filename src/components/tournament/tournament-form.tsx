@@ -13,12 +13,29 @@ import { TournamentFormRegistration } from './tournament-form/tournament-form-re
 import { TournamentFormSchedule } from './tournament-form/tournament-form-schedule'
 import type { TournamentFormState, TournamentFormTournament } from './tournament-form/types'
 
+const TOURNAMENT_FORMATS = [
+  'SINGLE_ELIMINATION',
+  'DOUBLE_ELIMINATION',
+  'ROUND_ROBIN',
+  'SWISS',
+] as const
+
+export interface PlannerFormDefaults {
+  format?: string
+  maxTeams?: number
+}
+
 export interface TournamentFormProps {
   tournament?: TournamentFormTournament
   mode?: 'create' | 'edit'
+  plannerDefaults?: PlannerFormDefaults
 }
 
-export function TournamentForm({ tournament, mode = 'create' }: TournamentFormProps) {
+export function TournamentForm({
+  tournament,
+  mode = 'create',
+  plannerDefaults,
+}: TournamentFormProps) {
   const router = useRouter()
   const utils = trpc.useUtils()
   const [error, setError] = useState<string | null>(null)
@@ -34,12 +51,23 @@ export function TournamentForm({ tournament, mode = 'create' }: TournamentFormPr
 
   const { data: games, isLoading: gamesLoading } = trpc.game.getAll.useQuery()
 
+  const initialFormat =
+    plannerDefaults?.format &&
+    TOURNAMENT_FORMATS.includes(plannerDefaults.format as (typeof TOURNAMENT_FORMATS)[number])
+      ? plannerDefaults.format
+      : tournament?.format || 'SINGLE_ELIMINATION'
+
+  const initialMaxTeams =
+    plannerDefaults?.maxTeams && plannerDefaults.maxTeams >= 2 && plannerDefaults.maxTeams <= 128
+      ? plannerDefaults.maxTeams
+      : tournament?.maxTeams || 8
+
   const [formData, setFormData] = useState<TournamentFormState>({
     name: tournament?.name || '',
     description: tournament?.description || '',
     gameId: tournament?.game || '',
-    format: tournament?.format || 'SINGLE_ELIMINATION',
-    maxTeams: tournament?.maxTeams || 8,
+    format: initialFormat,
+    maxTeams: initialMaxTeams,
     startDate: tournament?.startDate ? new Date(tournament.startDate) : null,
     endDate: tournament?.endDate ? new Date(tournament.endDate) : null,
     registrationStart: tournament?.registrationStart ? new Date(tournament.registrationStart) : null,

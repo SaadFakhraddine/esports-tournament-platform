@@ -64,12 +64,19 @@ export default function TournamentsManagementPage() {
               Manage and organize your tournaments
             </p>
           </div>
-          <Link href='/dashboard/tournaments/create'>
-            <Button className='gap-2'>
-              <Plus className='h-4 w-4' />
-              Create Tournament
-            </Button>
-          </Link>
+          <div className='flex flex-wrap gap-2'>
+            <Link href='/dashboard/tournaments/planner'>
+              <Button variant='outline' className='gap-2'>
+                Bracket Designer
+              </Button>
+            </Link>
+            <Link href='/dashboard/tournaments/create'>
+              <Button className='gap-2'>
+                <Plus className='h-4 w-4' />
+                Create Tournament
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Search and Filter */}
