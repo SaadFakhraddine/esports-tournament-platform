@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import { TRPCError } from '@trpc/server'
 import { TeamRole } from '@prisma/client'
-import type { Prisma } from '@prisma/client'
+import { buildTeamListWhere } from '@/lib/team-list-query'
 
 export const teamRouter = createTRPCRouter({
   create: protectedProcedure
@@ -72,22 +72,8 @@ export const teamRouter = createTRPCRouter({
   .query(async ({ ctx, input }) => {
       const { game, search, limit, cursor } = input
 
-      const andConditions: Prisma.TeamWhereInput[] = []
-      const gameId = game?.trim()
-      if (gameId) {
-        andConditions.push({ gameId })
-      }
-      if (search) {
-        andConditions.push({
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { tag: { contains: search, mode: 'insensitive' } },
-          ],
-        })
-      }
-
       const teams = await ctx.db.team.findMany({
-        where: andConditions.length > 0 ? { AND: andConditions } : {},
+        where: buildTeamListWhere({ game, search }),
         take: limit + 1,
         ...(cursor && {
           skip: 1,

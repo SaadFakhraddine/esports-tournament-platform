@@ -60,20 +60,24 @@ export function TournamentManageRegistrationsTab({
     )
   }, [registrations])
 
-  const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
-    {
-      game: gameId,
-      search: debouncedTeamSearch || undefined,
-      limit: 10,
-    },
-    { enabled: canAddTeams },
-  )
+  const trimmedSearch = debouncedTeamSearch.trim()
+
+  const { data: teams, isLoading: teamsLoading, isFetching: teamsFetching } =
+    trpc.team.getAll.useQuery(
+      {
+        game: gameId,
+        search: trimmedSearch || undefined,
+        limit: 20,
+      },
+      { enabled: canAddTeams && !!gameId },
+    )
   const hasTeams = (teams?.teams?.length ?? 0) > 0
   const showTeamsSkeleton = teamsLoading && !hasTeams
 
   const addTeamMutation = trpc.tournament.addTeamToTournament.useMutation({
     onSuccess: async () => {
       setTeamSearch('')
+      setDebouncedTeamSearch('')
       setSelectedTeamIds([])
       await utils.tournament.getRegistrations.invalidate({ tournamentId })
     },
@@ -82,6 +86,7 @@ export function TournamentManageRegistrationsTab({
   const addTeamsMutation = trpc.tournament.addTeamsToTournament.useMutation({
     onSuccess: async () => {
       setTeamSearch('')
+      setDebouncedTeamSearch('')
       setSelectedTeamIds([])
       await utils.tournament.getRegistrations.invalidate({ tournamentId })
     },
@@ -128,9 +133,17 @@ export function TournamentManageRegistrationsTab({
               ))}
             </div>
           ) : (teams?.teams?.length || 0) === 0 ? (
-            <p className='text-sm text-muted-foreground'>No teams found.</p>
+            <p className='text-sm text-muted-foreground'>
+              {trimmedSearch
+                ? `No teams match "${trimmedSearch}" for this tournament's game.`
+                : 'No teams are registered for this game yet. Create teams from the Teams page first.'}
+            </p>
           ) : (
-            <div className='space-y-2'>
+            <>
+              {teamsFetching && trimmedSearch ? (
+                <p className='text-xs text-muted-foreground mb-2'>Searching…</p>
+              ) : null}
+              <div className='space-y-2'>
               {teams?.teams.map((team) => {
                 const checked = selectedTeamIds.includes(team.id)
                 const regStatus = getRegistrationStatusForTeam(registrations, team.id)
@@ -212,6 +225,7 @@ export function TournamentManageRegistrationsTab({
                 </div>
               )}
             </div>
+            </>
           )}
         </CardContent>
       </Card>

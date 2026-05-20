@@ -61,7 +61,13 @@ export default function TournamentRegistrationsPage() {
   })
 
   const [teamSearch, setTeamSearch] = useState('')
+  const [debouncedTeamSearch, setDebouncedTeamSearch] = useState('')
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedTeamSearch(teamSearch), 350)
+    return () => clearTimeout(t)
+  }, [teamSearch])
 
   const { data: tournament, isLoading: tournamentLoading } = trpc.tournament.getManageOverviewById.useQuery(
     { id: tournamentId },
@@ -73,19 +79,25 @@ export default function TournamentRegistrationsPage() {
     { enabled: !!tournamentId }
   )
 
-  const { data: teams, isLoading: teamsLoading } = trpc.team.getAll.useQuery(
-    {
-      game: tournament?.game?.id,
-      search: teamSearch || undefined,
-      limit: 5,
-    },
-    { enabled: !!tournament }
-  )
+  const canAddTeams = tournament?.status === 'REGISTRATION'
+  const trimmedSearch = debouncedTeamSearch.trim()
+  const tournamentGameId = tournament?.game?.id
+
+  const { data: teams, isLoading: teamsLoading, isFetching: teamsFetching } =
+    trpc.team.getAll.useQuery(
+      {
+        game: tournamentGameId,
+        search: trimmedSearch || undefined,
+        limit: 20,
+      },
+      { enabled: !!tournamentGameId && canAddTeams },
+    )
 
   const addTeamMutation = trpc.tournament.addTeamToTournament.useMutation({
     onSuccess: () => {
       refetch()
       setTeamSearch('')
+      setDebouncedTeamSearch('')
     },
   })
 
@@ -93,6 +105,7 @@ export default function TournamentRegistrationsPage() {
     onSuccess: () => {
       refetch()
       setTeamSearch('')
+      setDebouncedTeamSearch('')
       setSelectedTeamIds([])
     },
   })
@@ -112,8 +125,6 @@ export default function TournamentRegistrationsPage() {
       ),
     [selectedTeamIds, registrations]
   )
-
-  const canAddTeams = tournament?.status === 'REGISTRATION'
 
   const approveMutation = trpc.tournament.approveRegistration.useMutation({
     onSuccess: () => {
@@ -244,7 +255,7 @@ export default function TournamentRegistrationsPage() {
                 placeholder='Search by team name or tag...'
                 value={teamSearch}
                 onChange={(e) => setTeamSearch(e.target.value)}
-                disabled={!canAddTeams || addTeamMutation.isPending || teamsLoading}
+                disabled={!canAddTeams || addTeamMutation.isPending}
               />
             </div>
 
@@ -263,7 +274,11 @@ export default function TournamentRegistrationsPage() {
                 ))}
               </div>
             ) : (teams?.teams?.length || 0) === 0 ? (
-              <p className='text-sm text-muted-foreground'>No teams found.</p>
+              <p className='text-sm text-muted-foreground'>
+                {trimmedSearch
+                  ? `No teams match "${trimmedSearch}" for this tournament's game.`
+                  : 'No teams are registered for this game yet. Create teams from the Teams page first.'}
+              </p>
             ) : (
               <div className='space-y-2'>
                 <div className='space-y-2'>

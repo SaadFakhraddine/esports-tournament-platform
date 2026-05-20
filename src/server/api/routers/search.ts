@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { buildTeamListWhere } from '@/lib/team-list-query'
 
 export const searchRouter = createTRPCRouter({
   /** Dashboard navbar: tournaments + teams in one query. */
@@ -32,12 +33,7 @@ export const searchRouter = createTRPCRouter({
           },
         }),
         ctx.db.team.findMany({
-          where: {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { tag: { contains: search, mode: 'insensitive' } },
-            ],
-          },
+          where: buildTeamListWhere({ search }),
           take: limit,
           orderBy: { createdAt: 'desc' },
           select: {
