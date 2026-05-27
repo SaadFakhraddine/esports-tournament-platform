@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FORMAT_LABELS } from '@/lib/bracket-planner/recommend-format'
 import type { PlannerConstraints, TournamentFormatId } from '@/lib/bracket-planner/types'
-import { Loader2, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Loader2, Sparkles, ArrowRight, CheckCircle2, MessageSquare } from 'lucide-react'
 
 const FORMAT_OPTIONS: { value: TournamentFormatId; label: string }[] = [
   { value: 'SINGLE_ELIMINATION', label: 'Single Elimination' },
@@ -44,6 +44,14 @@ export function BracketPlanner() {
   const recommendQuery = trpc.tournament.recommend.useQuery(
     { teamCount, constraints },
     { enabled: teamCountValid },
+  )
+
+  const explainQuery = trpc.tournament.explainPlanner.useQuery(
+    { teamCount, constraints },
+    {
+      enabled: teamCountValid && recommendQuery.isSuccess,
+      staleTime: 60_000,
+    },
   )
 
   const previewQuery = trpc.tournament.preview.useQuery(
@@ -159,6 +167,36 @@ export function BracketPlanner() {
             </CardDescription>
           </CardHeader>
           <CardContent className='space-y-3'>
+            {recommendQuery.isSuccess && (
+              <div className='rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2'>
+                <div className='flex items-center gap-2'>
+                  <MessageSquare className='h-4 w-4 text-primary' />
+                  <span className='text-sm font-medium'>Planner insight</span>
+                  {explainQuery.data && (
+                    <Badge variant='outline' className='text-xs ml-auto'>
+                      {explainQuery.data.source === 'ai' ? 'AI' : 'Guide'}
+                    </Badge>
+                  )}
+                </div>
+                {explainQuery.isLoading && (
+                  <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                    Generating insight…
+                  </div>
+                )}
+                {explainQuery.isError && (
+                  <p className='text-sm text-muted-foreground'>
+                    Insight is temporarily unavailable. Use the format cards below.
+                  </p>
+                )}
+                {explainQuery.data?.insight && (
+                  <p className='text-sm text-muted-foreground leading-relaxed'>
+                    {explainQuery.data.insight}
+                  </p>
+                )}
+              </div>
+            )}
+
             {recommendQuery.isLoading && (
               <div className='flex items-center gap-2 text-muted-foreground py-8 justify-center'>
                 <Loader2 className='h-5 w-5 animate-spin' />
