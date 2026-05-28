@@ -28,11 +28,13 @@ From the [live demo](https://esports-tournament-platform-giq9.vercel.app/). Rege
 | --- | --- |
 | ![Register](./docs/images/05-register.png) | ![Dashboard](./docs/images/06-dashboard.png) |
 
-| Tournament detail |
-| --- |
-| ![Tournament detail](./docs/images/07-tournament-detail.png) |
+| Tournament detail | Bracket Designer (AI planner) |
+| --- | --- |
+| ![Tournament detail](./docs/images/07-tournament-detail.png) | ![Bracket Designer](./docs/images/09-bracket-designer.png) |
 
-Organizer shots (`08-my-tournaments.png`, `09-bracket-designer.png`) — see [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
+| My Tournaments (organizer) |
+| --- |
+| ![My Tournaments](./docs/images/08-my-tournaments.png) |
 
 ## Highlights
 
