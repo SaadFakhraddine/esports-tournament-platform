@@ -28,6 +28,16 @@ Override admin credentials with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED
 
 5. Redeploy or open the live site and confirm `/` shows non-zero stats and `/tournaments` lists events.
 
+## Admin console
+
+Sign in as `admin@example.com` and open **Admin** in the sidebar (`/dashboard/admin`):
+
+- **Overview** — user, game, tournament, and suspension counts
+- **Games** — add, hide, or remove unused games (used by tournament/team forms)
+- **Users** — change roles or suspend accounts (blocked at sign-in and on API calls)
+
+After schema changes, run `npx prisma db push` on your database before using suspend features.
+
 ## Verify quickly
 
 - Open `/` — platform stats and live/upcoming sections should not be empty.
