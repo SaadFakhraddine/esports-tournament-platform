@@ -49,5 +49,6 @@ project_structure_simple.txt
 
 .aider*
 
-# Claude Code / local AI tool settings (machine-specific)
+# Cursor / Claude Code — local AI editor settings (machine-specific)
+.cursor/
 .claude/
