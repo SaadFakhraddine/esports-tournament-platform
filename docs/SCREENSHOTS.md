@@ -8,7 +8,9 @@ The README embeds captures from production (see `docs/images/`). The canonical d
 npm run screenshots:portfolio
 ```
 
-Uses `player1@example.com` / `password123` by default for the dashboard capture. Override with `E2E_EMAIL` and `E2E_PASSWORD` if needed.
+Uses `player1@example.com` / `password123` for the player dashboard and `admin@example.com` / `password123` for organizer shots (Bracket Designer, My Tournaments). Override with `E2E_EMAIL`, `E2E_PASSWORD`, `E2E_ORGANIZER_EMAIL`, and `E2E_ORGANIZER_PASSWORD` if needed.
+
+Optional: `SCREENSHOT_BASE_URL=http://localhost:3000` to capture a local dev server instead of production.
 
 ## Public pages only (manual)
 
@@ -28,7 +30,26 @@ npx playwright screenshot "https://esports-tournament-platform-giq9.vercel.app/r
 | `04-login.png` | `/login` | Auth UI |
 | `05-register.png` | `/register` | Sign-up |
 | `06-dashboard.png` | `/dashboard` | Signed-in home |
-| `07-tournament-detail.png` | `/tournaments/[id]` | Bracket / registrations |
+| `07-tournament-detail.png` | `/tournaments/[id]` | Bracket tab (public) |
+| `08-my-tournaments.png` | `/dashboard/tournaments` | Organizer list (admin) |
+| `09-bracket-designer.png` | `/dashboard/tournaments/planner` | Format recommendations + AI insight |
+
+## Organizer shots (08–09)
+
+Production must include **`admin@example.com`** / `password123` (run `npm run db:reset` against the **demo** `DATABASE_URL` — see `docs/DEMO.md`). If admin login fails on the live URL, capture locally:
+
+```bash
+npm run dev
+# in another terminal, after local DB is seeded:
+npm run screenshots:organizer
+```
+
+Or point at production once admin exists:
+
+```bash
+set SCREENSHOT_BASE_URL=https://esports-tournament-platform-giq9.vercel.app
+npm run screenshots:organizer
+```
 
 ## Tips
 

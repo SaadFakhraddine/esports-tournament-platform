@@ -32,6 +32,8 @@ From the [live demo](https://esports-tournament-platform-giq9.vercel.app/). Rege
 | --- |
 | ![Tournament detail](./docs/images/07-tournament-detail.png) |
 
+Organizer shots (`08-my-tournaments.png`, `09-bracket-designer.png`) — see [`docs/SCREENSHOTS.md`](./docs/SCREENSHOTS.md).
+
 ## Highlights
 
 - **Tournament management** — Multiple formats: Single/Double Elimination, Round Robin, Swiss
