@@ -1,13 +1,25 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { chromium } from 'playwright'
+import { chromium, type Page } from 'playwright'
 import { LIVE_DEMO_URL } from '../docs/demo-site'
 
+const baseUrl = process.env.SCREENSHOT_BASE_URL ?? LIVE_DEMO_URL
 const outputDir = path.join(process.cwd(), 'docs', 'images')
 const viewport = { width: 1400, height: 900 }
 
-const email = process.env.E2E_EMAIL ?? 'player1@example.com'
-const password = process.env.E2E_PASSWORD ?? 'password123'
+const playerEmail = process.env.E2E_EMAIL ?? 'player1@example.com'
+const playerPassword = process.env.E2E_PASSWORD ?? 'password123'
+const organizerEmail = process.env.E2E_ORGANIZER_EMAIL ?? 'admin@example.com'
+const organizerPassword = process.env.E2E_ORGANIZER_PASSWORD ?? 'password123'
+
+async function signIn(page: Page, email: string, password: string) {
+  await page.goto(new URL('/login', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: /^sign in$/i }).click()
+  await page.waitForURL(/\/dashboard(\?|$)/, { timeout: 60_000 })
+  await page.waitForTimeout(2000)
+}
 
 async function capturePublicPages() {
   const browser = await chromium.launch()
@@ -22,7 +34,7 @@ async function capturePublicPages() {
   ] as const
 
   for (const route of routes) {
-    await page.goto(new URL(route.url, LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
+    await page.goto(new URL(route.url, baseUrl).toString(), { waitUntil: 'networkidle' })
     await page.waitForTimeout(route.waitMs)
     await page.screenshot({
       path: path.join(outputDir, route.file),
@@ -34,22 +46,25 @@ async function capturePublicPages() {
   await browser.close()
 }
 
-async function captureAuthenticatedPages() {
+async function capturePlayerDashboard() {
   const browser = await chromium.launch()
   const page = await browser.newPage({ viewport })
 
-  await page.goto(new URL('/login', LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: /^sign in$/i }).click()
-  await page.waitForURL(/\/dashboard(\?|$)/, { timeout: 45_000 })
+  await signIn(page, playerEmail, playerPassword)
 
-  await page.waitForTimeout(2000)
   await page.screenshot({ path: path.join(outputDir, '06-dashboard.png') })
   console.log('Saved 06-dashboard.png')
 
-  await page.goto(new URL('/tournaments', LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
+  await browser.close()
+}
+
+async function captureTournamentDetailWithBracket() {
+  const browser = await chromium.launch()
+  const page = await browser.newPage({ viewport })
+
+  await page.goto(new URL('/tournaments', baseUrl).toString(), { waitUntil: 'networkidle' })
   await page.waitForTimeout(2000)
+
   const tournamentLink = page.locator('a[href^="/tournaments/"]').first()
   await tournamentLink.waitFor({ timeout: 20_000 })
   const href = await tournamentLink.getAttribute('href')
@@ -57,45 +72,85 @@ async function captureAuthenticatedPages() {
     throw new Error('No tournament detail link found on /tournaments')
   }
 
-  await page.goto(new URL(href, LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
-  await page.waitForTimeout(3000)
-  await page.screenshot({ path: path.join(outputDir, '07-tournament-detail.png'), fullPage: true })
+  await page.goto(new URL(href, baseUrl).toString(), { waitUntil: 'networkidle' })
+  await page.waitForTimeout(2000)
+
+  const bracketTab = page.getByRole('tab', { name: /^bracket$/i })
+  if (await bracketTab.isVisible().catch(() => false)) {
+    await bracketTab.click()
+    await page.waitForTimeout(3500)
+  }
+
+  await page.screenshot({
+    path: path.join(outputDir, '07-tournament-detail.png'),
+    fullPage: true,
+  })
   console.log('Saved 07-tournament-detail.png')
 
   await browser.close()
 }
 
-async function captureTournamentDetailPublic() {
+async function captureOrganizerPages() {
   const browser = await chromium.launch()
   const page = await browser.newPage({ viewport })
 
-  await page.goto(new URL('/tournaments', LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
-  await page.waitForTimeout(2000)
-  const tournamentLink = page.locator('a[href^="/tournaments/"]').first()
-  await tournamentLink.waitFor({ timeout: 20_000 })
-  const href = await tournamentLink.getAttribute('href')
-  if (!href) {
-    throw new Error('No tournament detail link found on /tournaments')
-  }
+  await signIn(page, organizerEmail, organizerPassword)
 
-  await page.goto(new URL(href, LIVE_DEMO_URL).toString(), { waitUntil: 'networkidle' })
+  await page.goto(new URL('/dashboard/tournaments', baseUrl).toString(), {
+    waitUntil: 'networkidle',
+  })
+  await page.waitForTimeout(2500)
+  await page.screenshot({
+    path: path.join(outputDir, '08-my-tournaments.png'),
+    fullPage: true,
+  })
+  console.log('Saved 08-my-tournaments.png')
+
+  await page.goto(new URL('/dashboard/tournaments/planner', baseUrl).toString(), {
+    waitUntil: 'networkidle',
+  })
+  await page.getByRole('heading', { name: /bracket designer/i }).waitFor({ timeout: 20_000 })
+  await page.getByText('Recommendations').waitFor({ timeout: 20_000 })
+  // Allow recommend + explainPlanner queries to finish (AI insight block)
+  await page
+    .getByText(/planner insight/i)
+    .waitFor({ timeout: 25_000 })
+    .catch(() => undefined)
   await page.waitForTimeout(3000)
-  await page.screenshot({ path: path.join(outputDir, '07-tournament-detail.png'), fullPage: true })
-  console.log('Saved 07-tournament-detail.png')
+  await page.screenshot({
+    path: path.join(outputDir, '09-bracket-designer.png'),
+    fullPage: true,
+  })
+  console.log('Saved 09-bracket-designer.png')
 
   await browser.close()
 }
 
 async function main() {
   await mkdir(outputDir, { recursive: true })
-  console.log(`Capturing portfolio screenshots from ${LIVE_DEMO_URL}`)
+  console.log(`Capturing portfolio screenshots from ${baseUrl}`)
+  console.log(`Output: ${outputDir}`)
+
   await capturePublicPages()
+
   try {
-    await captureAuthenticatedPages()
+    await capturePlayerDashboard()
   } catch (error) {
-    console.warn('Authenticated captures failed; saving public tournament detail only.', error)
-    await captureTournamentDetailPublic()
+    console.warn('Player dashboard capture failed:', error)
   }
+
+  try {
+    await captureTournamentDetailWithBracket()
+  } catch (error) {
+    console.warn('Tournament detail capture failed:', error)
+  }
+
+  try {
+    await captureOrganizerPages()
+  } catch (error) {
+    console.warn('Organizer captures failed (need admin@example.com on demo DB):', error)
+  }
+
   console.log('Done.')
 }
 
