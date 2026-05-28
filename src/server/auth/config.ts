@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from 'next-auth'
+import { CredentialsSignin } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import DiscordProvider from 'next-auth/providers/discord'
@@ -13,6 +14,10 @@ import {
 
 const googleCreds = getGoogleOAuthCredentials()
 const discordCreds = getDiscordOAuthCredentials()
+
+class AccountSuspendedError extends CredentialsSignin {
+  code = 'AccountSuspended'
+}
 
 /** Auth.js reads `provider.clientId` for the authorize URL; built-in providers only nest creds under `options`. */
 const oauthProviders = [
@@ -81,7 +86,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         if (isUserBanned(user.bannedAt)) {
-          throw new Error('AccountSuspended')
+          throw new AccountSuspendedError()
         }
 
         return {
