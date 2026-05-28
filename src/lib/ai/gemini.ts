@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const DEFAULT_MODEL = 'gemini-2.0-flash'
+/** Override with GEMINI_MODEL. Default matches typical AI Studio free-tier (2.5 Flash). */
+const DEFAULT_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash'
 
 export function isGeminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY?.trim())
