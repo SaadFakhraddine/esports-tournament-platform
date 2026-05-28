@@ -22,6 +22,8 @@ const oauthErrorMessages: Record<string, string> = {
     'This sign-in method is not linked to your account. Sign in with the method you used originally, then contact support if you need help.',
   OAuthSignin: 'Could not start OAuth sign-in. Try again or use email and password.',
   OAuthCallback: 'OAuth callback failed. Check that your callback URL matches the provider settings.',
+  AccountSuspended:
+    'Your account has been suspended. Contact support if you think this is a mistake.',
   Default: 'Sign-in failed. Try again or use email and password.',
 }
 

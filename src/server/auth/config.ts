@@ -5,6 +5,7 @@ import DiscordProvider from 'next-auth/providers/discord'
 import { db } from '@/server/db/client'
 import bcrypt from 'bcryptjs'
 import { UserRole } from '@prisma/client'
+import { isUserBanned } from '@/lib/user/ban'
 import {
   getDiscordOAuthCredentials,
   getGoogleOAuthCredentials,
@@ -79,6 +80,10 @@ export const authConfig: NextAuthConfig = {
           return null
         }
 
+        if (isUserBanned(user.bannedAt)) {
+          return null
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -97,8 +102,21 @@ export const authConfig: NextAuthConfig = {
       return !!auth?.user
     },
     async signIn({ user, account, profile }) {
-      // Allow credentials sign in
+      const rejectBanned = async (userId: string) => {
+        const dbUser = await db.user.findUnique({
+          where: { id: userId },
+          select: { bannedAt: true },
+        })
+        if (isUserBanned(dbUser?.bannedAt)) {
+          return '/login?error=AccountSuspended'
+        }
+        return true
+      }
+
       if (account?.provider === 'credentials') {
+        if (user.id) {
+          return rejectBanned(user.id)
+        }
         return true
       }
 
@@ -192,6 +210,10 @@ export const authConfig: NextAuthConfig = {
             user.id = existingUser.id
           }
 
+          if (user.id) {
+            return rejectBanned(user.id)
+          }
+
           return true
         } catch (error) {
           console.error('OAuth sign in error:', error)
@@ -209,10 +231,13 @@ export const authConfig: NextAuthConfig = {
         // Fetch user data from database to get role and username
         const dbUser = await db.user.findUnique({
           where: { id: user.id },
-          select: { role: true, username: true, email: true, name: true, avatar: true },
+          select: { role: true, username: true, email: true, name: true, avatar: true, bannedAt: true },
         })
 
         if (dbUser) {
+          if (isUserBanned(dbUser.bannedAt)) {
+            return null
+          }
           token.role = dbUser.role
           token.username = dbUser.username
           token.email = dbUser.email
