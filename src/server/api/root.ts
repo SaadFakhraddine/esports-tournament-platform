@@ -7,8 +7,10 @@ import { invitationRouter } from '@/server/api/routers/invitation'
 import { gameRouter } from '@/server/api/routers/game'
 import { statsRouter } from '@/server/api/routers/stats'
 import { searchRouter } from '@/server/api/routers/search'
+import { adminRouter } from '@/server/api/routers/admin'
 
 export const appRouter = createTRPCRouter({
+  admin: adminRouter,
   tournament: tournamentRouter,
   team: teamRouter,
   match: matchRouter,
