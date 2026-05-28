@@ -42,6 +42,11 @@ async function main() {
     process.exit(1)
   }
 
+  if (coach.insight.length < 80) {
+    console.error('Insight too short (%d chars): %s', coach.insight.length, coach.insight)
+    process.exit(1)
+  }
+
   console.log('\nAll checks passed.')
 }
 

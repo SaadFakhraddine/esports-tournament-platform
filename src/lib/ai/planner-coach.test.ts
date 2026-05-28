@@ -27,7 +27,8 @@ describe('getPlannerCoachInsight', () => {
   test('uses AI when Gemini returns text', async () => {
     vi.spyOn(gemini, 'isGeminiConfigured').mockReturnValue(true)
     vi.spyOn(gemini, 'generateGeminiText').mockResolvedValue(
-      'Swiss fits your weekend event well; single elim is faster if time is tight.',
+      'Swiss fits your weekend event well because every team plays several matches without early elimination. ' +
+        'Single elimination is faster if you only have one afternoon and want a quick champion.',
     )
 
     const result = await getPlannerCoachInsight(sampleResult, sampleConstraints)

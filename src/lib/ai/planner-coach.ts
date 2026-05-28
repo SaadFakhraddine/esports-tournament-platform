@@ -80,6 +80,16 @@ export async function getPlannerCoachInsight(
 
   try {
     const insight = await generateGeminiCoachInsight(result, constraints)
+    if (insight.length < 80) {
+      console.warn(
+        '[planner-coach] Gemini returned a very short insight (%d chars), using template fallback',
+        insight.length,
+      )
+      return {
+        insight: buildTemplateCoachInsight(result, constraints),
+        source: 'template',
+      }
+    }
     return { insight, source: 'ai' }
   } catch (error) {
     console.warn('[planner-coach] Gemini failed, using template fallback:', error)
