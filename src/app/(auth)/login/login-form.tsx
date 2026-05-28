@@ -76,7 +76,15 @@ function LoginFormInner({ discordOAuthEnabled, googleOAuthEnabled }: LoginFormPr
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        const params = result.url ? new URL(result.url, window.location.origin).searchParams : null
+        const errorCode = params?.get('error')
+        const errorDetail = params?.get('code')
+
+        if (errorCode === 'AccountSuspended' || errorDetail === 'AccountSuspended') {
+          setError(oauthErrorMessage('AccountSuspended'))
+        } else {
+          setError('Invalid email or password')
+        }
       } else {
         router.push(returnUrl)
         router.refresh()

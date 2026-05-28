@@ -81,7 +81,7 @@ export const authConfig: NextAuthConfig = {
         }
 
         if (isUserBanned(user.bannedAt)) {
-          return null
+          throw new Error('AccountSuspended')
         }
 
         return {
