@@ -67,7 +67,7 @@ const navigation = [
   },
   {
     name: 'Admin',
-    href: '/admin',
+    href: '/dashboard/admin',
     icon: Shield,
     roles: ['ADMIN'],
   },
