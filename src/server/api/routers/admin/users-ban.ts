@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { adminProcedure } from '@/server/api/trpc'
 import { assertCanBanUser } from '@/lib/admin/guards'
+import { logAdminAction } from '@/lib/admin/audit'
 
 export const adminUsersBan = {
   banUser: adminProcedure
@@ -13,7 +14,7 @@ export const adminUsersBan = {
     .mutation(async ({ ctx, input }) => {
       await assertCanBanUser(ctx.db, ctx.session.user.id, input.userId)
 
-      return ctx.db.user.update({
+      const updated = await ctx.db.user.update({
         where: { id: input.userId },
         data: {
           bannedAt: new Date(),
@@ -27,12 +28,27 @@ export const adminUsersBan = {
           banReason: true,
         },
       })
+
+      await logAdminAction(ctx.db, {
+        actorId: ctx.session.user.id,
+        action: 'USER_BANNED',
+        targetType: 'user',
+        targetId: input.userId,
+        metadata: { email: updated.email, reason: input.reason?.trim() || null },
+      })
+
+      return updated
     }),
 
   unbanUser: adminProcedure
     .input(z.object({ userId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.user.update({
+      const existing = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+        select: { email: true },
+      })
+
+      const updated = await ctx.db.user.update({
         where: { id: input.userId },
         data: {
           bannedAt: null,
@@ -41,5 +57,15 @@ export const adminUsersBan = {
         },
         select: { id: true, email: true, bannedAt: true },
       })
+
+      await logAdminAction(ctx.db, {
+        actorId: ctx.session.user.id,
+        action: 'USER_UNBANNED',
+        targetType: 'user',
+        targetId: input.userId,
+        metadata: { email: existing?.email ?? updated.email },
+      })
+
+      return updated
     }),
 }

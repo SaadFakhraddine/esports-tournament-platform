@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client'
 import { TRPCError } from '@trpc/server'
 import { adminProcedure } from '@/server/api/trpc'
 import { assertNotLastAdmin, assertNotSelf } from '@/lib/admin/guards'
+import { logAdminAction } from '@/lib/admin/audit'
 
 const listUsersSchema = z.object({
   search: z.string().optional(),
@@ -84,10 +85,20 @@ export const adminUsers = {
         await assertNotLastAdmin(ctx.db, input.userId, 'ADMIN')
       }
 
-      return ctx.db.user.update({
+      const updated = await ctx.db.user.update({
         where: { id: input.userId },
         data: { role: input.role },
         select: { id: true, email: true, role: true },
       })
+
+      await logAdminAction(ctx.db, {
+        actorId: ctx.session.user.id,
+        action: 'USER_ROLE_CHANGED',
+        targetType: 'user',
+        targetId: input.userId,
+        metadata: { fromRole: target.role, toRole: input.role, email: updated.email },
+      })
+
+      return updated
     }),
 }

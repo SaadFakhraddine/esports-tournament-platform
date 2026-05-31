@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { adminProcedure } from '@/server/api/trpc'
 import { slugifyGameName } from '@/lib/admin/slug'
+import { logAdminAction } from '@/lib/admin/audit'
 
 const gameInputSchema = z.object({
   name: z.string().min(1).max(100),
@@ -28,7 +29,7 @@ export const adminGames = {
     }
 
     try {
-      return await ctx.db.game.create({
+      const game = await ctx.db.game.create({
         data: {
           name: input.name.trim(),
           slug,
@@ -37,6 +38,16 @@ export const adminGames = {
           active: input.active ?? true,
         },
       })
+
+      await logAdminAction(ctx.db, {
+        actorId: ctx.session.user.id,
+        action: 'GAME_CREATED',
+        targetType: 'game',
+        targetId: game.id,
+        metadata: { name: game.name, slug: game.slug },
+      })
+
+      return game
     } catch {
       throw new TRPCError({
         code: 'CONFLICT',
@@ -52,7 +63,7 @@ export const adminGames = {
       const slug = data.slug?.trim() || (data.name ? slugifyGameName(data.name) : undefined)
 
       try {
-        return await ctx.db.game.update({
+        const game = await ctx.db.game.update({
           where: { id },
           data: {
             ...(data.name !== undefined ? { name: data.name.trim() } : {}),
@@ -62,6 +73,16 @@ export const adminGames = {
             ...(data.active !== undefined ? { active: data.active } : {}),
           },
         })
+
+        await logAdminAction(ctx.db, {
+          actorId: ctx.session.user.id,
+          action: 'GAME_UPDATED',
+          targetType: 'game',
+          targetId: game.id,
+          metadata: { name: game.name, slug: game.slug, active: game.active },
+        })
+
+        return game
       } catch {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -90,6 +111,15 @@ export const adminGames = {
       }
 
       await ctx.db.game.delete({ where: { id: input.id } })
+
+      await logAdminAction(ctx.db, {
+        actorId: ctx.session.user.id,
+        action: 'GAME_DELETED',
+        targetType: 'game',
+        targetId: input.id,
+        metadata: { name: usage.name, slug: usage.slug },
+      })
+
       return { success: true }
     }),
 }
