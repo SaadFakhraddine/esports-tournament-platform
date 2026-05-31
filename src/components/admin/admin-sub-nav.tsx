@@ -6,8 +6,9 @@ import { cn } from '@/lib/utils'
 
 const links = [
   { href: '/dashboard/admin', label: 'Overview', exact: true },
-  { href: '/dashboard/admin/games', label: 'Games' },
   { href: '/dashboard/admin/users', label: 'Users' },
+  { href: '/dashboard/admin/games', label: 'Games' },
+  { href: '/dashboard/admin/audit', label: 'Audit' },
 ]
 
 export function AdminSubNav() {
