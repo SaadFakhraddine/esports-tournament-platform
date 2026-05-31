@@ -71,10 +71,36 @@ model User {
   sentInvitations      TeamInvitation[] @relation("TeamInvitationInviter")
   bannedBy             User?            @relation("UserBannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
   usersBanned          User[]           @relation("UserBannedBy")
+  adminActions         AdminAuditLog[]  @relation("AdminAuditActor")
 
   @@index([email])
   @@index([username])
   @@index([bannedAt])
+}
+
+enum AdminAuditAction {
+  USER_ROLE_CHANGED
+  USER_BANNED
+  USER_UNBANNED
+  GAME_CREATED
+  GAME_UPDATED
+  GAME_DELETED
+}
+
+model AdminAuditLog {
+  id         String           @id @default(cuid())
+  actorId    String
+  action     AdminAuditAction
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime         @default(now())
+
+  actor User @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@index([actorId])
 }
 
 // NextAuth Models
