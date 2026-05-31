@@ -33,6 +33,29 @@ npx playwright screenshot "https://esports-tournament-platform-giq9.vercel.app/r
 | `07-tournament-detail.png` | `/tournaments/[id]` | Bracket tab (public) |
 | `08-my-tournaments.png` | `/dashboard/tournaments` | Organizer list (admin) |
 | `09-bracket-designer.png` | `/dashboard/tournaments/planner` | Format recommendations + AI insight |
+| `10-admin-overview.png` | `/dashboard/admin` | Platform KPIs and moderation queue |
+| `11-admin-users.png` | `/dashboard/admin/users` | User search, roles, account suspension |
+| `12-admin-audit.png` | `/dashboard/admin/audit` | Admin action audit trail |
+
+## Admin shots (10–12)
+
+Sign in as **`admin@example.com`** / `password123`. Stage data before capture so tables are not empty:
+
+1. **Users** — change `player2@example.com` to Organizer (creates audit row).
+2. **Users** — suspend `player3@example.com` with reason `Demo: policy violation`.
+3. **Games** — add or edit a game (creates audit row).
+4. Open **Audit** and confirm several rows appear (newest first).
+5. Open **Overview** and confirm the suspended-user panel is populated.
+
+Manual capture (local dev, after `npm run dev` and staging above):
+
+```bash
+npx playwright screenshot "http://localhost:3000/dashboard/admin" docs/images/10-admin-overview.png --viewport-size=1400,900 --wait-for-timeout=4000
+npx playwright screenshot "http://localhost:3000/dashboard/admin/users" docs/images/11-admin-users.png --full-page --viewport-size=1400,900 --wait-for-timeout=4000
+npx playwright screenshot "http://localhost:3000/dashboard/admin/audit" docs/images/12-admin-audit.png --full-page --viewport-size=1400,900 --wait-for-timeout=4000
+```
+
+Requires an authenticated admin session in the browser profile Playwright uses, or extend `scripts/capture-organizer-screenshots.ts` to visit admin routes after sign-in.
 
 ## Organizer shots (08–09)
 
