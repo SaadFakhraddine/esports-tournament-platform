@@ -1,6 +1,14 @@
-import type { AdminAuditAction, Prisma, PrismaClient } from '@prisma/client'
+import type { Prisma, PrismaClient } from '@prisma/client'
 
 type AuditDb = PrismaClient | Prisma.TransactionClient
+
+export type AdminAuditAction =
+  | 'USER_ROLE_CHANGED'
+  | 'USER_BANNED'
+  | 'USER_UNBANNED'
+  | 'GAME_CREATED'
+  | 'GAME_UPDATED'
+  | 'GAME_DELETED'
 
 export async function logAdminAction(
   db: AuditDb,
@@ -18,7 +26,7 @@ export async function logAdminAction(
       action: params.action,
       targetType: params.targetType,
       targetId: params.targetId,
-      metadata: params.metadata ?? undefined,
+      metadata: (params.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   })
 }
