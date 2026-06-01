@@ -43,7 +43,7 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-layer]:outline-none [&_.recharts-surface]:outline-none",
+          'flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke=\'#ccc\']]:stroke-border/50 [&_.recharts-layer]:outline-none [&_.recharts-surface]:outline-none [&_.recharts-bar-rectangle]:outline-none [&_.recharts-bar-rectangle]:stroke-none [&_.recharts-active-bar]:stroke-none [&_.recharts-tooltip-cursor]:fill-transparent [&_.recharts-tooltip-cursor]:stroke-transparent [&_.recharts-curve.recharts-tooltip-cursor]:stroke-transparent',
           className,
         )}
         {...props}
@@ -79,7 +79,12 @@ export type TooltipPayloadItem = {
   payload?: Record<string, unknown>
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip
+function ChartTooltip({
+  cursor = false,
+  ...props
+}: React.ComponentProps<typeof RechartsPrimitive.Tooltip>) {
+  return <RechartsPrimitive.Tooltip cursor={cursor} {...props} />
+}
 
 function ChartTooltipContent({
   active,

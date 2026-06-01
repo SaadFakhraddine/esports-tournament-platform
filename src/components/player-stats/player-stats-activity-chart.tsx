@@ -58,8 +58,18 @@ export function PlayerStatsActivityChart({ data }: Props) {
                 />
               )}
             />
-            <Bar dataKey='wins' stackId='a' fill='var(--color-wins)' />
-            <Bar dataKey='losses' stackId='a' fill='var(--color-losses)' />
+            <Bar
+              dataKey='wins'
+              stackId='a'
+              fill='var(--color-wins)'
+              activeBar={{ fill: 'var(--color-wins)', opacity: 0.85 }}
+            />
+            <Bar
+              dataKey='losses'
+              stackId='a'
+              fill='var(--color-losses)'
+              activeBar={{ fill: 'var(--color-losses)', opacity: 0.85 }}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

@@ -74,6 +74,12 @@ export function PlayerStatsWinRateChart({ data, compact }: Props) {
               fill='var(--color-winRate)'
               fillOpacity={0.2}
               strokeWidth={2}
+              activeDot={{
+                r: 4,
+                fill: 'var(--color-winRate)',
+                stroke: 'var(--color-winRate)',
+                strokeWidth: 2,
+              }}
             />
           </AreaChart>
         </ChartContainer>

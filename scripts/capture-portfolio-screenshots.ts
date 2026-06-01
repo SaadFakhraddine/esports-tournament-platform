@@ -3,7 +3,11 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { chromium, type Page } from 'playwright'
 import { LIVE_DEMO_URL } from '../docs/demo-site'
-import { waitForTeamsBrowseLoaded, waitForTournamentsBrowseLoaded } from './lib/screenshot-browse'
+import {
+  waitForPlayerStatsLoaded,
+  waitForTeamsBrowseLoaded,
+  waitForTournamentsBrowseLoaded,
+} from './lib/screenshot-browse'
 import { assertScreenshotBaseUrlReachable, screenshotSignIn } from './lib/screenshot-sign-in'
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? LIVE_DEMO_URL
@@ -64,8 +68,7 @@ async function capturePlayerDashboard() {
   await page.goto(new URL('/dashboard/stats', baseUrl).toString(), {
     waitUntil: 'domcontentloaded',
   })
-  await page.getByRole('heading', { name: /player stats/i }).waitFor({ timeout: 30_000 })
-  await page.waitForTimeout(4000)
+  await waitForPlayerStatsLoaded(page)
   const statsShot = path.join(outputDir, '13-player-stats.png')
   await page.screenshot({ path: statsShot, fullPage: true })
   console.log('Saved 13-player-stats.png')
@@ -157,7 +160,7 @@ async function main() {
   try {
     await capturePlayerDashboard()
   } catch (error) {
-    console.warn('Player dashboard capture failed:', error)
+    console.error('Player dashboard / stats capture failed:', error)
   }
 
   try {

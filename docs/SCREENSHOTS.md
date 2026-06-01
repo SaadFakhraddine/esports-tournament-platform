@@ -16,6 +16,8 @@ Sign-in uses the **Auth.js API** (not the login form), so React hydration timing
 
 Browse pages (`/tournaments`, `/teams`) wait for loaded cards (count text / “View Team” buttons), not skeleton placeholders.
 
+Refresh stats only: `npm run screenshots:stats` (writes `13-player-stats.png` and `public/images/dashboard-stats.png`).
+
 ### If local capture fails
 
 1. **Port stuck / timeouts** — Something on `:3000` may be hung while Next runs on `:3002`. Stop all `node` dev servers, free the port, then `npm run dev` and set `SCREENSHOT_BASE_URL` to the URL Next prints.

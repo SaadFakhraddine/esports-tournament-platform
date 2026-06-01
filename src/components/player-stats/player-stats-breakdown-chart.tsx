@@ -96,7 +96,12 @@ export function PlayerStatsBreakdownChart({ title, description, rows }: Props) {
                 )
               }}
             />
-            <Bar dataKey='winRate' fill='var(--color-winRate)' radius={[0, 4, 4, 0]} />
+            <Bar
+              dataKey='winRate'
+              fill='var(--color-winRate)'
+              activeBar={{ fill: 'var(--color-winRate)', opacity: 0.85 }}
+              radius={[0, 4, 4, 0]}
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>
