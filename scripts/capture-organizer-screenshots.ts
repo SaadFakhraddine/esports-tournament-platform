@@ -3,9 +3,11 @@
  * Run: npx tsx --env-file=.env scripts/capture-organizer-screenshots.ts
  * Or: SCREENSHOT_BASE_URL=http://localhost:3000 npx tsx scripts/capture-organizer-screenshots.ts
  */
+import 'dotenv/config'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { chromium } from 'playwright'
+import { screenshotSignIn } from './lib/screenshot-sign-in'
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? 'http://localhost:3000'
 const outputDir = path.join(process.cwd(), 'docs', 'images')
@@ -18,12 +20,7 @@ async function main() {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } })
 
   console.log(`Signing in as ${email} at ${baseUrl}`)
-  await page.goto(new URL('/login', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: /^sign in$/i }).click()
-  await page.waitForURL(/\/dashboard/, { timeout: 60_000 })
-  await page.waitForTimeout(2000)
+  await screenshotSignIn(page, baseUrl, email, password)
 
   await page.goto(new URL('/dashboard/tournaments', baseUrl).toString(), {
     waitUntil: 'domcontentloaded',

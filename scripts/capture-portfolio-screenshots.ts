@@ -1,7 +1,9 @@
+import 'dotenv/config'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { chromium, type Page } from 'playwright'
 import { LIVE_DEMO_URL } from '../docs/demo-site'
+import { assertScreenshotBaseUrlReachable, screenshotSignIn } from './lib/screenshot-sign-in'
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? LIVE_DEMO_URL
 const outputDir = path.join(process.cwd(), 'docs', 'images')
@@ -13,12 +15,7 @@ const organizerEmail = process.env.E2E_ORGANIZER_EMAIL ?? 'admin@example.com'
 const organizerPassword = process.env.E2E_ORGANIZER_PASSWORD ?? 'password123'
 
 async function signIn(page: Page, email: string, password: string) {
-  await page.goto(new URL('/login', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: /^sign in$/i }).click()
-  await page.waitForURL(/\/dashboard(\?|$)/, { timeout: 60_000 })
-  await page.waitForTimeout(2000)
+  await screenshotSignIn(page, baseUrl, email, password)
 }
 
 async function capturePublicPages() {
@@ -127,7 +124,6 @@ async function captureOrganizerPages() {
   })
   await page.getByRole('heading', { name: /bracket designer/i }).waitFor({ timeout: 20_000 })
   await page.getByText('Recommendations').waitFor({ timeout: 20_000 })
-  // Allow recommend + explainPlanner queries to finish (AI insight block)
   await page
     .getByText(/planner insight/i)
     .waitFor({ timeout: 25_000 })
@@ -144,6 +140,7 @@ async function captureOrganizerPages() {
 
 async function main() {
   await mkdir(outputDir, { recursive: true })
+  await assertScreenshotBaseUrlReachable(baseUrl)
   console.log(`Capturing portfolio screenshots from ${baseUrl}`)
   console.log(`Output: ${outputDir}`)
 

@@ -12,6 +12,15 @@ Uses `player1@example.com` / `password123` for the player dashboard and `admin@e
 
 Optional: `SCREENSHOT_BASE_URL=http://localhost:3000` to capture a local dev server instead of production.
 
+Sign-in uses the **Auth.js API** (not the login form), so React hydration timing no longer breaks captures.
+
+### If local capture fails
+
+1. **Port stuck / timeouts** — Something on `:3000` may be hung while Next runs on `:3002`. Stop all `node` dev servers, free the port, then `npm run dev` and set `SCREENSHOT_BASE_URL` to the URL Next prints.
+2. **Configuration error** — The dev server’s `DATABASE_URL` is wrong or unreachable. Fix `.env`, restart `npm run dev`.
+3. **Invalid credentials / suspended** — Run `npx tsx scripts/ensure-screenshot-users.ts` (also runs automatically via `npm run screenshots:*`).
+4. **Fastest path** — Omit `SCREENSHOT_BASE_URL` to capture the live demo on Vercel (default).
+
 ## Public pages only (manual)
 
 ```bash

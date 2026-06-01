@@ -8,28 +8,17 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { chromium, type Page } from 'playwright'
 import { LIVE_DEMO_URL } from '../docs/demo-site'
+import { assertScreenshotBaseUrlReachable, screenshotSignIn } from './lib/screenshot-sign-in'
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? LIVE_DEMO_URL
 const outputDir = path.join(process.cwd(), 'docs', 'images')
 const viewport = { width: 1400, height: 900 }
-// Must match scripts/ensure-screenshot-admin.ts (run via npm run screenshots:admin)
+// Credentials match scripts/ensure-screenshot-users.ts
 const email = 'admin@example.com'
 const password = 'password123'
 
 async function signIn(page: Page) {
-  await page.goto(new URL('/login', baseUrl).toString(), { waitUntil: 'networkidle' })
-  await page.getByLabel('Email').waitFor({ state: 'visible', timeout: 30_000 })
-  await page.waitForTimeout(1000)
-
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-
-  await Promise.all([
-    page.waitForURL(/\/dashboard/, { timeout: 60_000 }),
-    page.getByRole('button', { name: /^sign in$/i }).click(),
-  ])
-
-  await page.waitForTimeout(2000)
+  await screenshotSignIn(page, baseUrl, email, password)
   console.log(`Signed in as ${email}`)
 }
 
@@ -119,6 +108,7 @@ async function captureAdminPages(page: Page) {
 
 async function main() {
   await mkdir(outputDir, { recursive: true })
+  await assertScreenshotBaseUrlReachable(baseUrl)
   console.log(`Capturing admin screenshots from ${baseUrl}`)
   console.log(`Output: ${outputDir}`)
 
