@@ -30,6 +30,7 @@ npx playwright screenshot "https://esports-tournament-platform-giq9.vercel.app/r
 | `04-login.png` | `/login` | Auth UI |
 | `05-register.png` | `/register` | Sign-up |
 | `06-dashboard.png` | `/dashboard` | Signed-in home |
+| `13-player-stats.png` | `/dashboard/stats` | Player stats with charts (also copied to `public/images/dashboard-stats.png` for landing) |
 | `07-tournament-detail.png` | `/tournaments/[id]` | Bracket tab (public) |
 | `08-my-tournaments.png` | `/dashboard/tournaments` | Organizer list (admin) |
 | `09-bracket-designer.png` | `/dashboard/tournaments/planner` | Format recommendations + AI insight |

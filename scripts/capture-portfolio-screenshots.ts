@@ -52,8 +52,24 @@ async function capturePlayerDashboard() {
 
   await signIn(page, playerEmail, playerPassword)
 
+  await page.goto(new URL('/dashboard', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(2500)
   await page.screenshot({ path: path.join(outputDir, '06-dashboard.png') })
   console.log('Saved 06-dashboard.png')
+
+  await page.goto(new URL('/dashboard/stats', baseUrl).toString(), {
+    waitUntil: 'domcontentloaded',
+  })
+  await page.getByRole('heading', { name: /player stats/i }).waitFor({ timeout: 30_000 })
+  await page.waitForTimeout(4000)
+  const statsShot = path.join(outputDir, '13-player-stats.png')
+  await page.screenshot({ path: statsShot, fullPage: true })
+  console.log('Saved 13-player-stats.png')
+  await page.screenshot({
+    path: path.join(process.cwd(), 'public', 'images', 'dashboard-stats.png'),
+    fullPage: true,
+  })
+  console.log('Saved public/images/dashboard-stats.png')
 
   await browser.close()
 }
