@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { chromium, type Page } from 'playwright'
 import { LIVE_DEMO_URL } from '../docs/demo-site'
+import { waitForTeamsBrowseLoaded, waitForTournamentsBrowseLoaded } from './lib/screenshot-browse'
 import { assertScreenshotBaseUrlReachable, screenshotSignIn } from './lib/screenshot-sign-in'
 
 const baseUrl = process.env.SCREENSHOT_BASE_URL ?? LIVE_DEMO_URL
@@ -31,8 +32,14 @@ async function capturePublicPages() {
   ] as const
 
   for (const route of routes) {
-    await page.goto(new URL(route.url, baseUrl).toString(), { waitUntil: 'networkidle' })
-    await page.waitForTimeout(route.waitMs)
+    await page.goto(new URL(route.url, baseUrl).toString(), { waitUntil: 'domcontentloaded' })
+    if (route.url === '/tournaments') {
+      await waitForTournamentsBrowseLoaded(page)
+    } else if (route.url === '/teams') {
+      await waitForTeamsBrowseLoaded(page)
+    } else {
+      await page.waitForTimeout(route.waitMs)
+    }
     await page.screenshot({
       path: path.join(outputDir, route.file),
       fullPage: route.fullPage,
@@ -75,11 +82,12 @@ async function captureTournamentDetailWithBracket() {
   const browser = await chromium.launch()
   const page = await browser.newPage({ viewport })
 
-  await page.goto(new URL('/tournaments', baseUrl).toString(), { waitUntil: 'networkidle' })
-  await page.waitForTimeout(2000)
+  await page.goto(new URL('/tournaments', baseUrl).toString(), { waitUntil: 'domcontentloaded' })
+  await waitForTournamentsBrowseLoaded(page)
 
-  const tournamentLink = page.locator('a[href^="/tournaments/"]').first()
-  await tournamentLink.waitFor({ timeout: 20_000 })
+  const tournamentLink = page
+    .getByRole('link', { name: /Register Now|View Details|Watch Live/i })
+    .first()
   const href = await tournamentLink.getAttribute('href')
   if (!href) {
     throw new Error('No tournament detail link found on /tournaments')

@@ -14,6 +14,8 @@ Optional: `SCREENSHOT_BASE_URL=http://localhost:3000` to capture a local dev ser
 
 Sign-in uses the **Auth.js API** (not the login form), so React hydration timing no longer breaks captures.
 
+Browse pages (`/tournaments`, `/teams`) wait for loaded cards (count text / “View Team” buttons), not skeleton placeholders.
+
 ### If local capture fails
 
 1. **Port stuck / timeouts** — Something on `:3000` may be hung while Next runs on `:3002`. Stop all `node` dev servers, free the port, then `npm run dev` and set `SCREENSHOT_BASE_URL` to the URL Next prints.
