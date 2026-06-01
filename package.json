@@ -15,6 +15,7 @@
     "test:e2e:report": "playwright show-report",
     "screenshots:portfolio": "tsx scripts/capture-portfolio-screenshots.ts",
     "screenshots:organizer": "tsx scripts/capture-organizer-screenshots.ts",
+    "screenshots:admin": "tsx scripts/ensure-screenshot-admin.ts && tsx scripts/capture-admin-screenshots.ts",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
