@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from 'react'
 import { trpc } from '@/lib/trpc/client'
 import Link from 'next/link'
+import { PlayerStatsProfileCard } from '@/components/player-stats/player-stats-profile-card'
 
 export default function ProfilePage() {
   const { data: session, status, update: updateSession } = useSession()
@@ -33,7 +34,6 @@ export default function ProfilePage() {
 
   // Fetch real data
   const { data: profile } = trpc.user.getProfile.useQuery(undefined, { enabled: !!session })
-  const { data: stats } = trpc.user.getDashboardStats.useQuery(undefined, { enabled: !!session })
   const { data: myTeams, isLoading: myTeamsLoading } = trpc.team.getMyTeams.useQuery(undefined, {
     enabled: !!session && activeTab === 'teams',
   })
@@ -157,59 +157,16 @@ export default function ProfilePage() {
                     <Badge className='mt-2' variant='secondary'>
                       {session.user.role}
                     </Badge>
+                    <p className='text-xs text-muted-foreground mt-3 flex items-center justify-center gap-1'>
+                      <Calendar className='h-3 w-3' />
+                      Member since {memberSinceDate}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-base'>Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-3'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Trophy className='h-4 w-4 text-muted-foreground' />
-                    <span>Tournaments</span>
-                  </div>
-                  {stats ? (
-                    <span className='font-medium'>{stats.activeTournamentsCount}</span>
-                  ) : (
-                    <Skeleton className='h-5 w-8' />
-                  )}
-                </div>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Users className='h-4 w-4 text-muted-foreground' />
-                    <span>Teams</span>
-                  </div>
-                  {stats ? (
-                    <span className='font-medium'>{stats.teamsCount}</span>
-                  ) : (
-                    <Skeleton className='h-5 w-8' />
-                  )}
-                </div>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Trophy className='h-4 w-4 text-muted-foreground' />
-                    <span>Wins</span>
-                  </div>
-                  {stats ? (
-                    <span className='font-medium'>{stats.wonMatches}</span>
-                  ) : (
-                    <Skeleton className='h-5 w-8' />
-                  )}
-                </div>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2 text-sm'>
-                    <Calendar className='h-4 w-4 text-muted-foreground' />
-                    <span>Member Since</span>
-                  </div>
-                  <span className='font-medium text-xs'>{memberSinceDate}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <PlayerStatsProfileCard />
           </div>
 
           {/* Main content */}
