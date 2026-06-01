@@ -1,12 +1,92 @@
 import { MatchStatus, TournamentStatus } from '@prisma/client'
+import { z } from 'zod'
+import {
+  buildCurrentStreak,
+  buildForm,
+  buildMatchesOverTime,
+  buildWinRateOverTime,
+  computeSummaryFromMatches,
+  filterMatchesByGame,
+  filterMatchesByRange,
+  filterMatchesByTeam,
+  findBestHighlight,
+  type PlayerMatchRecord,
+  yourTeamIdForMatch,
+} from '@/lib/player-stats/aggregate'
 import { protectedProcedure } from '@/server/api/trpc'
+
+const playerStatsInputSchema = z
+  .object({
+    range: z.enum(['3m', '6m', '12m', 'all']).optional(),
+    gameId: z.string().optional(),
+    teamId: z.string().optional(),
+  })
+  .optional()
+
+const emptyResponse = {
+  summary: {
+    teamsCount: 0,
+    activeTournamentsCount: 0,
+    upcomingMatchesCount: 0,
+    completedMatches: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    tournamentsCompleted: 0,
+    bestGame: null as { id: string; name: string; winRate: number; played: number } | null,
+    bestTeam: null as { id: string; name: string; winRate: number; played: number } | null,
+  },
+  currentStreak: null as { type: 'win' | 'loss'; count: number } | null,
+  form: [] as Array<{ result: 'win' | 'loss' | 'unknown'; completedAt: Date | null; gameName: string }>,
+  matchesOverTime: [] as Array<{ period: string; wins: number; losses: number; played: number }>,
+  winRateOverTime: [] as Array<{ period: string; winRate: number }>,
+  byTeam: [] as Array<{
+    teamId: string
+    name: string
+    logo: string | null
+    played: number
+    wins: number
+    losses: number
+    winRate: number
+  }>,
+  byGame: [] as Array<{
+    gameId: string
+    name: string
+    slug: string
+    icon: string | null
+    played: number
+    wins: number
+    losses: number
+    winRate: number
+  }>,
+  recentMatches: [] as Array<{
+    id: string
+    tournamentId: string
+    tournamentName: string
+    gameName: string
+    gameSlug: string
+    gameIcon: string | null
+    completedAt: Date | null
+    homeTeam: { id: string; name: string }
+    awayTeam: { id: string; name: string }
+    homeScore: number | null
+    awayScore: number | null
+    winnerTeamId: string | null
+    yourTeamId: string
+    yourTeamName: string
+    result: 'win' | 'loss' | 'unknown'
+  }>,
+}
 
 export const userStatsPlayer = {
   /**
-   * Full player-facing stats: aggregates, per-team breakdown, recent completed matches.
+   * Full player-facing stats: aggregates, time series, per-team/game breakdown, recent matches.
    */
-  getPlayerStats: protectedProcedure.query(async ({ ctx }) => {
+  getPlayerStats: protectedProcedure.input(playerStatsInputSchema).query(async ({ ctx, input }) => {
     const userId = ctx.session.user.id
+    const range = input?.range ?? 'all'
+    const gameId = input?.gameId
+    const teamId = input?.teamId
 
     const memberships = await ctx.db.teamMember.findMany({
       where: { userId },
@@ -15,63 +95,10 @@ export const userStatsPlayer = {
     const teamIds = memberships.map((m) => m.teamId)
 
     if (teamIds.length === 0) {
-      return {
-        summary: {
-          teamsCount: 0,
-          activeTournamentsCount: 0,
-          upcomingMatchesCount: 0,
-          completedMatches: 0,
-          wins: 0,
-          losses: 0,
-          winRate: 0,
-          tournamentsCompleted: 0,
-        },
-        byTeam: [] as Array<{
-          teamId: string
-          name: string
-          logo: string | null
-          played: number
-          wins: number
-          losses: number
-          winRate: number
-        }>,
-        byGame: [] as Array<{
-          gameId: string
-          name: string
-          slug: string
-          icon: string | null
-          played: number
-          wins: number
-          losses: number
-          winRate: number
-        }>,
-        recentMatches: [] as Array<{
-          id: string
-          tournamentId: string
-          tournamentName: string
-          gameName: string
-          gameSlug: string
-          gameIcon: string | null
-          completedAt: Date | null
-          homeTeam: { id: string; name: string }
-          awayTeam: { id: string; name: string }
-          homeScore: number | null
-          awayScore: number | null
-          winnerTeamId: string | null
-          yourTeamId: string
-          yourTeamName: string
-          result: 'win' | 'loss' | 'unknown'
-        }>,
-      }
+      return emptyResponse
     }
 
     const teamIdSet = new Set(teamIds)
-
-    function yourTeamIdForMatch(homeTeamId: string | null, awayTeamId: string | null): string | null {
-      if (homeTeamId && teamIdSet.has(homeTeamId)) return homeTeamId
-      if (awayTeamId && teamIdSet.has(awayTeamId)) return awayTeamId
-      return null
-    }
 
     const participatedMatchWhere = {
       status: MatchStatus.COMPLETED,
@@ -102,7 +129,7 @@ export const userStatsPlayer = {
       upcomingMatchesCount,
       tournamentsCompleted,
       teamsMeta,
-      allCompleted,
+      allCompletedRaw,
     ] = await Promise.all([
       ctx.db.tournamentRegistration.count({
         where: {
@@ -144,11 +171,28 @@ export const userStatsPlayer = {
       }),
     ])
 
+    const allRecords: PlayerMatchRecord[] = allCompletedRaw.map((m) => ({
+      id: m.id,
+      completedAt: m.completedAt,
+      homeTeamId: m.homeTeamId,
+      awayTeamId: m.awayTeamId,
+      winnerTeamId: m.winnerTeamId,
+      gameId: m.tournament.game.id,
+      gameName: m.tournament.game.name,
+    }))
+
+    let filteredRecords = filterMatchesByRange(allRecords, range)
+    filteredRecords = filterMatchesByGame(filteredRecords, gameId)
+    filteredRecords = filterMatchesByTeam(filteredRecords, teamId, teamIdSet)
+
+    const filteredIds = new Set(filteredRecords.map((r) => r.id))
+    const filteredMatches = allCompletedRaw.filter((m) => filteredIds.has(m.id))
+
     const teamsCount = teamIds.length
-    const completedMatches = allCompleted.length
-    const wins = allCompleted.filter((m) => m.winnerTeamId != null && teamIdSet.has(m.winnerTeamId)).length
-    const losses = completedMatches - wins
-    const winRate = completedMatches > 0 ? Math.round((wins / completedMatches) * 100) : 0
+    const { completedMatches, wins, losses, winRate } = computeSummaryFromMatches(
+      filteredRecords,
+      teamIdSet,
+    )
 
     const teamNameById = new Map(teamsMeta.map((t) => [t.id, t.name]))
 
@@ -166,7 +210,7 @@ export const userStatsPlayer = {
       perTeamPlayedWins.set(id, { played: 0, wins: 0 })
     }
 
-    for (const m of allCompleted) {
+    for (const m of filteredMatches) {
       const g = m.tournament.game
       if (!gameMap.has(g.id)) {
         gameMap.set(g.id, {
@@ -180,7 +224,7 @@ export const userStatsPlayer = {
       }
       const gameRow = gameMap.get(g.id)!
       gameRow.played++
-      const yt = yourTeamIdForMatch(m.homeTeamId, m.awayTeamId)
+      const yt = yourTeamIdForMatch(m.homeTeamId, m.awayTeamId, teamIdSet)
       if (yt && m.winnerTeamId && m.winnerTeamId === yt) {
         gameRow.wins++
       }
@@ -196,11 +240,11 @@ export const userStatsPlayer = {
     }
 
     const metaById = new Map(teamsMeta.map((t) => [t.id, t]))
-    const byTeam = teamIds.map((teamId) => {
-      const meta = metaById.get(teamId)
-      const { played, wins: teamWins } = perTeamPlayedWins.get(teamId) ?? { played: 0, wins: 0 }
+    const byTeam = teamIds.map((tid) => {
+      const meta = metaById.get(tid)
+      const { played, wins: teamWins } = perTeamPlayedWins.get(tid) ?? { played: 0, wins: 0 }
       return {
-        teamId,
+        teamId: tid,
         name: meta?.name ?? 'Team',
         logo: meta?.logo ?? null,
         played,
@@ -209,7 +253,6 @@ export const userStatsPlayer = {
         winRate: played > 0 ? Math.round((teamWins / played) * 100) : 0,
       }
     })
-
     byTeam.sort((a, b) => b.played - a.played)
 
     const byGame = Array.from(gameMap.values())
@@ -225,7 +268,7 @@ export const userStatsPlayer = {
       }))
       .sort((a, b) => b.played - a.played)
 
-    const sortedByDate = [...allCompleted].sort((a, b) => {
+    const sortedByDate = [...filteredMatches].sort((a, b) => {
       const ta = a.completedAt?.getTime() ?? 0
       const tb = b.completedAt?.getTime() ?? 0
       return tb - ta
@@ -267,6 +310,13 @@ export const userStatsPlayer = {
       }
     })
 
+    const bestGame = findBestHighlight(
+      byGame.map((g) => ({ id: g.gameId, name: g.name, played: g.played, wins: g.wins })),
+    )
+    const bestTeam = findBestHighlight(
+      byTeam.map((t) => ({ id: t.teamId, name: t.name, played: t.played, wins: t.wins })),
+    )
+
     return {
       summary: {
         teamsCount,
@@ -277,7 +327,13 @@ export const userStatsPlayer = {
         losses,
         winRate,
         tournamentsCompleted: tournamentsCompleted.length,
+        bestGame,
+        bestTeam,
       },
+      currentStreak: buildCurrentStreak(filteredRecords, teamIdSet),
+      form: buildForm(filteredRecords, teamIdSet),
+      matchesOverTime: buildMatchesOverTime(filteredRecords, teamIdSet),
+      winRateOverTime: buildWinRateOverTime(filteredRecords, teamIdSet),
       byTeam,
       byGame,
       recentMatches,
