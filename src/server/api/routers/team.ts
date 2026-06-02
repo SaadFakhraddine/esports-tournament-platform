@@ -109,58 +109,6 @@ export const teamRouter = createTRPCRouter({
       }
     }),
 
-  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-    const team = await ctx.db.team.findUnique({
-      where: { id: input.id },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-          },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                username: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: { joinedAt: 'asc' },
-        },
-        registrations: {
-          include: {
-            tournament: {
-              select: {
-                id: true,
-                name: true,
-                game: true,
-                startDate: true,
-                status: true,
-              },
-            },
-          },
-          orderBy: { registeredAt: 'desc' },
-        },
-      },
-    })
-
-    if (!team) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Team not found',
-      })
-    }
-
-    return team
-  }),
-
   getOverviewById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const team = await ctx.db.team.findUnique({
       where: { id: input.id },
