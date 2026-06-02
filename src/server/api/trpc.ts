@@ -1,8 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { db } from '@/server/db/client'
 import { auth } from '@/server/auth'
+import { db } from '@/server/db/client'
 import { assertUserNotBanned } from '@/lib/user/ban'
 
 export const createPublicTRPCContext = () => ({
@@ -48,11 +48,7 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
 
-  const dbUser = await db.user.findUnique({
-    where: { id: ctx.session.user.id },
-    select: { bannedAt: true },
-  })
-  assertUserNotBanned(dbUser?.bannedAt)
+  assertUserNotBanned(ctx.session.user.bannedAt ? new Date(ctx.session.user.bannedAt) : null)
 
   return next({
     ctx: {

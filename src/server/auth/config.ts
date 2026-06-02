@@ -246,9 +246,18 @@ export const authConfig: NextAuthConfig = {
           token.role = dbUser.role
           token.username = dbUser.username
           token.email = dbUser.email
+          token.bannedAt = dbUser.bannedAt?.toISOString() ?? null
           if (dbUser.name) token.name = dbUser.name
           if (dbUser.avatar) token.picture = dbUser.avatar
         }
+      }
+
+      if (!user && token.id && token.bannedAt === undefined) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { bannedAt: true },
+        })
+        token.bannedAt = dbUser?.bannedAt?.toISOString() ?? null
       }
 
       // Handle session update (e.g. profile name/username from client `update()`)
@@ -270,6 +279,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string
         session.user.role = token.role as UserRole
         session.user.username = token.username as string | null
+        session.user.bannedAt = (token.bannedAt as string | null | undefined) ?? null
         if (token.name) session.user.name = token.name as string
         if (token.picture) session.user.image = token.picture as string
       }

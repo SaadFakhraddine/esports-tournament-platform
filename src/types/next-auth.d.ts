@@ -7,6 +7,7 @@ declare module 'next-auth' {
       id: string
       role: UserRole
       username: string | null
+      bannedAt: string | null
     } & DefaultSession['user']
   }
 
@@ -23,5 +24,6 @@ declare module 'next-auth/jwt' {
     username: string | null
     name?: string | null
     picture?: string | null
+    bannedAt?: string | null
   }
 }
