@@ -16,8 +16,10 @@ import {
 } from 'lucide-react'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from '@/server/api/root'
+import { trpc } from '@/lib/trpc/client'
 import { StatCard } from './stat-card'
 import { ActivityItem } from './activity-item'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type ManageOverview = inferRouterOutputs<AppRouter>['tournament']['getManageOverviewById']
 
@@ -53,6 +55,9 @@ export function TournamentManageOverviewTab({
   invalidateBracketAndOverview: () => Promise<void>
   invalidateRegistrations: () => Promise<void>
 }) {
+  const { data: recentActivity, isLoading: activityLoading } =
+    trpc.tournament.getRecentActivity.useQuery({ tournamentId, limit: 10 })
+
   const runStart = async () => {
     if (tournament.status === 'REGISTRATION') {
       if (
@@ -261,11 +266,28 @@ export function TournamentManageOverviewTab({
           <CardDescription>Latest updates for this tournament</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='space-y-4'>
-            <ActivityItem action='Team registered' team='Phoenix Legends' time='2 hours ago' />
-            <ActivityItem action='Registration approved' team='Dragon Squad' time='5 hours ago' />
-            <ActivityItem action='Tournament updated' team='Settings changed' time='1 day ago' />
-          </div>
+          {activityLoading ? (
+            <div className='space-y-3'>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className='h-12 w-full' />
+              ))}
+            </div>
+          ) : recentActivity && recentActivity.length > 0 ? (
+            <div className='space-y-4'>
+              {recentActivity.map((item) => (
+                <ActivityItem
+                  key={item.id}
+                  action={item.action}
+                  team={item.detail}
+                  timestamp={item.timestamp}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className='text-sm text-muted-foreground py-4 text-center'>
+              No activity yet. Registrations and match results will appear here.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

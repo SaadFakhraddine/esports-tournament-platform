@@ -80,6 +80,7 @@ export function useTournamentManage(tournamentId: string) {
     await Promise.all([
       utils.tournament.getManageOverviewById.invalidate({ id: tournamentId }),
       utils.tournament.getBracketTree.invalidate({ tournamentId }),
+      utils.tournament.getRecentActivity.invalidate({ tournamentId }),
     ])
   }
 

@@ -102,9 +102,12 @@ export default function TournamentManagePage() {
               generateBracketMutation={vm.generateBracketMutation}
               autoSeedMutation={vm.autoSeedMutation}
               invalidateBracketAndOverview={vm.invalidateBracketAndOverview}
-              invalidateRegistrations={() =>
-                vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId })
-              }
+              invalidateRegistrations={async () => {
+                await Promise.all([
+                  vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId }),
+                  vm.utils.tournament.getRecentActivity.invalidate({ tournamentId: vm.tournamentId }),
+                ])
+              }}
             />
           </TabsContent>
 
@@ -121,11 +124,17 @@ export default function TournamentManagePage() {
               isLoading={vm.registrationsLoading}
               onApprove={async (registrationId) => {
                 await vm.approveRegistrationMutation.mutateAsync({ registrationId })
-                vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId })
+                await Promise.all([
+                  vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId }),
+                  vm.utils.tournament.getRecentActivity.invalidate({ tournamentId: vm.tournamentId }),
+                ])
               }}
               onReject={async (registrationId) => {
                 await vm.rejectRegistrationMutation.mutateAsync({ registrationId })
-                vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId })
+                await Promise.all([
+                  vm.utils.tournament.getRegistrations.invalidate({ tournamentId: vm.tournamentId }),
+                  vm.utils.tournament.getRecentActivity.invalidate({ tournamentId: vm.tournamentId }),
+                ])
               }}
             />
           </TabsContent>

@@ -1,4 +1,17 @@
-export function ActivityItem({ action, team, time }: { action: string; team: string; time: string }) {
+import { formatDistanceToNow } from 'date-fns'
+
+export function ActivityItem({
+  action,
+  team,
+  timestamp,
+}: {
+  action: string
+  team: string
+  timestamp: Date | string
+}) {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp)
+  const time = formatDistanceToNow(date, { addSuffix: true })
+
   return (
     <div className='flex items-center justify-between py-2 border-b last:border-0'>
       <div>

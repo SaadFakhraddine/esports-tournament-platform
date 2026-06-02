@@ -4,6 +4,7 @@ import { tournamentBracketPlanner } from './bracket-planner'
 import { tournamentCrud } from './crud'
 import { tournamentQueries } from './queries'
 import { tournamentRegistration } from './registration'
+import { tournamentActivity } from './activity'
 
 export const tournamentRouter = createTRPCRouter({
   ...tournamentQueries,
@@ -11,4 +12,5 @@ export const tournamentRouter = createTRPCRouter({
   ...tournamentRegistration,
   ...tournamentBracket,
   ...tournamentBracketPlanner,
+  ...tournamentActivity,
 })
