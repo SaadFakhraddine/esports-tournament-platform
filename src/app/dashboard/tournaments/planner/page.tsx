@@ -1,11 +1,24 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { BracketPlanner } from '@/components/bracket-planner/bracket-planner'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ArrowLeft } from 'lucide-react'
+
+const BracketPlanner = dynamic(
+  () => import('@/components/bracket-planner/bracket-planner').then((m) => m.BracketPlanner),
+  {
+    loading: () => (
+      <div className='space-y-4'>
+        <Skeleton className='h-10 w-full max-w-md' />
+        <Skeleton className='h-96 w-full rounded-lg' />
+      </div>
+    ),
+  },
+)
 
 export default function BracketPlannerPage() {
   const { data: session, status } = useSession()

@@ -1,5 +1,5 @@
-import { AdminOverviewStats } from '@/components/admin/admin-overview-stats'
+import { AdminOverviewClient } from './admin-overview-client'
 
 export default function AdminOverviewPage() {
-  return <AdminOverviewStats />
+  return <AdminOverviewClient />
 }

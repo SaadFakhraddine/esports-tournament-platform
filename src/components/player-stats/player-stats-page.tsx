@@ -12,14 +12,31 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { trpc } from '@/lib/trpc/client'
+import dynamic from 'next/dynamic'
 import { PlayerStatsKpiGrid, PlayerStatsHighlights } from './player-stats-kpi-grid'
-import { PlayerStatsWinRateChart } from './player-stats-win-rate-chart'
-import { PlayerStatsActivityChart } from './player-stats-activity-chart'
-import { PlayerStatsBreakdownChart } from './player-stats-breakdown-chart'
 import { PlayerStatsFormStrip } from './player-stats-form-strip'
 import { PlayerStatsRecentMatches } from './player-stats-recent-matches'
 import { PlayerStatsEmptyState } from './player-stats-empty-state'
 import { RANGE_OPTIONS, type StatsRange } from './types'
+
+const chartFallback = (
+  <div className='rounded-lg border bg-card p-6'>
+    <Skeleton className='h-[220px] w-full' />
+  </div>
+)
+
+const PlayerStatsWinRateChart = dynamic(
+  () => import('./player-stats-win-rate-chart').then((m) => m.PlayerStatsWinRateChart),
+  { loading: () => chartFallback },
+)
+const PlayerStatsActivityChart = dynamic(
+  () => import('./player-stats-activity-chart').then((m) => m.PlayerStatsActivityChart),
+  { loading: () => chartFallback },
+)
+const PlayerStatsBreakdownChart = dynamic(
+  () => import('./player-stats-breakdown-chart').then((m) => m.PlayerStatsBreakdownChart),
+  { loading: () => chartFallback },
+)
 
 export function PlayerStatsPage() {
   const { data: session, status } = useSession({ required: true })
