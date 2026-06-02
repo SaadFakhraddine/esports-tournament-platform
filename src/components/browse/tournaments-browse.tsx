@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { trpc } from '@/lib/trpc/client'
 import { TournamentCard } from '@/components/tournament/tournament-card'
+import type { PublicTournamentsList } from '@/lib/tournaments/public-tournaments-data'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -36,9 +37,11 @@ export interface TournamentsBrowseProps {
   listBasePath: string
   /** Target for empty-state “Back to home” */
   homeHref?: string
+  /** Server-fetched list for the default "all" tab with no search */
+  initialData?: PublicTournamentsList
 }
 
-export function TournamentsBrowse({ listBasePath, homeHref = '/' }: TournamentsBrowseProps) {
+export function TournamentsBrowse({ listBasePath, homeHref = '/', initialData }: TournamentsBrowseProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
@@ -71,18 +74,28 @@ export function TournamentsBrowse({ listBasePath, homeHref = '/' }: TournamentsB
     return () => clearTimeout(timer)
   }, [searchQuery, searchParams, listBasePath, router])
 
-  const { data, isLoading, isError, refetch, isFetching } = trpc.tournament.getAll.useQuery({
+  const queryInput = {
     limit: 30,
     status:
       activeTab === 'live'
-        ? 'IN_PROGRESS'
+        ? ('IN_PROGRESS' as const)
         : activeTab === 'open'
-          ? 'REGISTRATION'
+          ? ('REGISTRATION' as const)
           : activeTab === 'completed'
-            ? 'COMPLETED'
+            ? ('COMPLETED' as const)
             : undefined,
     search: debouncedSearch || undefined,
-  })
+  }
+
+  const canUseInitialData =
+    initialData && activeTab === 'all' && !debouncedSearch && filterParam === 'all'
+
+  const { data, isLoading, isError, refetch, isFetching } = trpc.tournament.getAll.useQuery(
+    queryInput,
+    {
+      initialData: canUseInitialData ? initialData : undefined,
+    },
+  )
 
   const handleTabChange = (value: string) => {
     setActiveTab(value)
