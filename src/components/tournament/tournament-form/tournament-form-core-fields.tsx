@@ -1,8 +1,12 @@
 'use client'
 
+import { useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -10,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { suggestTournamentNames } from '@/lib/tournament/suggest-names'
 import type { TournamentFormState } from './types'
 
 type GameRow = { id: string; name: string; icon: string | null }
@@ -27,11 +32,39 @@ export function TournamentFormCoreFields({
   games,
   gamesLoading,
 }: TournamentFormCoreFieldsProps) {
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const selectedGame = games?.find((game) => game.id === formData.gameId)
+
+  const handleSuggestNames = () => {
+    if (!selectedGame) return
+    setSuggestions(
+      suggestTournamentNames({
+        gameName: selectedGame.name,
+        format: formData.format,
+        startDate: formData.startDate,
+        count: 3,
+      }),
+    )
+  }
+
   return (
     <>
       <div className='space-y-4'>
         <div className='space-y-2'>
-          <Label htmlFor='name'>Tournament Name *</Label>
+          <div className='flex items-center justify-between gap-2'>
+            <Label htmlFor='name'>Tournament Name *</Label>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-8 gap-1.5 text-muted-foreground'
+              onClick={handleSuggestNames}
+              disabled={!selectedGame}
+            >
+              <Sparkles className='h-3.5 w-3.5' />
+              Suggest names
+            </Button>
+          </div>
           <Input
             id='name'
             placeholder='Summer Championship 2026'
@@ -39,6 +72,23 @@ export function TournamentFormCoreFields({
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
           />
+          {!selectedGame && (
+            <p className='text-xs text-muted-foreground'>Select a game below to get name suggestions.</p>
+          )}
+          {suggestions.length > 0 && (
+            <div className='flex flex-wrap gap-2 pt-1'>
+              {suggestions.map((name) => (
+                <Badge
+                  key={name}
+                  variant='secondary'
+                  className='cursor-pointer hover:bg-secondary/80 font-normal'
+                  onClick={() => setFormData({ ...formData, name })}
+                >
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className='space-y-2'>
