@@ -11,6 +11,11 @@ import {
   getDiscordOAuthCredentials,
   getGoogleOAuthCredentials,
 } from '@/server/auth/oauth-env'
+import {
+  oauthBanCheck,
+  provisionOAuthUser,
+  validateOAuthEmail,
+} from '@/server/auth/oauth-provision'
 
 const googleCreds = getGoogleOAuthCredentials()
 const discordCreds = getDiscordOAuthCredentials()
@@ -107,118 +112,25 @@ export const authConfig: NextAuthConfig = {
       return !!auth?.user
     },
     async signIn({ user, account, profile }) {
-      const rejectBanned = async (userId: string) => {
-        const dbUser = await db.user.findUnique({
-          where: { id: userId },
-          select: { bannedAt: true },
-        })
-        if (isUserBanned(dbUser?.bannedAt)) {
-          return '/login?error=AccountSuspended'
-        }
-        return true
-      }
-
       if (account?.provider === 'credentials') {
         if (user.id) {
-          return rejectBanned(user.id)
+          return oauthBanCheck(user.id)
         }
         return true
       }
 
-      // Handle OAuth providers (Google, Discord)
       if (account?.provider === 'google' || account?.provider === 'discord') {
-        if (!user.email) {
-          const hint =
-            account.provider === 'discord'
-              ? 'Discord requires a verified email on the account (email scope).'
-              : 'This OAuth provider did not return an email; check scopes and consent screen.'
-          console.warn(`[auth] OAuth sign-in rejected: missing email (${account.provider}). ${hint}`)
-          return false
-        }
-
-        if (
-          account.provider === 'google' &&
-          profile &&
-          typeof profile === 'object' &&
-          'email_verified' in profile &&
-          (profile as { email_verified?: boolean }).email_verified !== true
-        ) {
-          console.warn('[auth] Google sign-in rejected: email_verified is false')
+        const emailCheck = validateOAuthEmail(account.provider, user.email, profile)
+        if (!emailCheck.ok) {
+          console.warn(`[auth] OAuth sign-in rejected (${account.provider}): ${emailCheck.reason}`)
           return false
         }
 
         try {
-          // Check if user exists
-          const existingUser = await db.user.findUnique({
-            where: { email: user.email },
-          })
-
-          if (!existingUser) {
-            // Create new user for OAuth
-            const newUser = await db.user.create({
-              data: {
-                email: user.email,
-                name: user.name,
-                avatar: user.image,
-                emailVerified: new Date(),
-              },
-            })
-
-            // Create account link
-            await db.account.create({
-              data: {
-                userId: newUser.id,
-                type: account.type,
-                provider: account.provider,
-                providerAccountId: account.providerAccountId,
-                access_token: account.access_token,
-                refresh_token: account.refresh_token,
-                expires_at: account.expires_at,
-                token_type: account.token_type,
-                scope: account.scope,
-                id_token: account.id_token,
-                session_state: typeof account.session_state === 'string' ? account.session_state : null,
-              },
-            })
-
-            user.id = newUser.id
-          } else {
-            // Check if account is already linked
-            const existingAccount = await db.account.findUnique({
-              where: {
-                provider_providerAccountId: {
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                },
-              },
-            })
-
-            if (!existingAccount) {
-              // Link account to existing user
-              await db.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token,
-                  refresh_token: account.refresh_token,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                  session_state: typeof account.session_state === 'string' ? account.session_state : null,
-                },
-              })
-            }
-
-            user.id = existingUser.id
-          }
-
+          await provisionOAuthUser(user, account)
           if (user.id) {
-            return rejectBanned(user.id)
+            return oauthBanCheck(user.id)
           }
-
           return true
         } catch (error) {
           console.error('OAuth sign in error:', error)
