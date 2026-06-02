@@ -47,6 +47,8 @@ export function useTournamentManage(tournamentId: string) {
   const [reportMatchId, setReportMatchId] = useState<string | null>(null)
   const [reportHomeScore, setReportHomeScore] = useState('0')
   const [reportAwayScore, setReportAwayScore] = useState('0')
+  const [reportHomeTeamName, setReportHomeTeamName] = useState('Home')
+  const [reportAwayTeamName, setReportAwayTeamName] = useState('Away')
 
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleMatchId, setScheduleMatchId] = useState<string | null>(null)
@@ -106,6 +108,21 @@ export function useTournamentManage(tournamentId: string) {
     } catch (error: unknown) {
       alert(error instanceof Error ? error.message : 'Failed to submit result')
     }
+  }
+
+  const openReportDialog = (match: {
+    id: string
+    homeScore: number | null
+    awayScore: number | null
+    homeTeam?: { name: string } | null
+    awayTeam?: { name: string } | null
+  }) => {
+    setReportMatchId(match.id)
+    setReportHomeScore(String(match.homeScore ?? 0))
+    setReportAwayScore(String(match.awayScore ?? 0))
+    setReportHomeTeamName(match.homeTeam?.name ?? 'TBD')
+    setReportAwayTeamName(match.awayTeam?.name ?? 'TBD')
+    setReportOpen(true)
   }
 
   const openScheduleDialog = (match: {
@@ -225,6 +242,9 @@ export function useTournamentManage(tournamentId: string) {
     setReportHomeScore,
     reportAwayScore,
     setReportAwayScore,
+    reportHomeTeamName,
+    reportAwayTeamName,
+    openReportDialog,
     submitReportedResult,
     scheduleOpen,
     setScheduleOpen,

@@ -161,12 +161,7 @@ export default function TournamentManagePage() {
               clearMatchScheduleFromRow={vm.clearMatchScheduleFromRow}
               startMatch={vm.startMatch}
               cancelMatch={vm.cancelMatch}
-              openReportDialog={(match) => {
-                vm.setReportMatchId(match.id)
-                vm.setReportHomeScore(String(match.homeScore ?? 0))
-                vm.setReportAwayScore(String(match.awayScore ?? 0))
-                vm.setReportOpen(true)
-              }}
+              openReportDialog={vm.openReportDialog}
             />
           </TabsContent>
         </Tabs>
@@ -178,6 +173,8 @@ export default function TournamentManagePage() {
           setReportHomeScore={vm.setReportHomeScore}
           reportAwayScore={vm.reportAwayScore}
           setReportAwayScore={vm.setReportAwayScore}
+          reportHomeTeamName={vm.reportHomeTeamName}
+          reportAwayTeamName={vm.reportAwayTeamName}
           submitReportedResult={vm.submitReportedResult}
           submitResultMutation={vm.submitResultMutation}
           reportMatchId={vm.reportMatchId}

@@ -13,6 +13,8 @@ export function TournamentManageDialogs({
   setReportHomeScore,
   reportAwayScore,
   setReportAwayScore,
+  reportHomeTeamName,
+  reportAwayTeamName,
   submitReportedResult,
   submitResultMutation,
   reportMatchId,
@@ -31,6 +33,8 @@ export function TournamentManageDialogs({
   setReportHomeScore: (v: string) => void
   reportAwayScore: string
   setReportAwayScore: (v: string) => void
+  reportHomeTeamName: string
+  reportAwayTeamName: string
   submitReportedResult: () => void | Promise<void>
   submitResultMutation: { isPending: boolean }
   reportMatchId: string | null
@@ -57,8 +61,9 @@ export function TournamentManageDialogs({
           <div className='grid gap-4'>
             <div className='grid grid-cols-2 gap-3'>
               <div className='space-y-2'>
-                <p className='text-sm text-muted-foreground'>Home Score</p>
+                <Label htmlFor='report-home-score'>{reportHomeTeamName}</Label>
                 <Input
+                  id='report-home-score'
                   type='number'
                   min={0}
                   value={reportHomeScore}
@@ -66,8 +71,9 @@ export function TournamentManageDialogs({
                 />
               </div>
               <div className='space-y-2'>
-                <p className='text-sm text-muted-foreground'>Away Score</p>
+                <Label htmlFor='report-away-score'>{reportAwayTeamName}</Label>
                 <Input
+                  id='report-away-score'
                   type='number'
                   min={0}
                   value={reportAwayScore}
