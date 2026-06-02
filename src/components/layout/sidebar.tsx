@@ -77,8 +77,10 @@ export function Sidebar({ userRole = 'PLAYER' }: SidebarProps) {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
+  const normalizedRole = String(userRole || 'PLAYER').toUpperCase()
+
   const filteredNavigation = navigation.filter((item) =>
-    item.roles.includes(userRole)
+    item.roles.includes(normalizedRole)
   )
 
   const SidebarContent = () => (
