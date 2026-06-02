@@ -3,16 +3,16 @@ import { z } from 'zod'
 import {
   buildCurrentStreak,
   buildForm,
-  buildMatchesOverTime,
-  buildWinRateOverTime,
   computeSummaryFromMatches,
-  filterMatchesByGame,
-  filterMatchesByRange,
-  filterMatchesByTeam,
   findBestHighlight,
   type PlayerMatchRecord,
   yourTeamIdForMatch,
 } from '@/lib/player-stats/aggregate'
+import {
+  buildCompletedMatchWhere,
+  buildWinRateOverTimeFromBuckets,
+  queryMonthlyMatchBuckets,
+} from '@/lib/player-stats/match-query'
 import { protectedProcedure } from '@/server/api/trpc'
 
 const playerStatsInputSchema = z
@@ -100,10 +100,7 @@ export const userStatsPlayer = {
 
     const teamIdSet = new Set(teamIds)
 
-    const participatedMatchWhere = {
-      status: MatchStatus.COMPLETED,
-      OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
-    }
+    const matchWhere = buildCompletedMatchWhere(teamIds, { range, gameId, teamId })
 
     const completedMatchSelect = {
       id: true,
@@ -129,7 +126,8 @@ export const userStatsPlayer = {
       upcomingMatchesCount,
       tournamentsCompleted,
       teamsMeta,
-      allCompletedRaw,
+      filteredMatchesRaw,
+      matchesOverTime,
     ] = await Promise.all([
       ctx.db.tournamentRegistration.count({
         where: {
@@ -166,12 +164,14 @@ export const userStatsPlayer = {
         select: { id: true, name: true, logo: true },
       }),
       ctx.db.match.findMany({
-        where: participatedMatchWhere,
+        where: matchWhere,
         select: completedMatchSelect,
+        orderBy: { completedAt: 'desc' },
       }),
+      queryMonthlyMatchBuckets(ctx.db, teamIds, { range, gameId, teamId }),
     ])
 
-    const allRecords: PlayerMatchRecord[] = allCompletedRaw.map((m) => ({
+    const filteredRecords: PlayerMatchRecord[] = filteredMatchesRaw.map((m) => ({
       id: m.id,
       completedAt: m.completedAt,
       homeTeamId: m.homeTeamId,
@@ -181,12 +181,8 @@ export const userStatsPlayer = {
       gameName: m.tournament.game.name,
     }))
 
-    let filteredRecords = filterMatchesByRange(allRecords, range)
-    filteredRecords = filterMatchesByGame(filteredRecords, gameId)
-    filteredRecords = filterMatchesByTeam(filteredRecords, teamId, teamIdSet)
-
-    const filteredIds = new Set(filteredRecords.map((r) => r.id))
-    const filteredMatches = allCompletedRaw.filter((m) => filteredIds.has(m.id))
+    const filteredMatches = filteredMatchesRaw
+    const winRateOverTime = buildWinRateOverTimeFromBuckets(matchesOverTime)
 
     const teamsCount = teamIds.length
     const { completedMatches, wins, losses, winRate } = computeSummaryFromMatches(
@@ -268,11 +264,7 @@ export const userStatsPlayer = {
       }))
       .sort((a, b) => b.played - a.played)
 
-    const sortedByDate = [...filteredMatches].sort((a, b) => {
-      const ta = a.completedAt?.getTime() ?? 0
-      const tb = b.completedAt?.getTime() ?? 0
-      return tb - ta
-    })
+    const sortedByDate = filteredMatches
 
     const recentMatches = sortedByDate.slice(0, 20).map((m) => {
       const homeId = m.homeTeamId
@@ -332,8 +324,8 @@ export const userStatsPlayer = {
       },
       currentStreak: buildCurrentStreak(filteredRecords, teamIdSet),
       form: buildForm(filteredRecords, teamIdSet),
-      matchesOverTime: buildMatchesOverTime(filteredRecords, teamIdSet),
-      winRateOverTime: buildWinRateOverTime(filteredRecords, teamIdSet),
+      matchesOverTime,
+      winRateOverTime,
       byTeam,
       byGame,
       recentMatches,
