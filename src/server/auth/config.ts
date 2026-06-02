@@ -16,6 +16,7 @@ import {
   provisionOAuthUser,
   validateOAuthEmail,
 } from '@/server/auth/oauth-provision'
+import { applyFreshBanStatusToToken } from '@/lib/auth/session-ban'
 
 const googleCreds = getGoogleOAuthCredentials()
 const discordCreds = getDiscordOAuthCredentials()
@@ -142,14 +143,18 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id
+        if (user.id) {
+          token.id = user.id
+        }
         token.email = user.email ?? token.email
 
         // Fetch user data from database to get role and username
-        const dbUser = await db.user.findUnique({
-          where: { id: user.id },
-          select: { role: true, username: true, email: true, name: true, avatar: true, bannedAt: true },
-        })
+        const dbUser = user.id
+          ? await db.user.findUnique({
+              where: { id: user.id },
+              select: { role: true, username: true, email: true, name: true, avatar: true, bannedAt: true },
+            })
+          : null
 
         if (dbUser) {
           if (isUserBanned(dbUser.bannedAt)) {
@@ -164,12 +169,8 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
-      if (!user && token.id && token.bannedAt === undefined) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.id as string },
-          select: { bannedAt: true },
-        })
-        token.bannedAt = dbUser?.bannedAt?.toISOString() ?? null
+      if (!user && token.id) {
+        return applyFreshBanStatusToToken(token)
       }
 
       // Handle session update (e.g. profile name/username from client `update()`)
@@ -187,6 +188,10 @@ export const authConfig: NextAuthConfig = {
       return token
     },
     async session({ session, token }) {
+      if (!token?.id) {
+        return session
+      }
+
       if (token && session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as UserRole
